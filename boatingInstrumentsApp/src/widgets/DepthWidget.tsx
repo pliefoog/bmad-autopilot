@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { TrendLine } from '../components/TrendLine';
-import { useNmeaStore } from '../store/nmeaStore';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
@@ -49,6 +48,9 @@ interface DepthWidgetProps {
  * **TrendLine Integration:**
  * - TrendLine component also supports virtual metrics with same dot notation
  * - Can render trends of min/max/avg values: `<TrendLine metricKey="depth.max" />`
+ * 
+ * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
+ * MetricCells subscribe individually. Enables fine-grained reactivity.
  */
 export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
   // Extract instance number from widget ID
@@ -57,21 +59,11 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
     return match ? parseInt(match[1], 10) : 0;
   }, [id]);
 
-  // Get SensorInstance - single source of truth
-  const depthSensorInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.depth?.[instanceNumber],
-  );
-
-  // Subscribe to timestamp to trigger re-renders when data changes
-  const _timestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors.depth?.[instanceNumber]?.timestamp,
-  );
-
   return (
     <TemplatedWidget
       template="2Rx1C-SEP-2Rx1C"
-      sensorInstance={depthSensorInstance}
       sensorType="depth"
+      instanceNumber={instanceNumber}
       testID={`depth-widget-${instanceNumber}`}
     >
       {/* Primary Grid: Current depth + trend visualization */}

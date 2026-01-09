@@ -249,10 +249,13 @@ export class SensorInstance<T extends SensorData = SensorData> {
       }
     }
 
+    // Check if timestamp changed (important for GPS time updates)
+    const timestampChanged = this.timestamp !== now;
     this.timestamp = now;
 
-    // Increment sensor-level version if any metric changed
-    if (hasChanges) {
+    // Increment sensor-level version if any metric changed OR if timestamp changed
+    // This ensures GPS time field updates trigger re-renders even when lat/lon unchanged
+    if (hasChanges || timestampChanged) {
       this._version++;
     }
 

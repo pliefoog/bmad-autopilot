@@ -302,33 +302,36 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
       }
     }
 
-    // FORCE UPDATE: Always update store to ensure React subscribers are notified
-    // Even if values seem unchanged, timestamp and version counters need to propagate
-    // No throttling - update on EVERY NMEA message
-    set((state) => {
-      const newNmeaData = {
-        ...state.nmeaData,
-        sensors: {
-          ...state.nmeaData.sensors,
-          [sensorType]: {
-            ...state.nmeaData.sensors[sensorType],
-            [instance]: sensorInstance,
+    // SMART UPDATE: Only update store if metrics actually changed
+    // SensorInstance.updateMetrics() returns true if any metric changed
+    // Now that widgets don't subscribe (only TemplatedWidget + MetricCells do),
+    // we can safely skip updates when nothing changed - fine-grained reactivity works!
+    if (hasChanges) {
+      set((state) => {
+        const newNmeaData = {
+          ...state.nmeaData,
+          sensors: {
+            ...state.nmeaData.sensors,
+            [sensorType]: {
+              ...state.nmeaData.sensors[sensorType],
+              [instance]: sensorInstance,
+            },
           },
-        },
-        timestamp: now,
-        messageCount: state.nmeaData.messageCount + 1,
-        messageFormat: messageFormat || state.nmeaData.messageFormat,
-      };
+          timestamp: now,
+          messageCount: state.nmeaData.messageCount + 1,
+          messageFormat: messageFormat || state.nmeaData.messageFormat,
+        };
 
-      // Evaluate alarms on every update (no throttling)
-      const alarms = evaluateAlarms(newNmeaData.sensors);
-      lastAlarmEvaluation = now;
+        // Evaluate alarms on every update when changes detected
+        const alarms = evaluateAlarms(newNmeaData.sensors);
+        lastAlarmEvaluation = now;
 
-      return {
-        nmeaData: newNmeaData,
-        alarms,
-      };
-    });
+        return {
+          nmeaData: newNmeaData,
+          alarms,
+        };
+      });
+    }
 
     // Emit sensor update event ONLY for new instances
     // Widget detection only needs to know when sensors first appear

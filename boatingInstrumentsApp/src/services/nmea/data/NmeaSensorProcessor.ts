@@ -609,11 +609,23 @@ export class NmeaSensorProcessor {
           timestamp: timestamp,
         };
 
-        // Add UTC time and date if available
-        if (fields.time && fields.date) {
-          const utcDateTime = this.parseRMCDateTime(fields.time, fields.date);
-          if (utcDateTime) {
-            gpsData.utcTime = utcDateTime.getTime(); // Convert Date to timestamp (number)
+        // Always extract GPS time if available (fixes intermittent GPS time updates)
+        // RMC sentences may have time without date, still update time
+        if (fields.time) {
+          if (fields.date) {
+            // Preferred: full date+time
+            const utcDateTime = this.parseRMCDateTime(fields.time, fields.date);
+            if (utcDateTime) {
+              gpsData.utcTime = utcDateTime.getTime(); // Convert Date to timestamp (number)
+            }
+          } else {
+            // Fallback: time only, use today's date
+            const today = new Date();
+            const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+            const utcDateTime = this.parseRMCDateTime(fields.time, dateStr);
+            if (utcDateTime) {
+              gpsData.utcTime = utcDateTime.getTime();
+            }
           }
         }
 

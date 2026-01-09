@@ -1,5 +1,4 @@
 import React from 'react';
-import { useNmeaStore } from '../store/nmeaStore';
 import TemplatedWidget from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
@@ -14,18 +13,17 @@ interface GPSWidgetProps {
  * Template: 2Rx1C-SEP-2Rx1C (2 primary rows, separator, 2 secondary rows, 1 column each)
  * Primary: Latitude, Longitude (coordinate formatting with MetricValue)
  * Secondary: UTC Date, UTC Time (datetime formatting with forceTimezone: 'utc')
+ * 
+ * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
+ * MetricCells subscribe individually via useMetric hook. This enables fine-grained
+ * reactivity - only affected cells re-render on updates.
  */
-export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id }) => {
-  const gpsInstance = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]);
-
-  // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
-  const _timestamp = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.timestamp);
-
+export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (
     <TemplatedWidget
       template="2Rx1C-SEP-2Rx1C"
-      sensorInstance={gpsInstance}
       sensorType="gps"
+      instanceNumber={instanceNumber}
       testID={id}
     >
       {/* Primary Grid: Coordinates */}
