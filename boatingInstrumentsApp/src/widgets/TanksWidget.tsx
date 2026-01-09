@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { useNmeaStore } from '../store/nmeaStore';
 import { TemplatedWidget } from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
@@ -14,6 +13,8 @@ interface TanksWidgetProps {
  * Template: 2Rx1C-SEP-2Rx1C
  * Primary: Level (%), Capacity
  * Secondary: Type, Name
+ *
+ * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
  */
 export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
   ({ id, instanceNumber: propInstanceNumber }) => {
@@ -24,15 +25,12 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
       return match ? parseInt(match[1], 10) : 0;
     }, [id, propInstanceNumber]);
 
-    const tankInstance = useNmeaStore((state) => state.nmeaData.sensors.tank?.[instanceNumber]);
-
-    // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
-    const _timestamp = useNmeaStore(
-      (state) => state.nmeaData.sensors.tank?.[instanceNumber]?.timestamp,
-    );
-
     return (
-      <TemplatedWidget template="2Rx1C-SEP-2Rx1C" sensorInstance={tankInstance} sensorType="tank">
+      <TemplatedWidget
+        template="2Rx1C-SEP-2Rx1C"
+        sensorType="tank"
+        instanceNumber={instanceNumber}
+      >
         {
           [
             <PrimaryMetricCell key="level" metricKey="level" />,
