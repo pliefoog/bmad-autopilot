@@ -211,6 +211,15 @@ export class SensorInstance<T extends SensorData = SensorData> {
             const currentMetricVersion = this._metricVersions.get(fieldName) ?? 0;
             this._metricVersions.set(fieldName, currentMetricVersion + 1);
 
+            // DEBUG: Log version increment for GPS time fields
+            if (this.sensorType === 'gps' && (fieldName === 'utcTime' || fieldName === 'utcDate')) {
+              log.gps(`🔢 ${fieldName} version incremented`, () => ({
+                version: currentMetricVersion + 1,
+                value: fieldValue,
+                formatted: metric.formattedValue,
+              }));
+            }
+
             // Evaluate alarm with priority logic
             const thresholds = this._thresholds.get(fieldName);
             const staleThreshold = thresholds?.staleThresholdMs ?? 5000;

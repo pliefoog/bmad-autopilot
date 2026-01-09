@@ -617,6 +617,11 @@ export class NmeaSensorProcessor {
             const utcDateTime = this.parseRMCDateTime(fields.time, fields.date);
             if (utcDateTime) {
               gpsData.utcTime = utcDateTime.getTime(); // Convert Date to timestamp (number)
+              log.gps('📅 RMC utcTime extracted (with date)', () => ({
+                time: fields.time,
+                date: fields.date,
+                utcTime: utcDateTime.toISOString(),
+              }));
             }
           } else {
             // Fallback: time only, use today's date
@@ -625,6 +630,11 @@ export class NmeaSensorProcessor {
             const utcDateTime = this.parseRMCDateTime(fields.time, dateStr);
             if (utcDateTime) {
               gpsData.utcTime = utcDateTime.getTime();
+              log.gps('⏰ RMC utcTime extracted (time only, date inferred)', () => ({
+                time: fields.time,
+                inferredDate: dateStr,
+                utcTime: utcDateTime.toISOString(),
+              }));
             }
           }
         }
