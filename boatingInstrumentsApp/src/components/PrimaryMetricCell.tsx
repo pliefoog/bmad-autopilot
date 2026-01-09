@@ -111,28 +111,16 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
   // ARCHITECTURE v2.0: Subscribe to specific metric using fine-grained subscription
   // MUST be called unconditionally (Rules of Hooks)
   // Pass defaults when sensorInstance doesn't exist, hook will return null
-  const subscribedMetric = useMetric(
+  const metricValue = useMetric(
     sensorType || 'depth', // Safe default
     sensorInstance?.instance ?? 0, // Safe default
     metricKey,
   );
 
-  // Fallback to context-based metric access if subscription not available
-  // (happens when sensor doesn't exist yet or subscription returns null)
-  const contextMetric = sensorInstance?.getMetric(metricKey);
-
-  // Use subscribed metric only if sensorInstance exists, otherwise fallback
-  const metricValue =
-    sensorInstance && subscribedMetric
-      ? {
-          formattedValue: subscribedMetric.formattedValue,
-          formattedValueWithUnit: subscribedMetric.formattedValueWithUnit,
-          unit: subscribedMetric.unit,
-          si_value: subscribedMetric.si_value,
-          value: subscribedMetric.value,
-          timestamp: subscribedMetric.timestamp,
-        }
-      : contextMetric;
+  // NOTE: Removed fallback to contextMetric (sensorInstance.getMetric()) because
+  // it's NOT reactive and causes erratic updates. The fallback pattern made
+  // components "stuck" on stale values when subscribedMetric was briefly null.
+  // Now we ONLY use the reactive subscription from useMetric.
 
   // Extract base field name for registry lookup (remove .min/.max/.avg suffix if present)
   const baseMetricKey = metricKey.replace(/\.(min|max|avg)$/, '');
@@ -195,9 +183,8 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
     return '';
   }, [fieldConfig?.valueType, fieldConfig?.unitType, metricValue?.unit]);
 
-  // Use alarm state from subscription if available, otherwise from context
-  const alarmLevel: AlarmLevel =
-    subscribedMetric?.alarmState ?? sensorInstance?.getAlarmState(metricKey) ?? 0;
+  // Get alarm state from subscription (includes alarmState in EnrichedMetric)
+  const alarmLevel: AlarmLevel = metricValue?.alarmState ?? 0;
 
   // Calculate dynamic font sizes based on content length and constraints
   const dynamicSizes = useMemo(() => {
