@@ -630,6 +630,9 @@ export class NmeaSensorProcessor {
                 date: fields.date,
                 timestamp: timestamp,
                 iso: utcDateTime.toISOString(),
+                utcTime: gpsData.utcTime,
+                utcDate: gpsData.utcDate,
+                bothFieldsSet: gpsData.utcTime === gpsData.utcDate && gpsData.utcTime === timestamp,
               }));
             }
           } else {
@@ -646,6 +649,9 @@ export class NmeaSensorProcessor {
                 inferredDate: dateStr,
                 timestamp: timestamp,
                 iso: utcDateTime.toISOString(),
+                utcTime: gpsData.utcTime,
+                utcDate: gpsData.utcDate,
+                bothFieldsSet: gpsData.utcTime === gpsData.utcDate && gpsData.utcTime === timestamp,
               }));
             }
           }

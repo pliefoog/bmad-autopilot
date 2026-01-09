@@ -273,9 +273,14 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
 
     // DEBUG: Log GPS metric updates
     if (sensorType === 'gps') {
-      log.gps(`📝 updateMetrics result`, () => ({
+      log.gps(`📝 GPS updateMetrics result`, () => ({
         hasChanges,
-        utcTime: sensorInstance.getMetric('utcTime')?.formattedValue,
+        utcTime: data.utcTime,
+        utcDate: data.utcDate,
+        utcTimeMetric: sensorInstance.getMetric('utcTime')?.si_value,
+        utcDateMetric: sensorInstance.getMetric('utcDate')?.si_value,
+        utcTimeFormatted: sensorInstance.getMetric('utcTime')?.formattedValue,
+        utcDateFormatted: sensorInstance.getMetric('utcDate')?.formattedValue,
         lat: sensorInstance.getMetric('latitude')?.si_value,
         lon: sensorInstance.getMetric('longitude')?.si_value,
       }));
