@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { useNmeaStore } from '../store/nmeaStore';
 import TemplatedWidget from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import TrendLine from '../components/TrendLine';
@@ -21,6 +20,8 @@ interface WeatherWidgetProps {
  * - Rapid drop (>3 hPa/hr): Storm approaching
  * - Steady rise: Weather clearing
  * - Stable: Current conditions persisting
+ *
+ * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
  */
 export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(({ id }) => {
   // Extract instance number from widget ID (e.g., "weather-0" → 0)
@@ -29,20 +30,11 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(({ id }) =
     return match ? parseInt(match[1], 10) : 0;
   }, [id]);
 
-  const weatherInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.weather?.[instanceNumber ?? 0],
-  );
-
-  // Subscribe to timestamp to trigger re-renders when data changes
-  const _timestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors.weather?.[instanceNumber ?? 0]?.timestamp,
-  );
-
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C-WIDE"
-      sensorInstance={weatherInstance}
       sensorType="weather"
+      instanceNumber={instanceNumber}
       testID={id}
     >
       {/* Primary Grid: Weather metrics in 2x2 layout */}
