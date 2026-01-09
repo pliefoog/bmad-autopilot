@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
-import { useNmeaStore } from '../store/nmeaStore';
 import { EmptyCell } from 'components/EmptyCell';
 
 interface BatteryWidgetProps {
@@ -34,6 +33,8 @@ interface BatteryWidgetProps {
  * - Single version-based subscription
  *
  * **Layout:** 2Rx2C primary (VLT, AMP, TMP, SOC) + 2Rx2C secondary (CAP, CHEM, NOM, NAME)
+ *
+ * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
  */
 export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id }) => {
   // Extract instance number from widget ID
@@ -42,17 +43,11 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id }) =
     return match ? parseInt(match[1], 10) : 0;
   }, [id]);
 
-  // Get SensorInstance for context (MetricCells subscribe individually)
-  // Widget no longer needs subscription - cells handle their own reactivity
-  const batterySensorInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.battery?.[instanceNumber],
-  );
-
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C"
-      sensorInstance={batterySensorInstance}
       sensorType="battery"
+      instanceNumber={instanceNumber}
       testID={`battery-widget-${instanceNumber}`}
     >
       {/* Primary Grid: 2x2 critical metrics */}
