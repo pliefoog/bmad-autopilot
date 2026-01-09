@@ -297,13 +297,6 @@ const createStyles = (
       marginTop: 0, // baseline alignment
       flexShrink: 0, // Don't shrink units
     },
-    value: {
-      fontSize: sizes.value,
-      lineHeight: sizes.value,
-      fontWeight: '700',
-      fontFamily: 'monospace',
-      color: valueColor,
-    },
   });
 
 export default SecondaryMetricCell;
