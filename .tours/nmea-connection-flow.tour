@@ -1,0 +1,60 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "NMEA Connection Flow",
+  "description": "Follow the complete flow of connecting to an NMEA data source and displaying data in widgets",
+  "steps": [
+    {
+      "title": "Start: User Connection",
+      "description": "The journey begins when a user opens the Connection Configuration Dialog to set up their NMEA data source (TCP, UDP, or WebSocket)."
+    },
+    {
+      "file": "boatingInstrumentsApp/src/components/dialogs/ConnectionConfigDialog.tsx",
+      "line": 163,
+      "description": "## Connection Configuration\n\nThe user selects their connection type and configures settings:\n- **TCP**: Direct connection to NMEA server\n- **UDP**: Multicast NMEA 2000 data\n- **WebSocket**: Browser-based connection to NMEA bridge\n\nNotice how this uses `usePresentationStore` and `useSettingsStore` for state management."
+    },
+    {
+      "file": "boatingInstrumentsApp/src/services/nmea/connection/PureConnectionManager.ts",
+      "line": 42,
+      "description": "## Connection Manager\n\nWhen the user clicks Connect, the `PureConnectionManager` takes over.\n\n**Key responsibilities:**\n- Establish WebSocket connection\n- Handle reconnection logic\n- Parse incoming NMEA sentences\n- Update the NMEA store with data\n\nThis is the heart of the connection system!"
+    },
+    {
+      "file": "boatingInstrumentsApp/src/services/nmea/connection/PureConnectionManager.ts",
+      "line": 120,
+      "description": "## Connection Establishment\n\nThe `connect()` method:\n1. Creates a WebSocket connection\n2. Sets up event handlers (onopen, onmessage, onerror, onclose)\n3. Starts heartbeat monitoring\n4. Updates connection state in the store\n\nNotice the error handling and retry logic!"
+    },
+    {
+      "file": "boatingInstrumentsApp/src/services/nmea/connection/PureConnectionManager.ts",
+      "line": 250,
+      "description": "## Receiving NMEA Data\n\nWhen data arrives via WebSocket:\n1. Raw NMEA sentence received as string\n2. Validate checksum\n3. Parse sentence type (GGA, VTG, MWV, etc.)\n4. Extract data fields\n5. Update appropriate store section\n\nThis happens for every NMEA sentence!"
+    },
+    {
+      "file": "boatingInstrumentsApp/src/store/nmeaStore.ts",
+      "line": 50,
+      "description": "## NMEA Data Store\n\nThe `nmeaStore` is a Zustand store that holds all parsed NMEA data:\n- GPS position (latitude, longitude, altitude)\n- Speed over ground\n- Wind speed and direction\n- Depth below transducer\n- Water temperature\n- Engine RPM, temperature, pressure\n- And more!\n\nWidgets subscribe to this store to get updates."
+    },
+    {
+      "file": "boatingInstrumentsApp/src/widgets/DepthWidget.tsx",
+      "line": 20,
+      "description": "## Widget Subscription\n\nWidgets use the `useNMEAStore()` hook to subscribe to data updates.\n\nWhen the NMEA store updates, Zustand automatically triggers a re-render of subscribed components.\n\nThis widget specifically watches for depth data changes."
+    },
+    {
+      "file": "boatingInstrumentsApp/src/widgets/DepthWidget.tsx",
+      "line": 45,
+      "description": "## Data Presentation\n\nThe widget uses `useDepthPresentation()` hook to:\n1. Get the current depth value from store\n2. Apply user's preferred unit (meters, feet, fathoms)\n3. Apply user's preferred precision\n4. Format for display\n\nThis separation keeps data, formatting, and presentation concerns independent!"
+    },
+    {
+      "file": "boatingInstrumentsApp/src/presentation/presentationStore.ts",
+      "line": 100,
+      "description": "## Presentation Store\n\nThe `presentationStore` manages how data is displayed:\n- Unit conversions (meters ↔ feet ↔ fathoms)\n- Number formatting (precision, decimal places)\n- Layout preferences\n\nUsers can change units in real-time without affecting the underlying data!"
+    },
+    {
+      "file": "boatingInstrumentsApp/src/widgets/DepthWidget.tsx",
+      "line": 80,
+      "description": "## Rendering to User\n\nFinally, the widget renders using `PrimaryMetricCell`:\n1. Shows the formatted value\n2. Displays the unit\n3. Applies styling based on widget configuration\n4. Shows \"N/A\" if no data available\n\n**The user sees the depth!** 🎉"
+    },
+    {
+      "title": "Complete!",
+      "description": "## You've completed the NMEA Connection Flow tour!\n\n**Summary:**\n1. User configures connection → `ConnectionConfigDialog`\n2. Manager establishes connection → `PureConnectionManager`\n3. Data arrives and is parsed → `parseNMEA()`\n4. Store is updated → `nmeaStore`\n5. Widgets are notified → Zustand subscription\n6. Data is formatted → `presentationStore`\n7. User sees the result → Widget renders\n\n**Try it yourself:**\n- Run VS Code Task: \"Start Full Web Development Stack (Safari)\"\n- Open Safari at http://localhost:8082\n- Watch the widgets update with real NMEA data!\n\n**Debug logging:**\nIn Safari console, try:\n```javascript\nenableLog('nmea.gps')\nenableLog('nmea.connection')\n```"
+    }
+  ]
+}
