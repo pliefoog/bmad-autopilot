@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { useNmeaStore } from '../store/nmeaStore';
 import { TemplatedWidget } from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
@@ -31,6 +30,8 @@ interface CompassWidgetProps {
  * - Interactive mode toggle (TRUE/MAGNETIC) - not used in practice
  * - SVG CompassRose visualization - could be added back if needed
  * - Manual cardinal direction calculation - handled by formatter
+ *
+ * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
  */
 export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id }) => {
   // Extract instance number from widget ID
@@ -39,19 +40,11 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id }) =
     return match ? parseInt(match[1], 10) : 0;
   }, [id]);
 
-  // Get sensor instance
-  const compassInstance = useNmeaStore((state) => state.nmeaData.sensors.compass?.[instanceNumber]);
-
-  // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
-  const _timestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors.compass?.[instanceNumber]?.timestamp,
-  );
-
   return (
     <TemplatedWidget
       template="2Rx1C-SEP-2Rx1C"
-      sensorInstance={compassInstance}
       sensorType="compass"
+      instanceNumber={instanceNumber}
       testID={`compass-widget-${instanceNumber}`}
     >
       {/* Primary Grid: True and Magnetic Heading */}
