@@ -507,7 +507,9 @@ export class NmeaSensorProcessor {
     if (fields.time) {
       const utcTime = this.parseGGATime(fields.time);
       if (utcTime) {
-        gpsData.utcTime = utcTime.getTime();
+        const timestamp = utcTime.getTime();
+        gpsData.utcTime = timestamp; // Formatted as TIME (hh:mm:ss) in widget
+        gpsData.utcDate = timestamp; // Formatted as DATE (yyyy-mm-dd) in widget
       }
     }
 
@@ -568,7 +570,9 @@ export class NmeaSensorProcessor {
     if (fields.time) {
       const utcTime = this.parseGGATime(fields.time);
       if (utcTime) {
-        gpsData.utcTime = utcTime.getTime();
+        const timestamp = utcTime.getTime();
+        gpsData.utcTime = timestamp; // Formatted as TIME (hh:mm:ss) in widget
+        gpsData.utcDate = timestamp; // Formatted as DATE (yyyy-mm-dd) in widget
       }
     }
 
@@ -611,16 +615,21 @@ export class NmeaSensorProcessor {
 
         // Always extract GPS time if available (fixes intermittent GPS time updates)
         // RMC sentences may have time without date, still update time
+        // CRITICAL: Set BOTH utcTime AND utcDate to the same timestamp value
+        // The widget displays them separately, but they're both formatted from the same timestamp
         if (fields.time) {
           if (fields.date) {
             // Preferred: full date+time
             const utcDateTime = this.parseRMCDateTime(fields.time, fields.date);
             if (utcDateTime) {
-              gpsData.utcTime = utcDateTime.getTime(); // Convert Date to timestamp (number)
-              log.gps('📅 RMC utcTime extracted (with date)', () => ({
+              const timestamp = utcDateTime.getTime(); // Unix timestamp in milliseconds
+              gpsData.utcTime = timestamp; // Formatted as TIME (hh:mm:ss) in widget
+              gpsData.utcDate = timestamp; // Formatted as DATE (yyyy-mm-dd) in widget
+              log.gps('📅 RMC time+date extracted', () => ({
                 time: fields.time,
                 date: fields.date,
-                utcTime: utcDateTime.toISOString(),
+                timestamp: timestamp,
+                iso: utcDateTime.toISOString(),
               }));
             }
           } else {
@@ -629,11 +638,14 @@ export class NmeaSensorProcessor {
             const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
             const utcDateTime = this.parseRMCDateTime(fields.time, dateStr);
             if (utcDateTime) {
-              gpsData.utcTime = utcDateTime.getTime();
-              log.gps('⏰ RMC utcTime extracted (time only, date inferred)', () => ({
+              const timestamp = utcDateTime.getTime();
+              gpsData.utcTime = timestamp;
+              gpsData.utcDate = timestamp;
+              log.gps('⏰ RMC time extracted (date inferred)', () => ({
                 time: fields.time,
                 inferredDate: dateStr,
-                utcTime: utcDateTime.toISOString(),
+                timestamp: timestamp,
+                iso: utcDateTime.toISOString(),
               }));
             }
           }
@@ -2668,9 +2680,11 @@ export class NmeaSensorProcessor {
       const utcDateTime = this.parseZDADateTime(fields.time, fields.day, fields.month, fields.year);
 
       if (utcDateTime) {
+        const timestamp = utcDateTime.getTime();
         const gpsData: Partial<GpsSensorData> = {
           name: 'GPS Receiver',
-          utcTime: utcDateTime.getTime(),
+          utcTime: timestamp, // Formatted as TIME (hh:mm:ss) in widget
+          utcDate: timestamp, // Formatted as DATE (yyyy-mm-dd) in widget
           timeSource: 'ZDA', // Priority 2
           timestamp: timestamp,
         };
