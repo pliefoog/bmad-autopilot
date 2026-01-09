@@ -125,6 +125,8 @@ function renderCell(cell: CellDefinition, index: number, isPrimary: boolean): Re
  * CustomWidget Renderer
  *
  * Renders widgets dynamically from CustomWidgetDefinition
+ *
+ * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
  */
 export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
   ({ id, instanceNumber = 0 }) => {
@@ -137,20 +139,9 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
       return widgetConfig?.settings?.customDefinition as CustomWidgetDefinition | undefined;
     }, [widgetConfig]);
 
-    // Dynamic Sensor Subscriptions (all hooks BEFORE any conditional returns)
+    // Dynamic Sensor Types (no subscriptions)
     const primarySensorType = definition?.grid?.primarySensor?.type;
     const primaryInstance = definition?.grid?.primarySensor?.instance ?? 0;
-
-    const primarySensor = useNmeaStore((state) =>
-      primarySensorType ? state.nmeaData.sensors[primarySensorType]?.[primaryInstance] : undefined,
-    );
-
-    // Subscribe to timestamp to trigger re-renders when sensor data actually changes
-    const _timestamp = useNmeaStore((state) =>
-      primarySensorType
-        ? state.nmeaData.sensors[primarySensorType]?.[primaryInstance]?.timestamp
-        : undefined,
-    );
 
     // Build additional sensors array for TemplatedWidget
     const additionalSensors = useMemo(() => {
@@ -181,7 +172,7 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
       });
     }, [definition?.grid?.cells, primaryCellCount]);
 
-    // Validation (AFTER all hooks)
+    // Validation
     if (!definition?.grid) {
       console.error(
         `[CustomWidget] RENDER BLOCKED - No grid configuration found for widget: ${id}`,
@@ -211,8 +202,8 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
     return (
       <TemplatedWidget
         template={definition.grid.template}
-        sensorInstance={primarySensor}
         sensorType={primarySensorType}
+        instanceNumber={primaryInstance}
         widgetId={definition.id}
         additionalSensors={additionalSensors}
       >
