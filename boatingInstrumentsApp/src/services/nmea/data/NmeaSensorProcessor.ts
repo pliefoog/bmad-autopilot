@@ -594,7 +594,6 @@ export class NmeaSensorProcessor {
   private processRMC(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
     const fields = message.fields;
     const updates: SensorUpdate[] = [];
-    const instance = this.extractInstanceId(message);
 
     // GPS position and UTC date/time
     if (fields.latitude_raw && fields.longitude_raw) {
@@ -640,52 +639,14 @@ export class NmeaSensorProcessor {
           }
         }
 
+        const instance = this.extractInstanceId(message);
+
         updates.push({
           sensorType: 'gps',
           instance,
           data: gpsData,
         });
       }
-    } else if (fields.time) {
-      // CRITICAL FIX: Handle time-only RMC sentences (no position)
-      // This happens when GPS has time fix but not satellite lock,
-      // or when simulator sends partial data. Without this, GPS sensor
-      // is not detected and utcTime field never updates.
-      const gpsData: Partial<GpsSensorData> = {
-        name: 'GPS Receiver',
-        timeSource: 'RMC',
-        timestamp: timestamp,
-      };
-
-      if (fields.date) {
-        const utcDateTime = this.parseRMCDateTime(fields.time, fields.date);
-        if (utcDateTime) {
-          gpsData.utcTime = utcDateTime.getTime();
-          log.gps('📅 RMC utcTime extracted (time-only sentence with date)', () => ({
-            time: fields.time,
-            date: fields.date,
-            utcTime: utcDateTime.toISOString(),
-          }));
-        }
-      } else {
-        const today = new Date();
-        const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-        const utcDateTime = this.parseRMCDateTime(fields.time, dateStr);
-        if (utcDateTime) {
-          gpsData.utcTime = utcDateTime.getTime();
-          log.gps('⏰ RMC utcTime extracted (time-only sentence, date inferred)', () => ({
-            time: fields.time,
-            inferredDate: dateStr,
-            utcTime: utcDateTime.toISOString(),
-          }));
-        }
-      }
-
-      updates.push({
-        sensorType: 'gps',
-        instance,
-        data: gpsData,
-      });
     }
 
     // Speed over ground and course over ground (GPS-calculated)
