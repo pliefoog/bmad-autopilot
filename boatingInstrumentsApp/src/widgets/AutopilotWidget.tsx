@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { TemplatedWidget } from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
-import { useNmeaStore } from '../store/nmeaStore';
 
 interface AutopilotWidgetProps {
   id: string;
@@ -31,6 +30,8 @@ interface AutopilotWidgetProps {
  * - Display-only (control functionality removed)
  *
  * **Layout:** 2Rx2C primary (HDG/TGT, RUDR/TURN) + 2Rx2C secondary (MODE/HDG SRC with full-width)
+ *
+ * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
  */
 export const AutopilotWidget: React.FC<AutopilotWidgetProps> = React.memo(({ id }) => {
   // Extract instance number from widget ID
@@ -39,21 +40,11 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = React.memo(({ id 
     return match ? parseInt(match[1], 10) : 0;
   }, [id]);
 
-  // Get sensor instance
-  const autopilotInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.autopilot?.[instanceNumber],
-  );
-
-  // Subscribe to timestamp to trigger re-renders (SensorInstance is mutable)
-  const _timestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors.autopilot?.[instanceNumber]?.timestamp,
-  );
-
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C-WIDE"
-      sensorInstance={autopilotInstance}
       sensorType="autopilot"
+      instanceNumber={instanceNumber}
       additionalSensors={[{ sensorType: 'compass', instance: instanceNumber }]}
       testID={`autopilot-widget-${instanceNumber}`}
     >
