@@ -21,7 +21,8 @@ interface WeatherWidgetProps {
  * - Steady rise: Weather clearing
  * - Stable: Current conditions persisting
  *
- * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
+ * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
+ * MetricCells subscribe individually via useMetric hook. Enables fine-grained reactivity.
  */
 export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (

@@ -15,7 +15,8 @@ interface NavigationWidgetProps {
  * Note: Waypoint name and ETA not displayed in this compact view.
  * Consider adding 2Rx2C-SEP-2Rx1C template variant for waypoint info.
  *
- * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
+ * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
+ * MetricCells subscribe individually via useMetric hook. Enables fine-grained reactivity.
  */
 export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(({ id }) => {
   return (

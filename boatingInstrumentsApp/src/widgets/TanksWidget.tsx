@@ -14,7 +14,8 @@ interface TanksWidgetProps {
  * Primary: Level (%), Capacity
  * Secondary: Type, Name
  *
- * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
+ * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
+ * MetricCells subscribe individually via useMetric hook. Enables fine-grained reactivity.
  */
 export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
     return (
