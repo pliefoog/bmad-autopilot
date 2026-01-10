@@ -59,7 +59,7 @@ We've successfully transformed the widget architecture from imperative to declar
 
 **After:**
 ```tsx
-<TemplatedWidget template="2Rx2C-SEP-2Rx2C" sensorType="battery" instanceNumber={instanceNumber}>
+<TemplatedWidget template="2Rx2C-SEP-2Rx2C" sensorType="battery" instanceNumber={instanceNumber} testID={id}>
   <PrimaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="voltage" />
   <PrimaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="current" />
   <PrimaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="temperature" />
@@ -69,6 +69,10 @@ We've successfully transformed the widget architecture from imperative to declar
   <SecondaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="nominalVoltage" />
   <SecondaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="name" />
 </TemplatedWidget>
+
+BatteryWidget.displayName = 'BatteryWidget';
+
+export default BatteryWidget;
 ```
 
 #### EngineWidget: 252 → 62 lines (-75%)
@@ -80,7 +84,7 @@ We've successfully transformed the widget architecture from imperative to declar
 
 **After:**
 ```tsx
-<TemplatedWidget template="2Rx2C-SEP-2Rx2C-WIDE" sensorType="engine" instanceNumber={instanceNumber}>
+<TemplatedWidget template="2Rx2C-SEP-2Rx2C-WIDE" sensorType="engine" instanceNumber={instanceNumber} testID={id}>
   <PrimaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="rpm" />
   <PrimaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="coolantTemp" />
   <PrimaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="oilPressure" />
@@ -88,6 +92,10 @@ We've successfully transformed the widget architecture from imperative to declar
   <SecondaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="fuelRate" />
   <SecondaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="hours" />
 </TemplatedWidget>
+
+EngineWidget.displayName = 'EngineWidget';
+
+export default EngineWidget;
 ```
 
 #### WindWidget: 366 → 58 lines (-84%)
@@ -100,12 +108,16 @@ We've successfully transformed the widget architecture from imperative to declar
 
 **After:**
 ```tsx
-<TemplatedWidget template="2Rx1C-SEP-2Rx1C" sensorType="wind" instanceNumber={instanceNumber}>
+<TemplatedWidget template="2Rx1C-SEP-2Rx1C" sensorType="wind" instanceNumber={instanceNumber} testID={id}>
   <PrimaryMetricCell sensorType="wind" instance={instanceNumber} metricKey="speed" />
   <PrimaryMetricCell sensorType="wind" instance={instanceNumber} metricKey="direction" />
   <SecondaryMetricCell sensorType="wind" instance={instanceNumber} metricKey="trueSpeed" />
   <SecondaryMetricCell sensorType="wind" instance={instanceNumber} metricKey="trueDirection" />
 </TemplatedWidget>
+
+WindWidget.displayName = 'WindWidget';
+
+export default WindWidget;
 ```
 
 ## Code Reduction Summary

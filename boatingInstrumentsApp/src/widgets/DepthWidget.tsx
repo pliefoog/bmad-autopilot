@@ -1,9 +1,8 @@
 import React from 'react';
-import TrendLine from '../components/TrendLine';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import TemplatedWidget from '../components/TemplatedWidget';
-
+import TrendLine from '../components/TrendLine';
 interface DepthWidgetProps {
   id: string;
   instanceNumber?: number;

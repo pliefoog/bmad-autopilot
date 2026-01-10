@@ -352,18 +352,13 @@ For widgets with dynamic configuration, create a helper function to resolve sens
 
 **✅ Declarative Widget Pattern:**
 ```tsx
-export const BatteryWidget: React.FC<Props> = React.memo(({ id }) => {
-  // Extract instance number from widget ID
-  const instanceNumber = useMemo(() => {
-    const match = id.match(/battery-(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
-  }, [id]);
-  
+export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C"
       sensorType="battery"
       instanceNumber={instanceNumber}
+      testID={id}
     >
       <PrimaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="voltage" />
       <PrimaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="current" />
@@ -371,6 +366,10 @@ export const BatteryWidget: React.FC<Props> = React.memo(({ id }) => {
     </TemplatedWidget>
   );
 });
+
+BatteryWidget.displayName = 'BatteryWidget';
+
+export default BatteryWidget;
 ```
 
 **Grid Templates** (`GridTemplateRegistry.ts`):
@@ -406,9 +405,7 @@ export const BatteryWidget: React.FC<Props> = React.memo(({ id }) => {
   template="2Rx2C-SEP-2Rx2C"
   sensorType="speed"
   instanceNumber={instanceNumber}
-  additionalSensors={[
-    { sensorType: 'gps', instance: 0 }
-  ]}
+  testID={id}
 >
   {/* GPS metrics use explicit sensorType="gps" */}
   <PrimaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="speedOverGround" />
@@ -457,6 +454,14 @@ export const BatteryWidget: React.FC<Props> = React.memo(({ id }) => {
 - **String fields:** Access directly (e.g., `metricKey="name"`) - NOT virtual metrics
 - **Base metric name:** Used for registry lookup (strips virtual suffix automatically)
 
+**Widget File Standards (MANDATORY):**
+- ✅ Use default imports: `import TemplatedWidget from` (NOT `import { TemplatedWidget } from`)
+- ✅ Use `testID={id}` (NOT `testID={\`widget-\${instanceNumber}\`}`)
+- ✅ Add `displayName = 'WidgetName'` before export for React DevTools
+- ✅ Accept `instanceNumber` prop with default 0 (NOT regex extraction from id)
+- ✅ Keep documentation brief (9-12 lines max) - template, metrics, pattern note
+- ✅ Consistent import order: React, components, then types
+
 **Mandatory Mnemonics:**
 All sensor fields MUST have `mnemonic: string` in `SensorConfigRegistry`. Startup validation throws if missing.
 
@@ -467,6 +472,11 @@ All sensor fields MUST have `mnemonic: string` in `SensorConfigRegistry`. Startu
 - ❌ Using React Context for sensor data (deprecated)
 - ❌ Widget-specific logic (belongs in SensorInstance)
 - ❌ Implicit sensor props via context
+- ❌ Named imports for TemplatedWidget/TrendLine
+- ❌ Constructed testID strings
+- ❌ Regex extraction of instanceNumber from id
+- ❌ Missing displayName for React DevTools
+- ❌ Verbose documentation blocks (keep 9-12 lines)
 
 **✅ CORRECT PATTERNS:**
 - ✅ Explicit props: `sensorType="X" instance={N} metricKey="Y"`
@@ -475,6 +485,11 @@ All sensor fields MUST have `mnemonic: string` in `SensorConfigRegistry`. Startu
 - ✅ Let MetricCells fetch via useMetric hook
 - ✅ Keep widgets <70 lines (avg 25-60 lines)
 - ✅ SensorInstance methods for computed metrics
+- ✅ Default imports for all components
+- ✅ Direct `testID={id}` prop usage
+- ✅ `displayName` for all widgets
+- ✅ Accept `instanceNumber` prop (no extraction)
+- ✅ Brief focused documentation
 
 **Results:**
 - 77% code reduction (855 → 183 lines across 3 widgets)

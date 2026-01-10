@@ -659,33 +659,28 @@ getMetric(fieldName: string): MetricValue | undefined {
 
 **After (~60 lines):**
 ```typescript
-export const GPSWidget: React.FC<Props> = React.memo(({ id }) => {
-  const instanceNumber = useMemo(() => {
-    const match = id.match(/gps-(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
-  }, [id]);
-
-  const gpsInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors.gps?.[instanceNumber]
-  );
-
+export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (
     <TemplatedWidget
       template="2Rx1C-SEP-2Rx1C"
-      sensorInstance={gpsInstance}
       sensorType="gps"
-      testID={`gps-widget-${instanceNumber}`}
+      instanceNumber={instanceNumber}
+      testID={id}
     >
       {/* Primary: Coordinates */}
-      <PrimaryMetricCell metricKey="latitude" />
-      <PrimaryMetricCell metricKey="longitude" />
+      <PrimaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="latitude" />
+      <PrimaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="longitude" />
       
       {/* Secondary: UTC Date/Time */}
-      <SecondaryMetricCell metricKey="utcDate" />
-      <SecondaryMetricCell metricKey="utcTime" />
+      <SecondaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="utcDate" />
+      <SecondaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="utcTime" />
     </TemplatedWidget>
   );
 });
+
+GPSWidget.displayName = 'GPSWidget';
+
+export default GPSWidget;
 ```
 
 ---
