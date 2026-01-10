@@ -353,11 +353,11 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
       });
     }
 
-    // Emit sensor update event ONLY for new instances
+    // Emit sensor created event ONLY for new instances
     // Widget detection only needs to know when sensors first appear
     if (isNewInstance) {
       setTimeout(() => {
-        get().sensorEventEmitter.emit('sensorUpdate', {
+        get().sensorEventEmitter.emit('sensorCreated', {
           sensorType,
           instance,
           timestamp: now,

@@ -152,9 +152,9 @@ class InstanceDetectionService {
     // Run initial full scan
     this.performScan();
 
-    // Subscribe to real-time sensor update events
+    // Subscribe to sensor creation events
     const store = useNmeaStore.getState();
-    store.sensorEventEmitter.on('sensorUpdate', this.handleSensorUpdate);
+    store.sensorEventEmitter.on('sensorCreated', this.handleSensorUpdate);
 
     // Background cleanup timer (reduced from 10s to 60s)
     // Only removes stale instances, no longer does full scans
@@ -165,10 +165,11 @@ class InstanceDetectionService {
   }
 
   /**
-   * Handle real-time sensor update events (Phase 1 optimization)
+   * Handle sensor creation events (Phase 1 optimization)
    *
-   * Called immediately when sensor data arrives (vs polling every 10s).
-   * Implements throttling to prevent event storms during rapid updates.
+   * Called when new sensor instances appear (not on data updates).
+   * Event frequency: ~0.01 Hz (once per sensor per session).
+   * Implements throttling for redundancy protection.
    */
   private handleSensorUpdate = (event: {
     sensorType: string;
@@ -289,7 +290,7 @@ class InstanceDetectionService {
 
     // Unsubscribe from sensor events
     const store = useNmeaStore.getState();
-    store.sensorEventEmitter.off('sensorUpdate', this.handleSensorUpdate);
+    store.sensorEventEmitter.off('sensorCreated', this.handleSensorUpdate);
 
     // Stop cleanup timer
     if (this.scanTimer) {

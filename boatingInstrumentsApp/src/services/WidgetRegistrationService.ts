@@ -7,7 +7,7 @@
  * - Bridge between sensor data (nmeaStore) and widget display (widgetStore)
  *
  * Key Features:
- * - Event-driven detection: Subscribes to nmeaStore sensor update events (no polling)
+ * - Event-driven detection: Subscribes to nmeaStore sensor creation events (no polling)
  * - Declarative dependencies: Widgets declare required/optional sensors
  * - Automatic creation: Widgets appear instantly when required sensors have valid data
  * - Instance management: Supports multi-instance sensors (multiple engines, batteries, etc.)
@@ -18,7 +18,7 @@
  *   Widgets access data via useNmeaStore() → SensorInstance.getMetric() → MetricValue
  * - Null-value filtering: buildSensorValueMap() only adds valid (non-null) values
  *   Key existence in map = sensor exists AND has valid data (Jan 2026 fix)
- * - Private methods: handleSensorUpdate(), hasRequiredSensors() are internal only
+ * - Private methods: handleSensorCreated(), hasRequiredSensors() are internal only
  * - Dynamic imports: Avoid circular dependencies with nmeaStore/widgetStore
  * - Singleton pattern: Single instance manages all widget registrations
  *
@@ -45,7 +45,7 @@
  * - builtInWidgetRegistrations.ts: Defines 12 built-in widget types with dependencies
  * - defaultCustomWidgets.ts: Defines custom widget definitions, converts to registrations
  * - widgetStore.ts: Receives detected instances via updateInstanceWidgets()
- * - nmeaStore.ts: Emits 'sensorUpdate' events via sensorEventEmitter
+ * - nmeaStore.ts: Emits 'sensorCreated' events via sensorEventEmitter (~0.01 Hz)
  * - SensorInstance.ts: Provides getMetric() for accessing enriched sensor data
  */
 
@@ -129,9 +129,11 @@ export interface WidgetRegistration {
 }
 
 /**
- * Sensor update event from nmeaStore
+ * Sensor created event from nmeaStore
+ * Emitted when a new sensor instance first appears (~0.01 Hz frequency)
+ * NOT emitted on data updates (those are handled by Zustand subscriptions)
  */
-interface SensorUpdateEvent {
+interface SensorCreatedEvent {
   sensorType: string;
   instance: number;
   timestamp: number;
@@ -163,7 +165,7 @@ export class WidgetRegistrationService {
 
   // Initialization state
   private isInitialized = false;
-  private sensorUpdateHandler: ((event: SensorUpdateEvent) => void) | null = null;
+  private sensorCreatedHandler: ((event: SensorCreatedEvent) => void) | null = null;
   private isCleaningUp = false;
 
   private constructor() {
@@ -242,7 +244,7 @@ export class WidgetRegistrationService {
    * - Jan 2026: Simplified logic after buildSensorValueMap null filtering
    *   No longer needs to check value !== null, only key existence
    *
-   * @internal Used only by handleSensorUpdate()
+   * @internal Used only by handleSensorCreated()
    * @param registration - Widget registration with required sensor list
    * @param sensorData - Map of sensor values (only contains valid entries)
    * @returns true if all required sensors have valid data
@@ -285,18 +287,18 @@ export class WidgetRegistrationService {
     import('../store/nmeaStore').then(({ useNmeaStore }) => {
       const store = useNmeaStore.getState();
 
-      // Subscribe to real-time sensor updates
-      this.sensorUpdateHandler = (event: SensorUpdateEvent) => {
+      // Subscribe to sensor creation events
+      this.sensorCreatedHandler = (event: SensorCreatedEvent) => {
         const currentState = useNmeaStore.getState();
         const allSensors = currentState.nmeaData.sensors;
         const sensorData = (allSensors as any)[event.sensorType]?.[event.instance];
 
         if (!sensorData) return;
 
-        this.handleSensorUpdate(event.sensorType as any, event.instance, sensorData, allSensors);
+        this.handleSensorCreated(event.sensorType as any, event.instance, sensorData, allSensors);
       };
 
-      store.sensorEventEmitter.on('sensorUpdate', this.sensorUpdateHandler);
+      store.sensorEventEmitter.on('sensorCreated', this.sensorCreatedHandler);
 
       // Perform initial scan of existing sensor data
       this.performInitialScan(useNmeaStore.getState().nmeaData.sensors);
@@ -321,7 +323,7 @@ export class WidgetRegistrationService {
         const sensorData = categoryData[instance];
 
         if (sensorData && sensorData.timestamp) {
-          this.handleSensorUpdate(category as any, instance, sensorData, allSensors);
+          this.handleSensorCreated(category as any, instance, sensorData, allSensors);
         }
       });
     });
@@ -331,42 +333,48 @@ export class WidgetRegistrationService {
    * Cleanup subscription (for factory reset)
    */
   public cleanup(): void {
-    if (!this.isInitialized || !this.sensorUpdateHandler) return;
+    if (!this.isInitialized || !this.sensorCreatedHandler) return;
 
     // Set flag to prevent store updates during cleanup
     this.isCleaningUp = true;
 
     // Save handler reference before clearing it
-    const handler = this.sensorUpdateHandler;
+    const handler = this.sensorCreatedHandler;
 
     import('../store/nmeaStore').then(({ useNmeaStore }) => {
       const store = useNmeaStore.getState();
-      store.sensorEventEmitter.removeListener('sensorUpdate', handler);
+      store.sensorEventEmitter.removeListener('sensorCreated', handler);
     });
 
-    this.sensorUpdateHandler = null;
+    this.sensorCreatedHandler = null;
     this.isInitialized = false;
     this.clearDetectedInstances();
     // console.log('[WidgetRegistrationService] 🧹 Cleaned up');
   }
 
   /**
-   * Handle sensor update event from nmeaStore
+   * Handle sensor created event from nmeaStore
    *
    * Implementation Notes:
-   * - Called on every sensor update at ~2Hz for active sensors
+   * - Called when new sensor instances first appear (~0.01 Hz frequency)
+   * - NOT called on data updates (those are handled by Zustand subscriptions at ~2Hz)
    * - Finds affected widgets using sensor type/instance matching
    * - Builds lightweight SensorValueMap for detection (not rendering)
    * - Creates/updates/removes DetectedWidgetInstance entries
    * - Updates widgetStore only when instance list changes (optimization)
    *
+   * Event Semantics:
+   * - Emitted ONLY when isNewInstance === true in nmeaStore
+   * - Typically 12-20 events at connection time (one per sensor type/instance)
+   * - Frequency: ~0.01 Hz (once per sensor per session)
+   *
    * Performance:
-   * - Early exit if no affected widgets (most updates)
+   * - Early exit if no affected widgets (most events)
    * - Set-based change detection prevents unnecessary store updates
    * - Typical execution: <1ms for 3-5 registered widget types
    *
    * Data Flow:
-   * 1. nmeaStore emits 'sensorUpdate' event
+   * 1. nmeaStore emits 'sensorCreated' event (topology change)
    * 2. This method receives event with sensorType/instance
    * 3. Finds widget registrations depending on this sensor
    * 4. Builds SensorValueMap for validation
@@ -375,22 +383,24 @@ export class WidgetRegistrationService {
    * 7. Calls updateWidgetStore() if changes detected
    *
    * Bug Fix History:
+   * - Jan 2026: Renamed from handleSensorUpdate - fixed misleading name
+   * - Jan 2026: Corrected documentation - event is ~0.01 Hz, not 2Hz
    * - Jan 2026: Replaced debug flags with conditional logger
    * - Jan 2026: Simplified detection after null-value filtering fix
    *
    * @internal Called only by event subscription in initialize()
-   * @param sensorType - Type of sensor that was updated (e.g., 'depth', 'engine')
+   * @param sensorType - Type of sensor that was created (e.g., 'depth', 'engine')
    * @param instance - Instance number of the sensor (0-based)
-   * @param sensorData - Partial sensor data from the update event
+   * @param sensorData - Partial sensor data from the creation event
    * @param allSensors - Full sensor state for multi-sensor widgets
    */
-  private handleSensorUpdate(
+  private handleSensorCreated(
     sensorType: SensorType,
     instance: number,
     sensorData: Partial<SensorData>,
     allSensors: any, // Full sensor state from nmeaStore
   ): void {
-    log.widgetRegistration('handleSensorUpdate', () => ({
+    log.widgetRegistration('handleSensorCreated', () => ({
       sensorType,
       instance,
       hasData: !!sensorData,
