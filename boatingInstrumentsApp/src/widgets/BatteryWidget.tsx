@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
@@ -36,13 +36,7 @@ interface BatteryWidgetProps {
  *
  * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
  */
-export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id }) => {
-  // Extract instance number from widget ID
-  const instanceNumber = useMemo(() => {
-    const match = id.match(/battery-(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
-  }, [id]);
-
+export const BatteryWidget: React.FC<Props> = React.memo(({ id, instanceNumber = 0 }) => {
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C"

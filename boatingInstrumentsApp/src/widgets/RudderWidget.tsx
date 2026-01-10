@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Circle, Line, Polygon, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../store/themeStore';
@@ -36,14 +36,8 @@ interface RudderWidgetProps {
  *
  * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
  */
-export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id }) => {
+export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   const theme = useTheme();
-
-  // Extract instance number from widget ID
-  const instanceNumber = useMemo(() => {
-    const match = id.match(/rudder-(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
-  }, [id]);
 
   return (
     <TemplatedWidget

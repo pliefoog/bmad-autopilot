@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import TemplatedWidget from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import TrendLine from '../components/TrendLine';
@@ -23,13 +23,7 @@ interface WeatherWidgetProps {
  *
  * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
  */
-export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(({ id }) => {
-  // Extract instance number from widget ID (e.g., "weather-0" → 0)
-  const instanceNumber = useMemo(() => {
-    const match = id.match(/weather-(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
-  }, [id]);
-
+export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C-WIDE"

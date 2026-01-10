@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import { TemplatedWidget } from '../components/TemplatedWidget';
@@ -27,13 +27,7 @@ interface EngineWidgetProps {
  *
  * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
  */
-export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id }) => {
-  // Extract instance number from widget ID
-  const instanceNumber = useMemo(() => {
-    const match = id.match(/engine-(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
-  }, [id]);
-
+export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C-WIDE"

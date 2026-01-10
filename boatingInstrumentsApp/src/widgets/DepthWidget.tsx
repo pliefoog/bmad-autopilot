@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { TrendLine } from '../components/TrendLine';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
@@ -52,13 +52,7 @@ interface DepthWidgetProps {
  * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
  * MetricCells subscribe individually. Enables fine-grained reactivity.
  */
-export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
-  // Extract instance number from widget ID
-  const instanceNumber = useMemo(() => {
-    const match = id.match(/depth-(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
-  }, [id]);
-
+export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (
     <TemplatedWidget
       template="2Rx1C-SEP-2Rx1C"

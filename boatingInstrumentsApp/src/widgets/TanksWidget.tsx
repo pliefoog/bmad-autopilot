@@ -16,15 +16,7 @@ interface TanksWidgetProps {
  *
  * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
  */
-export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(
-  ({ id, instanceNumber: propInstanceNumber }) => {
-    // Use provided instanceNumber or extract from widget ID
-    const instanceNumber = useMemo(() => {
-      if (propInstanceNumber !== undefined) return propInstanceNumber;
-      const match = id.match(/tank-(\d+)/);
-      return match ? parseInt(match[1], 10) : 0;
-    }, [id, propInstanceNumber]);
-
+export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
     return (
       <TemplatedWidget
         template="2Rx1C-SEP-2Rx1C"
