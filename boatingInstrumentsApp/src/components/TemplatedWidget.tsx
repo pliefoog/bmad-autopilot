@@ -41,17 +41,6 @@ const DEBUG_CELL_BORDER = 2;
 const NORMAL_WRAPPER_BORDER = 1;
 
 /**
- * Additional sensor configuration for multi-sensor widgets
- */
-interface AdditionalSensor {
-  /** Sensor type identifier (gps, speed, etc.) */
-  sensorType: SensorType;
-
-  /** Explicit instance number to use */
-  instance: number;
-}
-
-/**
  * TemplatedWidget Props
  */
 interface TemplatedWidgetProps {
@@ -72,18 +61,6 @@ interface TemplatedWidgetProps {
 
   /** Metric cells to render (PrimaryMetricCell, SecondaryMetricCell) */
   children: ReactElement | ReactElement[];
-
-  /**
-   * Additional sensors for multi-sensor widgets (e.g., SpeedWidget needs both speed + gps)
-   *
-   * TODO: Implement master instance selection mechanism
-   * Currently requires explicit instance numbers. Future enhancement:
-   * - Add sensor priority/master designation in settingsStore
-   * - Allow marking one GPS/speed sensor as "primary" in settings
-   * - Auto-resolve "master" instance instead of hardcoding instance numbers
-   * - Example: additionalSensors: [{ sensorType: 'gps', useMaster: true }]
-   */
-  additionalSensors?: AdditionalSensor[];
 
   /** Optional container styling */
   style?: any;
@@ -114,7 +91,6 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
   instanceNumber = 0,
   widgetId,
   debugLayout = false,
-  additionalSensors,
   children,
   style,
   testID,
@@ -164,26 +140,6 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
 
   // Validate cell count matches template
   validateTemplateCellCount(templateName, childArray.length);
-
-  // Build additional sensors map for multi-sensor widgets
-  const additionalSensorsMap = React.useMemo(() => {
-    if (!additionalSensors || additionalSensors.length === 0) {
-      return undefined;
-    }
-
-    const map = new Map<SensorType, SensorInstance | null | undefined>();
-
-    // Import useNmeaStore dynamically to avoid circular dependencies
-    const { useNmeaStore } = require('../store/nmeaStore');
-    const nmeaState = useNmeaStore.getState();
-
-    additionalSensors.forEach(({ sensorType: addlSensorType, instance }) => {
-      const addlInstance = nmeaState.nmeaData.sensors[addlSensorType]?.[instance];
-      map.set(addlSensorType, addlInstance);
-    });
-
-    return map;
-  }, [additionalSensors]);
 
   // Calculate cell distribution
   const primaryCellCount = template.primaryGrid.rows * template.primaryGrid.columns;

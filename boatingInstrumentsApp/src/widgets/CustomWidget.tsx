@@ -179,17 +179,6 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
     const primarySensorType = definition?.grid?.primarySensor?.type;
     const primaryInstance = definition?.grid?.primarySensor?.instance ?? 0;
 
-    // Build additional sensors array for TemplatedWidget
-    const additionalSensors = useMemo(() => {
-      if (!definition?.grid?.additionalSensors) return undefined;
-
-      return definition.grid.additionalSensors.map((sensor) => ({
-        sensorType: sensor.type,
-        instance: sensor.instance ?? 0,
-        required: sensor.required,
-      }));
-    }, [definition]);
-
     // Build additionalSensorsMap for renderCell lookups
     const additionalSensorsMap = useMemo(() => {
       const map: Record<string, { type: string; instance: number }> = {};
@@ -260,7 +249,6 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
         sensorType={primarySensorType}
         instanceNumber={primaryInstance}
         widgetId={definition.id}
-        additionalSensors={additionalSensors}
       >
         {children}
       </TemplatedWidget>

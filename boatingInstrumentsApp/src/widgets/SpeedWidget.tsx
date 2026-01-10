@@ -62,7 +62,6 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id }) => {
       template="2Rx2C-SEP-2Rx2C"
       sensorType="speed"
       instanceNumber={instanceNumber}
-      additionalSensors={[{ sensorType: 'gps', instance: instanceNumber }]}
       testID={`speed-widget-${instanceNumber}`}
     >
       {/* Primary Grid Row 1: Current SOG and STW */}

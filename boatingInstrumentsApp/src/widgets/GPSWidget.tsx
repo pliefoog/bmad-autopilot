@@ -25,9 +25,6 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, instanceNum
       sensorType="gps"
       instanceNumber={instanceNumber}
       testID={id}
-      additionalSensors={[
-        { sensorType: 'depth', instance: 0 }
-      ]}
     >
       {/* Primary Grid: Coordinates */}
       <PrimaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="latitude" />
