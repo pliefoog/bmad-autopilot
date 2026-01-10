@@ -93,7 +93,6 @@ export interface TrendLineProps extends SensorMetricProps {
  * - Full virtual metrics support
  */
 export const TrendLine: React.FC<TrendLineProps> = ({
-  metricKey,
   timeWindowMs,
   cellWidth,
   cellHeight,
