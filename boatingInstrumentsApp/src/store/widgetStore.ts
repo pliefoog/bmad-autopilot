@@ -255,86 +255,22 @@ export const useWidgetStore = create<WidgetStore>()(
         // Dynamic widget lifecycle actions
         setWidgetExpirationTimeout: (timeoutMs: number) => {
           set({ widgetExpirationTimeout: timeoutMs });
+          
+          // Sync threshold to WidgetRegistrationService
+          import('../services/WidgetRegistrationService').then(({ widgetRegistrationService }) => {
+            widgetRegistrationService.setSensorDataStalenessThreshold(timeoutMs);
+          });
         },
 
         setEnableWidgetAutoRemoval: (enabled: boolean) => {
           set({ enableWidgetAutoRemoval: enabled });
         },
 
-        // Cleanup expired widgets based on sensor data freshness
+        // DEPRECATED: Expiration logic moved to WidgetRegistrationService (Jan 2026)
+        // Kept for backward compatibility during migration
         cleanupExpiredWidgetsWithConfig: () => {
-          const state = get();
-          if (!state.enableWidgetAutoRemoval) return;
-
-          const currentDashboard = state.dashboard;
-          if (!currentDashboard) return;
-
-          const now = Date.now();
-          const GRACE_PERIOD = 30000;
-
-          // Import services for widget registration and sensor data
-          const { widgetRegistrationService } = require('../services/WidgetRegistrationService');
-          const { useNmeaStore } = require('./nmeaStore');
-          const nmeaState = useNmeaStore.getState();
-
-          // Import SensorDependency type
-          type SensorDependency = import('../services/WidgetRegistrationService').SensorDependency;
-
-          const updatedWidgets = currentDashboard.widgets.filter((widget) => {
-            // Always keep system widgets
-            if (widget.isSystemWidget) return true;
-
-            // Skip placeholder widget (used during drag-and-drop)
-            if (widget.type === 'placeholder') return true;
-
-            // Determine timeout (per-widget or global default)
-            const registration = widgetRegistrationService.getWidgetRegistration(widget.type);
-            if (!registration) {
-              console.warn(`⚠️ No registration found for widget type: ${widget.type}`);
-              return true; // Keep unknown widget types
-            }
-
-            // Use user-configured timeout when auto-removal is enabled, fall back to widget-specific timeout
-            const timeout = state.widgetExpirationTimeout;
-
-            // Parse instance from widget settings (e.g., engine-0 has instance: 0)
-            const instance = widget.settings?.instance ?? 0;
-
-            // Check all REQUIRED sensors have fresh data
-            const allRequiredFresh = registration.requiredSensors.every((dep: SensorDependency) => {
-              const targetInstance = dep.instance ?? instance;
-              const sensorData = nmeaState.nmeaData.sensors[dep.sensorType]?.[targetInstance];
-
-              if (!sensorData) {
-                // console.log(`⏱️ [cleanupExpiredWidgets] ${widget.id}: No sensorData for ${dep.sensorType}[${targetInstance}]`);
-                return false; // Sensor not found
-              }
-
-              // Use getMetric to access data from MetricValue
-              const metric = sensorData.getMetric?.(dep.metricName);
-              if (!metric) {
-                // console.log(`⏱️ [cleanupExpiredWidgets] ${widget.id}: No metric ${dep.metricName} in ${dep.sensorType}[${targetInstance}]`);
-                return false; // No metric found
-              }
-
-              const sensorTimestamp = sensorData.timestamp || 0;
-              const age = now - sensorTimestamp;
-              const isFresh = age <= timeout + GRACE_PERIOD;
-              
-              return isFresh; // Fresh enough
-            });
-
-            return allRequiredFresh;
-          });
-
-          if (updatedWidgets.length === currentDashboard.widgets.length) return;
-
-          set({
-            dashboard: {
-              ...currentDashboard,
-              widgets: updatedWidgets,
-            },
-          });
+          // No-op: Widget expiration now handled by WidgetRegistrationService.checkExpiredWidgets()
+          // This method is called from timer in WidgetRegistrationService.initialize()
         },
 
         // ========================================

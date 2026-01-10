@@ -43,7 +43,6 @@ export const DEPTH_WIDGET_REGISTRATION: WidgetRegistration = {
   multiInstance: true,
   maxInstances: 3, // DPT, DBT, DBK
   priority: 90,
-  expirationTimeout: 180000, // 3 minutes - navigation critical
   requiredSensors: [
     {
       sensorType: 'depth',
@@ -66,7 +65,6 @@ export const SPEED_WIDGET_REGISTRATION: WidgetRegistration = {
   multiInstance: true,
   maxInstances: 2, // GPS speed, log speed
   priority: 95,
-  expirationTimeout: 180000, // 3 minutes - navigation critical
   requiredSensors: [
     {
       sensorType: 'speed',
@@ -96,7 +94,6 @@ export const WIND_WIDGET_REGISTRATION: WidgetRegistration = {
   multiInstance: true,
   maxInstances: 2,
   priority: 85,
-  expirationTimeout: 180000, // 3 minutes - navigation critical
   requiredSensors: [
     {
       sensorType: 'wind',
@@ -225,7 +222,6 @@ export const NAVIGATION_WIDGET_REGISTRATION: WidgetRegistration = {
   icon: 'navigate-circle-outline',
   multiInstance: false,
   priority: 70,
-  expirationTimeout: 180000, // 3 minutes
   requiredSensors: [
     {
       sensorType: 'navigation',
@@ -327,7 +323,6 @@ export const ENGINE_WIDGET_REGISTRATION: WidgetRegistration = {
   multiInstance: true,
   maxInstances: 8,
   priority: 70,
-  expirationTimeout: 600000, // 10 minutes - engine can idle
   requiredSensors: [
     {
       sensorType: 'engine',
@@ -515,7 +510,6 @@ export const WEATHER_WIDGET_REGISTRATION: WidgetRegistration = {
   multiInstance: true,
   maxInstances: 5,
   priority: 54,
-  expirationTimeout: 300000, // 5 minutes - atmospheric data changes slowly
   requiredSensors: [
     {
       sensorType: 'weather',
@@ -540,10 +534,11 @@ export const WEATHER_WIDGET_REGISTRATION: WidgetRegistration = {
   ],
   createWidget: (instance, sensorData) => {
     const name = sensorData[`weather.${instance}.name`] || 'Weather Station';
+    const displayName = typeof name === 'string' ? name : 'Weather Station';
     return createWidgetConfig(
       'weather',
       instance,
-      instance === 0 ? name : `Weather ${instance}`,
+      instance === 0 ? displayName : `Weather ${instance}`,
       'partly-sunny-outline',
     );
   },

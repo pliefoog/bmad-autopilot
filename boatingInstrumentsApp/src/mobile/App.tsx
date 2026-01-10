@@ -305,8 +305,6 @@ const App = () => {
   // Use getState() for stable function references (don't cause re-renders)
   // Only subscribe to data that actually needs to trigger re-renders
   const dashboard = useWidgetStore((state) => state.dashboard);
-  const enableWidgetAutoRemoval = useWidgetStore((state) => state.enableWidgetAutoRemoval);
-  const widgetExpirationTimeout = useWidgetStore((state) => state.widgetExpirationTimeout);
 
   // Initialize widget system ONCE on app mount (before connection)
   useEffect(() => {
@@ -316,31 +314,10 @@ const App = () => {
   // Instance monitoring is now fully event-driven via WidgetRegistrationService
   // No manual start/stop needed - initialized once on mount in initializeWidgetSystem()
 
-  // Dynamic widget lifecycle management - periodic cleanup of expired widgets
-  useEffect(() => {
-    log.app('[App] 🧹 Setting up dynamic widget lifecycle management');
-
-    // Don't start cleanup if auto-removal is disabled
-    if (!enableWidgetAutoRemoval) {
-      log.app('[App] Widget auto-removal disabled - skipping cleanup timer');
-      return;
-    }
-
-    // Run initial cleanup using getState() for stable reference
-    useWidgetStore.getState().cleanupExpiredWidgetsWithConfig();
-
-    // Set up periodic cleanup - more frequent for responsive widget removal
-    const cleanupInterval = setInterval(() => {
-      log.app('[App] 🧹 Running periodic widget expiration cleanup');
-      useWidgetStore.getState().cleanupExpiredWidgetsWithConfig();
-    }, 15000); // Check every 15 seconds for more responsive widget removal
-
-    return () => clearInterval(cleanupInterval);
-  }, [enableWidgetAutoRemoval, widgetExpirationTimeout]); // Only data dependencies, functions via getState()
-
-  // Widget lifecycle is fully event-driven via WidgetRegistrationService
-  // No manual widget creation or validation needed - widgets appear/disappear automatically
-  // based on sensor data availability through the event-driven system
+  // Widget expiration is now handled internally by WidgetRegistrationService
+  // No need for external cleanup interval - service manages its own timer
+  // Timer frequency: staleness threshold / 4 (e.g., 75s for 5min threshold)
+  // Expiration logic uses same criteria as widget creation (prevents race conditions)
 
   // Helper functions now use global toast system
   const showSuccessToast = (message: string) => {
