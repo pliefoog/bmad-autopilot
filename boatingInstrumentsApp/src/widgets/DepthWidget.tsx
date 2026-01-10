@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendLine } from '../components/TrendLine';
+import TrendLine from '../components/TrendLine';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 import TemplatedWidget from '../components/TemplatedWidget';
@@ -16,7 +16,8 @@ interface DepthWidgetProps {
  * Secondary: Session minimum and maximum depth
  * 
  * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
- * MetricCells subscribe individually via useMetric hook. Enables fine-grained reactivity.
+ * MetricCells subscribe individually via useMetric hook. This enables fine-grained
+ * reactivity - only affected cells re-render on updates.
  */
 export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (
@@ -28,8 +29,6 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, instanc
     >
       {/* Primary Grid: Current depth + trend visualization */}
       <PrimaryMetricCell sensorType="depth" instance={instanceNumber} metricKey="depth" />
-
-      {/* TrendLine: Explicit props pattern */}
       <TrendLine
         sensorType="depth"
         instance={instanceNumber}
@@ -44,7 +43,6 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, instanc
         strokeWidth={2}
         forceZero
       />
-
       {/* Secondary Grid: Session statistics using virtual metrics */}
       <SecondaryMetricCell sensorType="depth" instance={instanceNumber} metricKey="depth.min" />
       <SecondaryMetricCell sensorType="depth" instance={instanceNumber} metricKey="depth.max" />

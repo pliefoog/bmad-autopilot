@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { TemplatedWidget } from '../components/TemplatedWidget';
+import React from 'react';
+import TemplatedWidget from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
