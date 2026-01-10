@@ -4,17 +4,18 @@ import { useTheme } from '../store/themeStore';
 import { FlashingText } from './FlashingText';
 import { ALARM_VISUAL_STATES } from '../types/AlarmTypes';
 import type { AlarmLevel } from '../types/AlarmTypes';
-import type { SensorType } from '../types/SensorData';
-import { useSensorContext } from '../contexts/SensorContext';
+import type { SensorType, SensorMetricProps } from '../types/SensorData';
 import { getSensorField } from '../registry/SensorConfigRegistry';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
 import { useMetric } from '../hooks/useMetric';
+import { useNmeaStore } from '../store/nmeaStore';
 
 /**
- * SecondaryMetricCell Props
+ * SecondaryMetricCell Props (Explicit Props Pattern - Dec 2024 Refactor)
  *
- * **Registry-First Auto-Fetch Pattern:**
- * Only requires metricKey - everything else auto-fetched from context.
+ * **Explicit Props Architecture:**
+ * Requires sensorType, instance, and metricKey as direct props.
+ * No React Context - all sensor data passed explicitly.
  *
  * **Virtual Metrics Support (Dot Notation):**
  * Identical to PrimaryMetricCell - supports computed statistics:
@@ -25,23 +26,8 @@ import { useMetric } from '../hooks/useMetric';
  *
  * Virtual metrics calculated in SensorInstance.getMetric() from history buffer.
  */
-interface SecondaryMetricCellProps {
-  /**
-   * Metric key to display (e.g., 'voltage', 'rpm', 'depth')
-   * Must match field key in SensorConfigRegistry
-   *
-   * **Supports virtual stat metrics:**
-   * - 'depth.min' - minimum depth from session stats
-   * - 'depth.max' - maximum depth from session stats
-   * - 'depth.avg' - average depth from session stats
-   * (Pattern: fieldName.min, fieldName.max, fieldName.avg)
-   */
-  metricKey: string;
-  /**
-   * Sensor key for multi-sensor widgets (e.g., 'gps', 'speed')
-   * Defaults to primary sensor if not specified.
-   */
-  sensorKey?: SensorType;
+interface SecondaryMetricCellProps extends SensorMetricProps {
+  // SensorMetricProps provides: sensorType, instance, metricKey
   // Optional styling overrides
   style?: any;
   cellWidth?: number;
@@ -72,8 +58,9 @@ interface SecondaryMetricCellProps {
  * Pattern identical to PrimaryMetricCell - NEVER add calculation logic here.
  */
 export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
+  sensorType,
+  instance,
   metricKey,
-  sensorKey,
   style,
   cellWidth,
   cellHeight,
@@ -82,17 +69,12 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
 }) => {
   const theme = useTheme();
 
-  // Get sensor context for type and instance information
-  const { sensorInstance, sensorType } = useSensorContext(sensorKey);
+  // Get sensor instance directly from store
+  const sensorInstance = useNmeaStore((state) => state.getSensorInstance(sensorType, instance));
 
   // ARCHITECTURE v2.0: Subscribe to specific metric using fine-grained subscription
-  // MUST be called unconditionally (Rules of Hooks)
-  // Pass defaults when sensorInstance doesn't exist, hook will return null
-  const metricValue = useMetric(
-    sensorType || 'depth', // Safe default
-    sensorInstance?.instance ?? 0, // Safe default
-    metricKey,
-  );
+  // Now uses explicit props instead of context
+  const metricValue = useMetric(sensorType, instance, metricKey);
 
   // NOTE: Removed fallback to contextMetric (sensorInstance.getMetric()) because
   // it's NOT reactive and causes erratic updates. The fallback pattern made

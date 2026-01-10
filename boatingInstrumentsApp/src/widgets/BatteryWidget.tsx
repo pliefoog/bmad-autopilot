@@ -51,15 +51,15 @@ export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id }) =
       testID={`battery-widget-${instanceNumber}`}
     >
       {/* Primary Grid: 2x2 critical metrics */}
-      <PrimaryMetricCell metricKey="voltage" />
-      <PrimaryMetricCell metricKey="current" />
-      <PrimaryMetricCell metricKey="temperature" />
-      <PrimaryMetricCell metricKey="stateOfCharge" />
+      <PrimaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="voltage" />
+      <PrimaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="current" />
+      <PrimaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="temperature" />
+      <PrimaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="stateOfCharge" />
 
       {/* Secondary Grid: 2x2 configuration/status (name now in header) */}
-      <SecondaryMetricCell metricKey="capacity" />
-      <SecondaryMetricCell metricKey="chemistry" />
-      <SecondaryMetricCell metricKey="nominalVoltage" />
+      <SecondaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="capacity" />
+      <SecondaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="chemistry" />
+      <SecondaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="nominalVoltage" />
       <EmptyCell />
     </TemplatedWidget>
   );

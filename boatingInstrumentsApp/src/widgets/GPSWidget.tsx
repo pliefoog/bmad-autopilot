@@ -30,14 +30,12 @@ export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, instanceNum
       ]}
     >
       {/* Primary Grid: Coordinates */}
-      <PrimaryMetricCell metricKey="latitude" />
-      <PrimaryMetricCell metricKey="longitude" />
+      <PrimaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="latitude" />
+      <PrimaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="longitude" />
 
-      {/* Secondary Grid: Date/Time (UTC always via forceTimezone in field config)
-      <SecondaryMetricCell metricKey="utcDate" />
-      <SecondaryMetricCell metricKey="utcTime" /> */}
-      <SecondaryMetricCell sensorKey="depth" metricKey="depth" />
-      <SecondaryMetricCell sensorKey="depth" metricKey="depth.avg" /> 
+      {/* Secondary Grid: Depth metrics from additional sensor */}
+      <SecondaryMetricCell sensorType="depth" instance={0} metricKey="depth" />
+      <SecondaryMetricCell sensorType="depth" instance={0} metricKey="depth.avg" /> 
     </TemplatedWidget>
   );
 });

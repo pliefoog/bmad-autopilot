@@ -67,10 +67,12 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
       testID={`depth-widget-${instanceNumber}`}
     >
       {/* Primary Grid: Current depth + trend visualization */}
-      <PrimaryMetricCell metricKey="depth" />
+      <PrimaryMetricCell sensorType="depth" instance={instanceNumber} metricKey="depth" />
 
-      {/* TrendLine: Auto-fetch pattern via SensorContext */}
+      {/* TrendLine: Explicit props pattern */}
       <TrendLine
+        sensorType="depth"
+        instance={instanceNumber}
         metricKey="depth"
         timeWindowMs={5 * 60 * 1000}
         usePrimaryLine
@@ -84,8 +86,8 @@ export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id }) => {
       />
 
       {/* Secondary Grid: Session statistics using virtual metrics */}
-      <SecondaryMetricCell metricKey="depth.min" />
-      <SecondaryMetricCell metricKey="depth.max" />
+      <SecondaryMetricCell sensorType="depth" instance={instanceNumber} metricKey="depth.min" />
+      <SecondaryMetricCell sensorType="depth" instance={instanceNumber} metricKey="depth.max" />
     </TemplatedWidget>
   );
 });

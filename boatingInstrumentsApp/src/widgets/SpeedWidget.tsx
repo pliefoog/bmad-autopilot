@@ -66,20 +66,20 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id }) => {
       testID={`speed-widget-${instanceNumber}`}
     >
       {/* Primary Grid Row 1: Current SOG and STW */}
-      <PrimaryMetricCell sensorKey="gps" metricKey="speedOverGround" />
-      <PrimaryMetricCell metricKey="throughWater" />
+      <PrimaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="speedOverGround" />
+      <PrimaryMetricCell sensorType="speed" instance={instanceNumber} metricKey="throughWater" />
 
       {/* Primary Grid Row 2: MAX SOG and MAX STW (using virtual stat metrics) */}
-      <PrimaryMetricCell sensorKey="gps" metricKey="speedOverGround.max" />
-      <PrimaryMetricCell metricKey="throughWater.max" />
+      <PrimaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="speedOverGround.max" />
+      <PrimaryMetricCell sensorType="speed" instance={instanceNumber} metricKey="throughWater.max" />
 
       {/* Secondary Grid: AVG SOG and AVG STW (using virtual stat metrics) */}
-      <SecondaryMetricCell sensorKey="gps" metricKey="speedOverGround.avg" />
-      <SecondaryMetricCell metricKey="throughWater.avg" />
+      <SecondaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="speedOverGround.avg" />
+      <SecondaryMetricCell sensorType="speed" instance={instanceNumber} metricKey="throughWater.avg" />
 
       {/* Empty cells for layout consistency */}
-      <SecondaryMetricCell metricKey="throughWater" />
-      <SecondaryMetricCell metricKey="throughWater" />
+      <SecondaryMetricCell sensorType="speed" instance={instanceNumber} metricKey="throughWater" />
+      <SecondaryMetricCell sensorType="speed" instance={instanceNumber} metricKey="throughWater" />
     </TemplatedWidget>
   );
 });

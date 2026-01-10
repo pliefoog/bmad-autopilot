@@ -41,12 +41,12 @@ export const WindWidget: React.FC<WindWidgetProps> = React.memo(({ id }) => {
       testID={`wind-widget-${instanceNumber}`}
     >
       {/* Primary Grid: 2x1 apparent wind */}
-      <PrimaryMetricCell metricKey="speed" />
-      <PrimaryMetricCell metricKey="direction" />
+      <PrimaryMetricCell sensorType="wind" instance={instanceNumber} metricKey="speed" />
+      <PrimaryMetricCell sensorType="wind" instance={instanceNumber} metricKey="direction" />
 
       {/* Secondary Grid: 2x1 true wind */}
-      <SecondaryMetricCell metricKey="trueSpeed" />
-      <SecondaryMetricCell metricKey="trueDirection" />
+      <SecondaryMetricCell sensorType="wind" instance={instanceNumber} metricKey="trueSpeed" />
+      <SecondaryMetricCell sensorType="wind" instance={instanceNumber} metricKey="trueDirection" />
     </TemplatedWidget>
   );
 });

@@ -1,15 +1,14 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { useSensorContext } from '../contexts/SensorContext';
 import { useNmeaStore } from '../store/nmeaStore';
+import type { SensorMetricProps } from '../types/SensorData';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
 import { getSensorField } from '../registry/SensorConfigRegistry';
 
-interface StatMetricCellProps {
-  metricKey: string;
+interface StatMetricCellProps extends SensorMetricProps {
+  // SensorMetricProps provides: sensorType, instance, metricKey
   statType: 'min' | 'max' | 'avg';
-  sensorKey?: 'primary' | 'secondary';
   style?: ViewStyle;
   cellWidth?: number;
   cellHeight?: number;
@@ -33,9 +32,10 @@ interface StatMetricCellProps {
  * - Unit: from ConversionRegistry (10pt)
  */
 export const StatMetricCell: React.FC<StatMetricCellProps> = ({
+  sensorType,
+  instance,
   metricKey,
   statType,
-  sensorKey,
   style,
   cellWidth,
   cellHeight,
@@ -43,14 +43,10 @@ export const StatMetricCell: React.FC<StatMetricCellProps> = ({
 }) => {
   const theme = useTheme();
 
-  // Auto-fetch sensor data from context
-  const { sensorInstance, sensorType } = useSensorContext(sensorKey);
-
-  // Get session stats from store
+  // Get session stats from store using explicit props
   const stats = useNmeaStore(
     (state) => {
-      if (!sensorInstance) return null;
-      return state.getSessionStats(sensorType, sensorInstance.instance, metricKey);
+      return state.getSessionStats(sensorType, instance, metricKey);
     },
     (a, b) => {
       if (!a && !b) return true;

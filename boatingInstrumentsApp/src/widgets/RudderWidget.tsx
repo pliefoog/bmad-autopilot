@@ -2,9 +2,9 @@ import React, { useMemo } from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Circle, Line, Polygon, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../store/themeStore';
+import { useNmeaStore } from '../store/nmeaStore';
 import { TemplatedWidget } from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
-import { useSensorContext } from '../contexts/SensorContext';
 
 interface RudderWidgetProps {
   id: string;
@@ -53,20 +53,28 @@ export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id }) => 
       testID={`rudder-widget-${instanceNumber}`}
     >
       {/* Primary Grid: Rudder Angle */}
-      <PrimaryMetricCell metricKey="rudderAngle" />
+      <PrimaryMetricCell sensorType="autopilot" instance={instanceNumber} metricKey="rudderAngle" />
 
-      {/* Secondary: Custom SVG Visualization - gets sensor from context */}
-      <RudderVisualization />
+      {/* Secondary: Custom SVG Visualization */}
+      <RudderVisualization sensorType="autopilot" instance={instanceNumber} />
     </TemplatedWidget>
   );
 });
 
 /**
- * RudderVisualization - Reads rudder angle from SensorContext
+ * RudderVisualization - Reads rudder angle from store
  */
-const RudderVisualization: React.FC = () => {
+interface RudderVisualizationProps {
+  sensorType: 'autopilot';
+  instance: number;
+}
+
+const RudderVisualization: React.FC<RudderVisualizationProps> = ({ sensorType, instance }) => {
   const theme = useTheme();
-  const { sensorInstance } = useSensorContext();
+  const sensorInstance = useNmeaStore(
+    (state) => state.getSensorInstance(sensorType, instance),
+    (a, b) => a === b
+  );
   
   // Get rudder angle for visualization
   const rudderAngle = (sensorInstance?.getMetric('rudderAngle')?.si_value as number) ?? 0;

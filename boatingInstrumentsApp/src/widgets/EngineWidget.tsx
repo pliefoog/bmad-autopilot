@@ -42,14 +42,14 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id }) => 
       testID={`engine-widget-${instanceNumber}`}
     >
       {/* Primary Grid: 2x2 critical metrics */}
-      <PrimaryMetricCell metricKey="rpm" />
-      <PrimaryMetricCell metricKey="coolantTemp" />
-      <PrimaryMetricCell metricKey="oilPressure" />
-      <PrimaryMetricCell metricKey="alternatorVoltage" />
+      <PrimaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="rpm" />
+      <PrimaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="coolantTemp" />
+      <PrimaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="oilPressure" />
+      <PrimaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="alternatorVoltage" />
 
       {/* Secondary Grid: 2x1 WIDE (full-width cells) */}
-      <SecondaryMetricCell metricKey="fuelRate" />
-      <SecondaryMetricCell metricKey="hours" />
+      <SecondaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="fuelRate" />
+      <SecondaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="hours" />
     </TemplatedWidget>
   );
 });

@@ -49,10 +49,12 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
       testID={`temperature-widget-${instanceNumber}`}
     >
       {/* Primary Grid: Current temperature + trend visualization */}
-      <PrimaryMetricCell metricKey="value" />
+      <PrimaryMetricCell sensorType="temperature" instance={instanceNumber} metricKey="value" />
 
-      {/* TrendLine: Auto-fetch pattern via SensorContext */}
+      {/* TrendLine: Explicit props pattern */}
       <TrendLine
+        sensorType="temperature"
+        instance={instanceNumber}
         metricKey="value"
         timeWindowMs={5 * 60 * 1000}
         usePrimaryLine
@@ -65,7 +67,7 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
       />
 
       {/* Secondary Grid: Sensor metadata (name now in header) */}
-      <SecondaryMetricCell metricKey="location" />
+      <SecondaryMetricCell sensorType="temperature" instance={instanceNumber} metricKey="location" />
     </TemplatedWidget>
   );
 });

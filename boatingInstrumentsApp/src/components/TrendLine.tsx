@@ -3,10 +3,9 @@ import { View, Text } from 'react-native';
 import Svg, { Polyline, Line, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../store/themeStore';
 import { useNmeaStore } from '../store/nmeaStore';
-import { SensorType } from '../types/SensorData';
+import { SensorType, SensorMetricProps } from '../types/SensorData';
 import { useCategoryPresentation } from '../presentation/useCategoryPresentation';
 import { useAlarmThresholds } from '../hooks/useAlarmThresholds';
-import { useSensorContext } from '../contexts/SensorContext';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
 import { log } from '../utils/logging/logger';
 
@@ -19,10 +18,9 @@ export interface DataPoint {
   timestamp: number;
 }
 
-export interface TrendLineProps {
-  // Auto-fetch pattern via SensorContext (REQUIRED)
-  metricKey: string; // The metric field name (e.g., 'pressure', 'airTemperature', 'depth')
-  // Auto-fetches sensor/instance from SensorContext provided by TemplatedWidget
+export interface TrendLineProps extends SensorMetricProps {
+  // SensorMetricProps provides: sensorType, instance, metricKey
+  // Explicit props pattern - no React Context (Dec 2024 Refactor)
 
   timeWindowMs: number;
 
@@ -114,16 +112,15 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   fontSize = 9,
   showDataPoints = false,
   dataPointRadius = 3,
+  sensorType,
+  instance,
+  metricKey,
 }) => {
-  // Auto-fetch from SensorContext (provided by TemplatedWidget)
-  const context = useSensorContext();
-
   // Get theme colors directly from store (MUST be called before any returns)
   const theme = useTheme();
 
-  // Extract sensor/instance from context
-  const sensor = context?.sensorType;
-  const instance = context?.sensorInstance?.instance ?? 0;
+  // Use explicit props instead of context (Dec 2024 Refactor)
+  const sensor = sensorType;
   const metric = metricKey;
 
   // Extract base metric name for registry lookup (remove .min/.max/.avg suffix if present)

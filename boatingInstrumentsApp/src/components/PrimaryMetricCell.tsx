@@ -4,20 +4,18 @@ import { useTheme } from '../store/themeStore';
 import { FlashingText } from './FlashingText';
 import { ALARM_VISUAL_STATES } from '../types/AlarmTypes';
 import type { AlarmLevel } from '../types/AlarmTypes';
-import type { SensorType } from '../types/SensorData';
-import { useSensorContext } from '../contexts/SensorContext';
+import type { SensorType, SensorMetricProps } from '../types/SensorData';
 import { getSensorField } from '../registry/SensorConfigRegistry';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
 import { useMetric } from '../hooks/useMetric';
+import { useNmeaStore } from '../store/nmeaStore';
 
 /**
- * PrimaryMetricCell Props
+ * PrimaryMetricCell Props (Explicit Props Pattern - Dec 2024 Refactor)
  *
- * **Registry-First Auto-Fetch Pattern:**
- * Only requires metricKey - everything else auto-fetched from context:
- * - Sensor instance from useSensorContext()
- * - Metric data via instance.getMetric(metricKey)
- * - Field config via getSensorField(sensorType, metricKey)
+ * **Explicit Props Architecture:**
+ * Requires sensorType, instance, and metricKey as direct props.
+ * No React Context - all sensor data passed explicitly.
  *
  * **Virtual Metrics Support (Dot Notation):**
  * Supports computed statistics using dot notation:
@@ -32,23 +30,11 @@ import { useMetric } from '../hooks/useMetric';
  * 4. Returning enriched MetricValue with proper units/formatting
  *
  * **For AI Agents:**
- * This is the unified widget architecture - cells are pure config,
- * all data fetching and calculation happens internally via context + registry.
- * Never calculate stats in UI components - always use virtual metric pattern.
+ * This is the explicit props pattern - widgets pass sensorType/instance/metricKey
+ * directly to cells. Never use React Context for sensor data propagation.
  */
-interface PrimaryMetricCellProps {
-  /**
-   * Metric key to display (e.g., 'voltage', 'rpm', 'depth')
-   * Must match field key in SensorConfigRegistry
-   */
-  metricKey: string;
-
-  /**
-   * Sensor key for multi-sensor widgets (e.g., 'gps', 'speed')
-   * Defaults to primary sensor if not specified.
-   * Use for widgets that display metrics from multiple sensors.
-   */
-  sensorKey?: SensorType;
+interface PrimaryMetricCellProps extends SensorMetricProps {
+  // SensorMetricProps provides: sensorType, instance, metricKey
 
   // Optional styling overrides
   style?: any;
@@ -95,8 +81,9 @@ interface PrimaryMetricCellProps {
  * NEVER add calculation logic here - extend SensorInstance.getMetric() instead.
  */
 export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
+  sensorType,
+  instance,
   metricKey,
-  sensorKey,
   style,
   cellWidth,
   cellHeight,
@@ -105,17 +92,12 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
 }) => {
   const theme = useTheme();
 
-  // Get sensor context for type and instance information
-  const { sensorInstance, sensorType } = useSensorContext(sensorKey);
-
   // ARCHITECTURE v2.0: Subscribe to specific metric using fine-grained subscription
-  // MUST be called unconditionally (Rules of Hooks)
-  // Pass defaults when sensorInstance doesn't exist, hook will return null
-  const metricValue = useMetric(
-    sensorType || 'depth', // Safe default
-    sensorInstance?.instance ?? 0, // Safe default
-    metricKey,
-  );
+  // Now uses explicit props instead of context
+  const metricValue = useMetric(sensorType, instance, metricKey);
+
+  // Get sensor instance directly from store for getMetric() calls
+  const sensorInstance = useNmeaStore((state) => state.getSensorInstance(sensorType, instance));
 
   // NOTE: Removed fallback to contextMetric (sensorInstance.getMetric()) because
   // it's NOT reactive and causes erratic updates. The fallback pattern made

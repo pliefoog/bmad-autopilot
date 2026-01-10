@@ -1,25 +1,24 @@
 /**
- * TemplatedWidget - Registry-First Declarative Widget Renderer
+ * TemplatedWidget - Registry-First Declarative Widget Renderer (Explicit Props)
  *
- * Renders widgets using grid templates and auto-fetch metric cells.
+ * Renders widgets using grid templates and explicit prop passing to cells.
  * Eliminates 200+ lines of boilerplate from each widget by providing:
  * - Grid template lookup and rendering
- * - SensorContext provision to all cells
+ * - Layout and dimension calculation
  * - Cell count validation
  * - Error boundary for graceful failures
  *
- * **Registry-First Architecture:**
- * Widgets are now pure configuration - just specify template + metric keys.
- * All layout, data fetching, and display logic handled here.
+ * **Explicit Props Architecture (Dec 2024 Refactor):**
+ * Widgets pass sensorType, instance, metricKey explicitly to child components.
+ * NO React Context - all props passed directly from widget to cells.
  *
  * **For AI Agents:**
- * This is the foundation of declarative widgets. Widgets become simple
- * configuration with template name and list of metric keys.
+ * This is the foundation of declarative widgets. Widgets are simple
+ * configuration with template name and explicit props to cells.
  */
 
 import React, { ReactElement } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { SensorContext } from '../contexts/SensorContext';
 import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 import { useNmeaStore } from '../store/nmeaStore';
 import type { SensorInstance } from '../types/SensorInstance';
@@ -229,25 +228,18 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
   const styles = createStyles(theme, debugLayout);
 
   return (
-    <SensorContext.Provider
-      value={{
-        sensorInstance,
-        sensorType,
-        additionalSensors: additionalSensorsMap,
-      }}
+    <View
+      style={[styles.wrapper, style]}
+      testID={testID || `widget-${sensorType}`}
+      onLayout={handleWidgetLayout}
     >
-      <View
-        style={[styles.wrapper, style]}
-        testID={testID || `widget-${sensorType}`}
-        onLayout={handleWidgetLayout}
-      >
-        {/* Widget Header - Full Width */}
-        {widgetMetadata && (
-          <WidgetHeader
-            title={headerTitle}
-            iconName={widgetMetadata.icon}
-            headerHeight={headerFooterHeight}
-            testID={testID ? `${testID}-header` : undefined}
+      {/* Widget Header - Full Width */}
+      {widgetMetadata && (
+        <WidgetHeader
+          title={headerTitle}
+          iconName={widgetMetadata.icon}
+          headerHeight={headerFooterHeight}
+          testID={testID ? `${testID}-header` : undefined}
           />
         )}
 
@@ -284,7 +276,6 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
         {/* Widget Footer - Visual spacing for balance */}
         <WidgetFooter testID={testID ? `${testID}-footer` : undefined} />
       </View>
-    </SensorContext.Provider>
   );
 };
 

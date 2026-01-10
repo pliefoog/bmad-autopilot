@@ -318,3 +318,46 @@ export interface SerializedSensorsData {
   navigation: { [instance: number]: ReturnType<SensorInstance<NavigationSensorData>['toJSON']> };
   weather: { [instance: number]: ReturnType<SensorInstance<WeatherSensorData>['toJSON']> };
 }
+
+/**
+ * Utility type for explicit props pattern in widgets (Dec 2024 Refactor)
+ * 
+ * Enforces compile-time validation that sensorType and instance are present
+ * when metricKey is specified. Replaces deprecated React Context pattern.
+ * 
+ * Usage:
+ * ```tsx
+ * interface Props extends SensorMetricProps<'depth'> {
+ *   // Additional component-specific props
+ * }
+ * 
+ * // TypeScript enforces all three props:
+ * <PrimaryMetricCell 
+ *   sensorType="depth" 
+ *   instance={0} 
+ *   metricKey="depth" 
+ * />
+ * ```
+ * 
+ * @template TMetricKey - Type of metric key (string literal for autocomplete)
+ */
+export type SensorMetricProps<TMetricKey extends string = string> = {
+  /**
+   * Sensor type from SensorsData union
+   * Examples: 'depth', 'engine', 'gps', 'battery', 'wind'
+   */
+  sensorType: keyof SensorsData;
+  
+  /**
+   * Sensor instance number (0-indexed)
+   * Multiple instances supported for engines, tanks, batteries, etc.
+   */
+  instance: number;
+  
+  /**
+   * Metric field name within the sensor data
+   * Examples: 'depth', 'voltage', 'speedOverGround', 'temperature'
+   * Generic type provides autocomplete when sensor type is known
+   */
+  metricKey: TMetricKey;
+};

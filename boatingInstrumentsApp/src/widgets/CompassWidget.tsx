@@ -48,12 +48,12 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id }) =
       testID={`compass-widget-${instanceNumber}`}
     >
       {/* Primary Grid: True and Magnetic Heading */}
-      <PrimaryMetricCell metricKey="trueHeading" />
-      <PrimaryMetricCell metricKey="magneticHeading" />
+      <PrimaryMetricCell sensorType="compass" instance={instanceNumber} metricKey="trueHeading" />
+      <PrimaryMetricCell sensorType="compass" instance={instanceNumber} metricKey="magneticHeading" />
 
       {/* Secondary Grid: Variation and Deviation */}
-      <SecondaryMetricCell metricKey="variation" />
-      <SecondaryMetricCell metricKey="deviation" />
+      <SecondaryMetricCell sensorType="compass" instance={instanceNumber} metricKey="variation" />
+      <SecondaryMetricCell sensorType="compass" instance={instanceNumber} metricKey="deviation" />
     </TemplatedWidget>
   );
 });

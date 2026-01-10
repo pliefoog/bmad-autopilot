@@ -26,10 +26,10 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(({ i
       testID={id}
     >
       {/* Primary Grid: Navigation metrics in 2x2 layout */}
-      <PrimaryMetricCell metricKey="bearingToWaypoint" />
-      <PrimaryMetricCell metricKey="distanceToWaypoint" />
-      <PrimaryMetricCell metricKey="crossTrackError" />
-      <PrimaryMetricCell metricKey="velocityMadeGood" />
+      <PrimaryMetricCell sensorType="navigation" instance={0} metricKey="bearingToWaypoint" />
+      <PrimaryMetricCell sensorType="navigation" instance={0} metricKey="distanceToWaypoint" />
+      <PrimaryMetricCell sensorType="navigation" instance={0} metricKey="crossTrackError" />
+      <PrimaryMetricCell sensorType="navigation" instance={0} metricKey="velocityMadeGood" />
     </TemplatedWidget>
   );
 });

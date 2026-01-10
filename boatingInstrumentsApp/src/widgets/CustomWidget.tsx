@@ -58,7 +58,14 @@ interface CustomWidgetProps {
  * 2. ComponentCellDef → Dynamic component from registry
  * 3. EmptyCellDef → EmptyCell for layout
  */
-function renderCell(cell: CellDefinition, index: number, isPrimary: boolean): React.ReactElement {
+function renderCell(
+  cell: CellDefinition,
+  index: number,
+  isPrimary: boolean,
+  primarySensorType: string,
+  primaryInstance: number,
+  additionalSensorsMap: Record<string, { type: string; instance: number }>,
+): React.ReactElement {
   // EmptyCellDef: Filler cell for layout
   if ('empty' in cell && cell.empty) {
     return <EmptyCell key={`empty-${index}`} />;
@@ -80,11 +87,25 @@ function renderCell(cell: CellDefinition, index: number, isPrimary: boolean): Re
       return <EmptyCell key={`missing-${index}`} />;
     }
 
+    // Determine sensor type and instance for component
+    let sensorType: string;
+    let instance: number;
+    
+    if ((cell as any).sensorKey && additionalSensorsMap[(cell as any).sensorKey]) {
+      const additionalSensor = additionalSensorsMap[(cell as any).sensorKey];
+      sensorType = additionalSensor.type;
+      instance = additionalSensor.instance;
+    } else {
+      sensorType = primarySensorType;
+      instance = primaryInstance;
+    }
+
     return (
       <Component
         key={`component-${index}`}
+        sensorType={sensorType as any}
+        instance={instance}
         metricKey={(cell as any).metricKey}
-        sensorKey={(cell as any).sensorKey}
         {...(cell.props || {})}
       />
     );
@@ -93,25 +114,40 @@ function renderCell(cell: CellDefinition, index: number, isPrimary: boolean): Re
   // MetricCellDef: Standard metric display
   if ('metricKey' in cell) {
     const metricKey = cell.metricKey;
-    // Use explicit sensorKey only if cell specifies it (for additional sensors)
-    // Primary sensor cells leave sensorKey undefined to use implicit context sensor
-    const cellSensorKey = cell.sensorKey;
+    
+    // Determine sensor type and instance
+    // If cell specifies sensorKey, look it up in additionalSensorsMap
+    // Otherwise use primary sensor
+    let sensorType: string;
+    let instance: number;
+    
+    if (cell.sensorKey && additionalSensorsMap[cell.sensorKey]) {
+      const additionalSensor = additionalSensorsMap[cell.sensorKey];
+      sensorType = additionalSensor.type;
+      instance = additionalSensor.instance;
+    } else {
+      sensorType = primarySensorType;
+      instance = primaryInstance;
+    }
+    
     const cellType = cell.cellType || (isPrimary ? 'primary' : 'secondary');
 
     if (cellType === 'primary') {
       return (
         <PrimaryMetricCell
           key={`metric-${index}`}
+          sensorType={sensorType as any}
+          instance={instance}
           metricKey={metricKey}
-          sensorKey={cellSensorKey as any}
         />
       );
     } else {
       return (
         <SecondaryMetricCell
           key={`metric-${index}`}
+          sensorType={sensorType as any}
+          instance={instance}
           metricKey={metricKey}
-          sensorKey={cellSensorKey as any}
         />
       );
     }
@@ -154,6 +190,24 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
       }));
     }, [definition]);
 
+    // Build additionalSensorsMap for renderCell lookups
+    const additionalSensorsMap = useMemo(() => {
+      const map: Record<string, { type: string; instance: number }> = {};
+      
+      if (definition?.grid?.additionalSensors) {
+        definition.grid.additionalSensors.forEach((sensor) => {
+          // Use sensor key if provided, otherwise use type as key
+          const key = sensor.key || sensor.type;
+          map[key] = {
+            type: sensor.type,
+            instance: sensor.instance ?? 0,
+          };
+        });
+      }
+      
+      return map;
+    }, [definition]);
+
     // Determine primary/secondary split from GridTemplateRegistry
     const gridTemplate = definition?.grid?.template
       ? getGridTemplate(definition.grid.template)
@@ -165,12 +219,13 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
     // Generate children from cells
     const children = useMemo(() => {
       if (!definition?.grid?.cells) return [];
+      if (!primarySensorType) return [];
 
       return definition.grid.cells.map((cell, index) => {
         const isPrimary = index < primaryCellCount;
-        return renderCell(cell, index, isPrimary);
+        return renderCell(cell, index, isPrimary, primarySensorType, primaryInstance, additionalSensorsMap);
       });
-    }, [definition?.grid?.cells, primaryCellCount]);
+    }, [definition?.grid?.cells, primaryCellCount, primarySensorType, primaryInstance, additionalSensorsMap]);
 
     // Validation
     if (!definition?.grid) {

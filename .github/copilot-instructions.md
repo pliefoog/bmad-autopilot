@@ -313,20 +313,61 @@ const unit = depthMetric?.unit;  // "ft"
 
 **Philosophy:** Widgets are pure configuration, zero logic. All metadata in `SensorConfigRegistry`, all rendering in reusable components.
 
+**🔴 MANDATORY: Explicit Props Pattern (Jan 2025 Refactor)**
+
+**ALL widgets and cell components MUST pass sensor information explicitly as props.**
+
+**NEVER use React Context for sensor data propagation** - this pattern was deprecated in January 2025. The old `useSensorContext()` hook and `SensorContext.Provider` have been removed from the codebase.
+
+**Required Pattern:**
+```tsx
+// ✅ CORRECT - Explicit props
+<PrimaryMetricCell sensorType="depth" instance={0} metricKey="depth" />
+<SecondaryMetricCell sensorType="battery" instance={0} metricKey="voltage" />
+<TrendLine sensorType="wind" instance={0} metricKey="speed" timeWindowMs={300000} />
+
+// ❌ WRONG - Context-based (deprecated, will not compile)
+<PrimaryMetricCell metricKey="depth" />  // Missing sensorType and instance
+<PrimaryMetricCell sensorKey="gps" metricKey="speedOverGround" />  // Old sensorKey prop removed
+```
+
+**Type Safety:**
+All cell components require `SensorMetricProps<TMetricKey>` which enforces:
+- `sensorType: keyof SensorsData` - Which sensor type (depth, battery, etc.)
+- `instance: number` - Sensor instance number (0 for single, 0+ for multiple)
+- `metricKey: TMetricKey` - Specific metric field name
+
+**Multi-Sensor Widgets:**
+When a widget uses multiple sensor types (e.g., SpeedWidget with both 'speed' and 'gps'), explicitly differentiate:
+```tsx
+{/* GPS sensor metrics */}
+<PrimaryMetricCell sensorType="gps" instance={0} metricKey="speedOverGround" />
+
+{/* Speed sensor metrics */}
+<PrimaryMetricCell sensorType="speed" instance={0} metricKey="throughWater" />
+```
+
+**Custom/Dynamic Widgets:**
+For widgets with dynamic configuration, create a helper function to resolve sensor type and instance from the configuration, then pass explicit props to all cells.
+
 **✅ Declarative Widget Pattern:**
 ```tsx
 export const BatteryWidget: React.FC<Props> = React.memo(({ id }) => {
-  const instance = useNmeaStore((state) => state.nmeaData.sensors.battery?.[0]);
+  // Extract instance number from widget ID
+  const instanceNumber = useMemo(() => {
+    const match = id.match(/battery-(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  }, [id]);
   
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C"
-      sensorInstance={instance}
       sensorType="battery"
+      instanceNumber={instanceNumber}
     >
-      <PrimaryMetricCell metricKey="voltage" />
-      <PrimaryMetricCell metricKey="current" />
-      <SecondaryMetricCell metricKey="capacity" />
+      <PrimaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="voltage" />
+      <PrimaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="current" />
+      <SecondaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="capacity" />
     </TemplatedWidget>
   );
 });
@@ -343,19 +384,18 @@ export const BatteryWidget: React.FC<Props> = React.memo(({ id }) => {
 
 **Single Sensor Widget:**
 ```tsx
-// Primary sensor is implicit via sensorInstance prop
 <TemplatedWidget
   template="2Rx1C-SEP-2Rx1C"
-  sensorInstance={depthInstance}
   sensorType="depth"
+  instanceNumber={instanceNumber}
 >
-  {/* Implicit primary sensor - no sensorKey needed */}
-  <PrimaryMetricCell metricKey="depth" />
-  <TrendLine metricKey="depth" timeWindowMs={300000} />
+  {/* All cells require explicit sensorType and instance */}
+  <PrimaryMetricCell sensorType="depth" instance={instanceNumber} metricKey="depth" />
+  <TrendLine sensorType="depth" instance={instanceNumber} metricKey="depth" timeWindowMs={300000} />
   
   {/* Virtual stat metrics using dot notation */}
-  <SecondaryMetricCell metricKey="depth.min" />
-  <SecondaryMetricCell metricKey="depth.max" />
+  <SecondaryMetricCell sensorType="depth" instance={instanceNumber} metricKey="depth.min" />
+  <SecondaryMetricCell sensorType="depth" instance={instanceNumber} metricKey="depth.max" />
 </TemplatedWidget>
 ```
 
@@ -364,32 +404,32 @@ export const BatteryWidget: React.FC<Props> = React.memo(({ id }) => {
 // Primary sensor: speed (STW), Additional sensor: gps (SOG)
 <TemplatedWidget
   template="2Rx2C-SEP-2Rx2C"
-  sensorInstance={speedInstance}
   sensorType="speed"
+  instanceNumber={instanceNumber}
   additionalSensors={[
     { sensorType: 'gps', instance: 0 }
   ]}
 >
-  {/* GPS metrics require explicit sensorKey */}
-  <PrimaryMetricCell sensorKey="gps" metricKey="speedOverGround" />
-  <PrimaryMetricCell sensorKey="gps" metricKey="speedOverGround.max" />
+  {/* GPS metrics use explicit sensorType="gps" */}
+  <PrimaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="speedOverGround" />
+  <PrimaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="speedOverGround.max" />
   
-  {/* Primary sensor (speed) - no sensorKey needed */}
-  <PrimaryMetricCell metricKey="throughWater" />
-  <PrimaryMetricCell metricKey="throughWater.avg" />
+  {/* Speed metrics use explicit sensorType="speed" */}
+  <PrimaryMetricCell sensorType="speed" instance={instanceNumber} metricKey="throughWater" />
+  <PrimaryMetricCell sensorType="speed" instance={instanceNumber} metricKey="throughWater.avg" />
 </TemplatedWidget>
 ```
 
 **Virtual Stat Metrics (Session Stats):**
 ```tsx
 // Dot notation for computed statistics (calculated in SensorInstance.getMetric())
-<PrimaryMetricCell metricKey="depth.min" />        // MIN DEPTH
-<PrimaryMetricCell metricKey="depth.max" />        // MAX DEPTH  
-<SecondaryMetricCell metricKey="depth.avg" />      // AVG DEPTH
+<PrimaryMetricCell sensorType="depth" instance={0} metricKey="depth.min" />        // MIN DEPTH
+<PrimaryMetricCell sensorType="depth" instance={0} metricKey="depth.max" />        // MAX DEPTH  
+<SecondaryMetricCell sensorType="depth" instance={0} metricKey="depth.avg" />      // AVG DEPTH
 
 // Works with any numeric metric field
-<PrimaryMetricCell metricKey="speedOverGround.max" />  // MAX SOG
-<SecondaryMetricCell metricKey="pressure.avg" />       // AVG pressure
+<PrimaryMetricCell sensorType="gps" instance={0} metricKey="speedOverGround.max" />  // MAX SOG
+<SecondaryMetricCell sensorType="weather" instance={0} metricKey="pressure.avg" />   // AVG pressure
 ```
 
 **How Virtual Metrics Work:**
@@ -401,16 +441,18 @@ export const BatteryWidget: React.FC<Props> = React.memo(({ id }) => {
    - Returns enriched MetricValue with proper units/formatting
 3. Component adds stat prefix to mnemonic: "MIN DEPTH", "MAX SOG"
 
-**Auto-Fetch Pattern** (SensorContext):
+**Direct Store Access Pattern:**
 ```tsx
-{/* MetricCells auto-fetch everything via useSensorContext() */}
-<PrimaryMetricCell metricKey="voltage" />
+{/* MetricCells receive sensor info explicitly and fetch from store */}
+<PrimaryMetricCell sensorType="battery" instance={0} metricKey="voltage" />
+{/* Internally calls: useMetric(sensorType, instance, metricKey) */}
 {/* Fetches: mnemonic, value, unit, alarm state, category config */}
 ```
 
 **⚠️ CRITICAL RULES:**
-- **Primary sensor:** Implicit via `sensorInstance` prop - NO `sensorKey` needed
-- **Additional sensors:** MUST use `sensorKey` prop to specify sensor type
+- **Explicit props required:** ALL cells MUST receive `sensorType`, `instance`, `metricKey` as direct props
+- **No context propagation:** NEVER use `useSensorContext()` or `SensorContext.Provider` (deprecated Jan 2025)
+- **Multi-sensor widgets:** Explicitly differentiate with different `sensorType` values
 - **Virtual metrics:** ALWAYS use dot notation (`.min`, `.max`, `.avg`) NOT underscore
 - **String fields:** Access directly (e.g., `metricKey="name"`) - NOT virtual metrics
 - **Base metric name:** Used for registry lookup (strips virtual suffix automatically)
@@ -422,13 +464,15 @@ All sensor fields MUST have `mnemonic: string` in `SensorConfigRegistry`. Startu
 - ❌ Manual metric extraction in widgets
 - ❌ Creating display data objects
 - ❌ Hardcoded mnemonics
-- ❌ Prop drilling (use Context)
+- ❌ Using React Context for sensor data (deprecated)
 - ❌ Widget-specific logic (belongs in SensorInstance)
+- ❌ Implicit sensor props via context
 
 **✅ CORRECT PATTERNS:**
-- ✅ Template name + metricKey list = entire widget
+- ✅ Explicit props: `sensorType="X" instance={N} metricKey="Y"`
+- ✅ Template name + explicit cells = entire widget
 - ✅ Let TemplatedWidget handle layout
-- ✅ Let MetricCells auto-fetch everything
+- ✅ Let MetricCells fetch via useMetric hook
 - ✅ Keep widgets <70 lines (avg 25-60 lines)
 - ✅ SensorInstance methods for computed metrics
 
@@ -437,6 +481,7 @@ All sensor fields MUST have `mnemonic: string` in `SensorConfigRegistry`. Startu
 - Zero duplication
 - XML-ready structure
 - Type-safe throughout
+- Self-documenting widget declarations (Jan 2025 improvement)
 
 ## Project Overview
 

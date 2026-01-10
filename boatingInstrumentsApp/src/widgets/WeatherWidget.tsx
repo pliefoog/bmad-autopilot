@@ -38,14 +38,16 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = React.memo(({ id }) =
       testID={id}
     >
       {/* Primary Grid: Weather metrics in 2x2 layout */}
-      <PrimaryMetricCell metricKey="pressure" />
-      <PrimaryMetricCell metricKey="airTemperature" />
-      <PrimaryMetricCell metricKey="humidity" />
-      <PrimaryMetricCell metricKey="dewPoint" />
+      <PrimaryMetricCell sensorType="weather" instance={instanceNumber} metricKey="pressure" />
+      <PrimaryMetricCell sensorType="weather" instance={instanceNumber} metricKey="airTemperature" />
+      <PrimaryMetricCell sensorType="weather" instance={instanceNumber} metricKey="humidity" />
+      <PrimaryMetricCell sensorType="weather" instance={instanceNumber} metricKey="dewPoint" />
 
       {/* Secondary Grid: Trend visualizations (full-width) */}
-      <TrendLine metricKey="pressure" timeWindowMs={300000} showXAxis={true} showYAxis={true} />
+      <TrendLine sensorType="weather" instance={instanceNumber} metricKey="pressure" timeWindowMs={300000} showXAxis={true} showYAxis={true} />
       <TrendLine
+        sensorType="weather"
+        instance={instanceNumber}
         metricKey="airTemperature"
         timeWindowMs={300000}
         showXAxis={true}
