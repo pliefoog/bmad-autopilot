@@ -12,21 +12,26 @@
  * - Automatic creation: Widgets appear instantly when required sensors have valid data
  * - Instance management: Supports multi-instance sensors (multiple engines, batteries, etc.)
  * - Direct store updates: No event forwarding - updates widgetStore directly
+ * - Expiration management: Automatic removal of widgets with stale sensor data
  *
  * Critical Implementation Details:
  * - SensorValueMap is ONLY for detection/validation, NOT rendering
  *   Widgets access data via useNmeaStore() → SensorInstance.getMetric() → MetricValue
  * - Null-value filtering: buildSensorValueMap() only adds valid (non-null) values
  *   Key existence in map = sensor exists AND has valid data (Jan 2026 fix)
- * - Private methods: handleSensorCreated(), hasRequiredSensors() are internal only
+ * - Private methods: handleSensorCreated(), checkExpiredWidgets(), isSensorDataFresh(),
+ *   hasRequiredSensors(), areRequiredSensorsFresh(), clearDetectedInstances() are internal only
  * - Dynamic imports: Avoid circular dependencies with nmeaStore/widgetStore
  * - Singleton pattern: Single instance manages all widget registrations
+ * - Grace period: Hardcoded to 30 seconds (not configurable)
  *
  * Bug Fix History:
  * - Jan 2026: Fixed null-value handling - map now only contains valid entries
  * - Jan 2026: Removed unused CalculatedField system (300+ lines)
  * - Jan 2026: Removed unused EventEmitter subscription methods
  * - Jan 2026: Replaced debug flags with conditional logger
+ * - Jan 2026: Moved expiration logic from widgetStore - unified creation/expiration criteria
+ * - Jan 2026: Removed 5 unused public methods (setGracePeriod, unregisterWidget, getRegisteredWidgets, getWidgetRegistration, reset)
  *
  * Performance Considerations:
  * - Incremental updates: Only processes affected widgets on sensor change
@@ -179,6 +184,11 @@ export class WidgetRegistrationService {
    * Set sensor data staleness threshold
    * Widgets will be removed if their required sensor data hasn't been updated within this time
    * 
+   * Implementation Notes:
+   * - Updates the threshold used for freshness checks
+   * - Restarts expiration check timer with new interval (threshold / 4)
+   * - Only takes effect if service is initialized
+   * 
    * @param thresholdMs - Staleness threshold in milliseconds
    */
   public setSensorDataStalenessThreshold(thresholdMs: number): void {
@@ -187,16 +197,25 @@ export class WidgetRegistrationService {
       thresholdMs,
       thresholdMinutes: Math.round(thresholdMs / 60000),
     }));
-  }
 
-  /**
-   * Set grace period for expiration checks
-   * Adds buffer time before removing widgets with stale data
-   * 
-   * @param gracePeriodMs - Grace period in milliseconds
-   */
-  public setGracePeriod(gracePeriodMs: number): void {
-    this.gracePeriod = gracePeriodMs;
+    // Restart timer with new interval if initialized
+    if (this.isInitialized && this.expirationCheckTimer) {
+      clearInterval(this.expirationCheckTimer);
+
+      const checkInterval = Math.max(
+        Math.floor(this.sensorDataStalenessThreshold / 4),
+        60000
+      );
+
+      this.expirationCheckTimer = setInterval(() => {
+        this.checkExpiredWidgets();
+      }, checkInterval);
+
+      log.widgetRegistration('Expiration timer restarted', () => ({
+        checkIntervalMs: checkInterval,
+        checkIntervalMinutes: Math.round(checkInterval / 60000),
+      }));
+    }
   }
 
   /**
@@ -215,36 +234,6 @@ export class WidgetRegistrationService {
       widgetType: registration.widgetType,
     }));
     this.registrations.set(registration.widgetType, registration);
-  }
-
-  /**
-   * Unregister a widget type (useful for cleanup or dynamic widget types)
-   */
-  public unregisterWidget(widgetType: string): void {
-    this.registrations.delete(widgetType);
-
-    // Clean up detected instances
-    const instancesToRemove: string[] = [];
-    this.detectedInstances.forEach((instance, key) => {
-      if (instance.widgetType === widgetType) {
-        instancesToRemove.push(key);
-      }
-    });
-    instancesToRemove.forEach((key) => this.detectedInstances.delete(key));
-  }
-
-  /**
-   * Get all registered widget types
-   */
-  public getRegisteredWidgets(): WidgetRegistration[] {
-    return Array.from(this.registrations.values());
-  }
-
-  /**
-   * Get specific widget registration
-   */
-  public getWidgetRegistration(widgetType: string): WidgetRegistration | undefined {
-    return this.registrations.get(widgetType);
   }
 
   /**
@@ -267,8 +256,47 @@ export class WidgetRegistrationService {
     const now = Date.now();
     const age = now - sensorTimestamp;
     const threshold = this.sensorDataStalenessThreshold + this.gracePeriod;
-    
+
     return age <= threshold;
+  }
+
+  /**
+   * Check if all required sensors for a widget have fresh data
+   * 
+   * Implementation Notes:
+   * - Validates both metric value existence AND timestamp freshness
+   * - Used by both creation (prevent stale widgets) and expiration (remove stale widgets)
+   * - Centralizes freshness logic to prevent divergence
+   * 
+   * @internal Used by handleSensorCreated() and checkExpiredWidgets()
+   * @param registration - Widget registration with required sensor list
+   * @param instance - Widget instance number
+   * @param allSensors - Full sensor state from nmeaStore
+   * @param skipFreshnessCheck - If true, only checks existence (used in initial scan)
+   * @returns true if all required sensors have valid AND fresh data
+   */
+  private areRequiredSensorsFresh(
+    registration: WidgetRegistration,
+    instance: number,
+    allSensors: any,
+    skipFreshnessCheck: boolean = false,
+  ): boolean {
+    return registration.requiredSensors.every((dep) => {
+      const targetInstance = dep.instance ?? instance;
+      const sensorData = allSensors[dep.sensorType]?.[targetInstance];
+
+      if (!sensorData) return false; // Sensor doesn't exist
+
+      // Check metric value exists
+      const metric = sensorData.getMetric?.(dep.metricName);
+      if (!metric || metric.si_value === null || metric.si_value === undefined) {
+        return false; // No valid metric data
+      }
+
+      // Check timestamp freshness (unless skipped for initial scan)
+      if (skipFreshnessCheck) return true;
+      return this.isSensorDataFresh(sensorData, allSensors);
+    });
   }
 
   /**
@@ -279,6 +307,7 @@ export class WidgetRegistrationService {
    * - Key existence = sensor exists AND has valid (non-null) data
    * - Supports multi-instance widgets with regex pattern matching
    * - O(n) complexity where n = number of required sensors
+   * - This checks VALUE existence, use areRequiredSensorsFresh() for timestamp freshness
    *
    * Performance:
    * - Typical case: 1-3 required sensors, <0.01ms per check
@@ -354,18 +383,18 @@ export class WidgetRegistrationService {
       import('../store/widgetStore').then(({ useWidgetStore }) => {
         const widgetStoreState = useWidgetStore.getState();
         this.sensorDataStalenessThreshold = widgetStoreState.widgetExpirationTimeout;
-        
+
         // Start expiration check timer
         // Check interval = threshold / 4, minimum 60 seconds
         const checkInterval = Math.max(
           Math.floor(this.sensorDataStalenessThreshold / 4),
           60000
         );
-        
+
         this.expirationCheckTimer = setInterval(() => {
           this.checkExpiredWidgets();
         }, checkInterval);
-        
+
         log.widgetRegistration('Expiration monitoring started', () => ({
           checkIntervalMs: checkInterval,
           checkIntervalMinutes: Math.round(checkInterval / 60000),
@@ -377,6 +406,12 @@ export class WidgetRegistrationService {
 
   /**
    * Perform initial scan of existing sensor data
+   * 
+   * Implementation Notes:
+   * - Called once at initialization before event subscription
+   * - Skips timestamp freshness validation for persisted data
+   * - This allows widgets to appear immediately on app restart
+   * - Expiration timer will remove stale widgets after startup
    */
   private performInitialScan(allSensors: any): void {
     const sensorCategories = Object.keys(allSensors);
@@ -390,7 +425,7 @@ export class WidgetRegistrationService {
         const sensorData = categoryData[instance];
 
         if (sensorData && sensorData.timestamp) {
-          this.handleSensorCreated(category as any, instance, sensorData, allSensors);
+          this.handleSensorCreated(category as any, instance, sensorData, allSensors, true);
         }
       });
     });
@@ -415,13 +450,13 @@ export class WidgetRegistrationService {
 
     this.sensorCreatedHandler = null;
     this.isInitialized = false;
-    
+
     // Clear expiration check timer
     if (this.expirationCheckTimer) {
       clearInterval(this.expirationCheckTimer);
       this.expirationCheckTimer = null;
     }
-    
+
     this.clearDetectedInstances();
     // console.log('[WidgetRegistrationService] 🧹 Cleaned up');
   }
@@ -461,18 +496,21 @@ export class WidgetRegistrationService {
    * - Jan 2026: Corrected documentation - event is ~0.01 Hz, not 2Hz
    * - Jan 2026: Replaced debug flags with conditional logger
    * - Jan 2026: Simplified detection after null-value filtering fix
+   * - Jan 2026: Added skipFreshnessCheck for initial scan of persisted data
    *
    * @internal Called only by event subscription in initialize()
    * @param sensorType - Type of sensor that was created (e.g., 'depth', 'engine')
    * @param instance - Instance number of the sensor (0-based)
    * @param sensorData - Partial sensor data from the creation event
    * @param allSensors - Full sensor state for multi-sensor widgets
+   * @param skipFreshnessCheck - If true, skip timestamp validation (initial scan only)
    */
   private handleSensorCreated(
     sensorType: SensorType,
     instance: number,
     sensorData: Partial<SensorData>,
     allSensors: any, // Full sensor state from nmeaStore
+    skipFreshnessCheck: boolean = false,
   ): void {
     log.widgetRegistration('handleSensorCreated', () => ({
       sensorType,
@@ -483,7 +521,7 @@ export class WidgetRegistrationService {
 
     // Find all widget types that depend on this sensor
     const affectedWidgets = this.findAffectedWidgets(sensorType, instance);
-    
+
     log.widgetRegistration('findAffectedWidgets', () => ({
       sensorType,
       instance,
@@ -502,14 +540,13 @@ export class WidgetRegistrationService {
       // Check if all required sensors have valid data AND fresh timestamps
       // This prevents creating widgets with stale data that would be immediately removed
       const hasRequiredData = this.hasRequiredSensors(registration, sensorValueMap);
-      
-      // Check timestamp freshness for all required sensors
-      const allSensorsFresh = registration.requiredSensors.every((dep) => {
-        const targetInstance = dep.instance ?? instance;
-        const sensorData = allSensors[dep.sensorType]?.[targetInstance];
-        return sensorData && this.isSensorDataFresh(sensorData, allSensors);
-      });
-      
+      const allSensorsFresh = this.areRequiredSensorsFresh(
+        registration,
+        instance,
+        allSensors,
+        skipFreshnessCheck
+      );
+
       const canCreate = hasRequiredData && allSensorsFresh;
 
       if (canCreate) {
@@ -561,75 +598,85 @@ export class WidgetRegistrationService {
    * 
    * Implementation Notes:
    * - Called by timer set up in initialize()
+   * - Respects enableWidgetAutoRemoval flag from widgetStore
    * - Uses same freshness criteria as widget creation (prevents race condition)
    * - Checks all required sensors for each detected widget
    * - Removes widgets whose sensor data has become stale
    * 
    * Performance:
-   * - Only runs if widgets exist (early exit)
+   * - Early exit if auto-removal disabled or no widgets exist
    * - Frequency: staleness threshold / 4 (e.g., 75s for 5min threshold)
    * - Typical execution: <5ms for 10-20 widgets
    * 
    * Bug Fix History:
    * - Jan 2026: Created to fix race condition between creation and expiration
+   * - Jan 2026: Added enableWidgetAutoRemoval flag check
+   * - Jan 2026: Unified freshness logic with areRequiredSensorsFresh() helper
    * 
    * @internal Called by expiration check timer
    */
   private checkExpiredWidgets(): void {
     if (this.detectedInstances.size === 0) return; // No widgets to check
-    
-    // Import nmeaStore to access current sensor data
-    import('../store/nmeaStore').then(({ useNmeaStore }) => {
-      const allSensors = useNmeaStore.getState().nmeaData.sensors;
-      const expiredKeys: string[] = [];
-      
-      this.detectedInstances.forEach((detectedInstance, instanceKey) => {
-        const registration = this.registrations.get(detectedInstance.widgetType);
-        if (!registration) {
-          expiredKeys.push(instanceKey); // No registration = expired
-          return;
+
+    // Import stores to access sensor data and user preferences
+    Promise.all([
+      import('../store/nmeaStore'),
+      import('../store/widgetStore')
+    ])
+      .then(([{ useNmeaStore }, { useWidgetStore }]) => {
+        // Check if auto-removal is enabled
+        const enableWidgetAutoRemoval = useWidgetStore.getState().enableWidgetAutoRemoval;
+        if (!enableWidgetAutoRemoval) {
+          log.widgetRegistration('Widget auto-removal disabled, skipping expiration check');
+          return; // User disabled auto-removal
         }
-        
-        // Check if all required sensors still have fresh data
-        const allSensorsFresh = registration.requiredSensors.every((dep) => {
-          const targetInstance = dep.instance ?? detectedInstance.instance;
-          const sensorData = allSensors[dep.sensorType]?.[targetInstance];
-          
-          if (!sensorData) return false; // Sensor disappeared
-          
-          const metric = sensorData.getMetric?.(dep.metricName);
-          if (!metric || metric.si_value === null || metric.si_value === undefined) {
-            return false; // No valid data
+
+        const allSensors = useNmeaStore.getState().nmeaData.sensors;
+        const expiredKeys: string[] = [];
+
+        this.detectedInstances.forEach((detectedInstance, instanceKey) => {
+          const registration = this.registrations.get(detectedInstance.widgetType);
+          if (!registration) {
+            expiredKeys.push(instanceKey); // No registration = expired
+            return;
           }
-          
-          return this.isSensorDataFresh(sensorData, allSensors);
+
+          // Use unified freshness check (same as creation logic)
+          const allSensorsFresh = this.areRequiredSensorsFresh(
+            registration,
+            detectedInstance.instance,
+            allSensors,
+            false // Don't skip freshness check for expiration
+          );
+
+          if (!allSensorsFresh) {
+            expiredKeys.push(instanceKey);
+          }
         });
-        
-        if (!allSensorsFresh) {
-          expiredKeys.push(instanceKey);
-        }
-      });
-      
-      // Remove expired widgets
-      if (expiredKeys.length > 0) {
-        expiredKeys.forEach(key => {
-          const instance = this.detectedInstances.get(key);
-          this.detectedInstances.delete(key);
-          log.widgetRegistration('Widget expired (stale sensor data)', () => ({
-            instanceKey: key,
-            widgetType: instance?.widgetType,
+
+        // Remove expired widgets
+        if (expiredKeys.length > 0) {
+          expiredKeys.forEach(key => {
+            const instance = this.detectedInstances.get(key);
+            this.detectedInstances.delete(key);
+            log.widgetRegistration('Widget expired (stale sensor data)', () => ({
+              instanceKey: key,
+              widgetType: instance?.widgetType,
+            }));
+          });
+
+          // Update widget store to reflect removals
+          this.updateWidgetStore();
+
+          log.widgetRegistration('Expired widgets removed', () => ({
+            count: expiredKeys.length,
+            remainingWidgets: this.detectedInstances.size,
           }));
-        });
-        
-        // Update widget store to reflect removals
-        this.updateWidgetStore();
-        
-        log.widgetRegistration('Expired widgets removed', () => ({
-          count: expiredKeys.length,
-          remainingWidgets: this.detectedInstances.size,
-        }));
-      }
-    });
+        }
+      })
+      .catch((error) => {
+        log.widgetRegistration('Error in checkExpiredWidgets', () => ({ error }));
+      });
   }
 
   /**
@@ -772,21 +819,13 @@ export class WidgetRegistrationService {
   }
 
   /**
-   * Clear all detected instances (useful for reconnection scenarios)
+   * Clear all detected instances
+   * 
+   * @internal Called only by cleanup()
    */
-  public clearDetectedInstances(): void {
+  private clearDetectedInstances(): void {
     this.detectedInstances.clear();
     this.updateWidgetStore();
-  }
-
-  /**
-   * Reset service (for testing)
-   */
-  public reset(): void {
-    this.registrations.clear();
-    this.detectedInstances.clear();
-    this.isCleaningUp = false;
-    this.isInitialized = false;
   }
 }
 

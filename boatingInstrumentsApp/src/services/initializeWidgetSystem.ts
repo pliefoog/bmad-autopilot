@@ -54,11 +54,3 @@ export function initializeWidgetSystem(): void {
 
   isInitialized = true;
 }
-
-/**
- * Reset the widget system (useful for testing or reconnection)
- */
-export function resetWidgetSystem(): void {
-  widgetRegistrationService.reset();
-  widgetRegistrationService.initialize();
-}
