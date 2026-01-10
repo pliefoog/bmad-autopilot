@@ -60,7 +60,6 @@ export interface DetectedInstance {
   icon: string;
   priority: number;
   lastSeen: number;
-  category: 'navigation' | 'environment' | 'engine' | 'power' | 'fluid';
   sourceAddress?: number; // For engines
   fluidType?: string; // For tanks
   location?: string; // For temperature sensors
@@ -390,7 +389,6 @@ class InstanceDetectionService {
                   icon: widgetInstance.icon,
                   priority: this.getInstrumentPriority(instrumentType),
                   lastSeen: currentTime,
-                  category: widgetInstance.category as DetectedInstance['category'],
                 };
 
                 // Log first detection
@@ -470,7 +468,6 @@ class InstanceDetectionService {
             icon: widgetInstance.icon,
             priority: instance, // Use instance number as priority
             lastSeen: currentTime,
-            category: widgetInstance.category as DetectedInstance['category'],
           };
 
           // Log first detection
@@ -516,7 +513,6 @@ class InstanceDetectionService {
             icon: widgetInstance.icon,
             priority: instance + 1,
             lastSeen: currentTime,
-            category: widgetInstance.category as DetectedInstance['category'],
           };
           const isFirstDetection = !this.state.batteries.has(instanceId);
           this.state.batteries.set(instanceId, detectedInstance);
@@ -562,7 +558,6 @@ class InstanceDetectionService {
             icon: widgetInstance.icon,
             priority: this.getTankPriority(fluidType, instance),
             lastSeen: currentTime,
-            category: widgetInstance.category as DetectedInstance['category'],
             fluidType,
             position: this.determinePosition(instance, fluidType),
           };
@@ -669,7 +664,6 @@ class InstanceDetectionService {
             icon,
             priority: instance + 20,
             lastSeen: currentTime,
-            category: 'environment',
             location,
           };
 

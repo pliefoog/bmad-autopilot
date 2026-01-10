@@ -365,7 +365,9 @@ const App = () => {
         }
 
         // Note: Widget lifecycle management is now fully event-driven via WidgetRegistrationService
-        // No explicit initialization needed - widgets update via onWidgetDetected/onWidgetUpdated events
+        // Widget lifecycle is fully event-driven via WidgetRegistrationService
+        // Widgets appear/disappear automatically based on sensor data availability
+        // No explicit initialization needed - widgets update via direct store updates
 
         // Status LED shows connection state - no toast needed
       } catch (error) {

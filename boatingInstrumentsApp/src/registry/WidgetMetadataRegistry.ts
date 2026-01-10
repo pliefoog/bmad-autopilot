@@ -4,15 +4,13 @@
  * Centralized registry for all widget metadata including:
  * - Icons (Ionicon names)
  * - Titles and instance titles
- * - Categories for organization
  * - Instance mapping for multi-instance widgets
  * - Type definitions for consistency
  *
  * This replaces scattered icon/title definitions across the codebase.
  */
 
-export type WidgetCategory = 'navigation' | 'environment' | 'engine' | 'power' | 'fluid';
-export type WidgetType = 'single' | 'multi-instance';
+export type WidgetInstanceType = 'single' | 'multi-instance';
 
 export interface InstanceMapping {
   title: string;
@@ -25,13 +23,10 @@ export interface InstanceMapping {
 
 export interface WidgetMetadata {
   id: string;
-  type: WidgetType;
+  type: WidgetInstanceType;
   title: string;
   icon: string; // Ionicon name (e.g., 'navigate-outline')
-  category: WidgetCategory;
-  description?: string;
   instanceMapping?: (instance: number, data?: any) => InstanceMapping;
-  maxInstances?: number;
 }
 
 // NMEA Engine Instance Mapping (marine convention for vessel layout)
@@ -79,8 +74,6 @@ const NMEA_TEMPERATURE_SOURCES: Record<number, InstanceMapping> = {
   15: { title: 'AFT CABIN', location: 'aftCabin', priority: 16, icon: 'bed-outline' },
 };
 
-// Legacy temperature instance mapping (for backward compatibility)
-const TEMPERATURE_INSTANCE_MAP: Record<number, InstanceMapping> = NMEA_TEMPERATURE_SOURCES;
 
 // NMEA 0183 Location Mapping (for temperature-location based IDs)
 // Maps location strings to NMEA 2000 source equivalents for consistency
@@ -120,16 +113,6 @@ const NMEA0183_LOCATION_MAP: Record<string, { source: number; instance?: number 
   aftCabin: { source: 15 },
 };
 
-// Tank Position Mapping for different fluid types
-const TANK_POSITIONS: Record<string, string[]> = {
-  fuel: ['PORT', 'STBD', 'CENTER', 'MAIN'],
-  freshWater: ['FRESH', 'POTABLE'],
-  grayWater: ['GRAY', 'WASTE'],
-  blackWater: ['BLACK', 'SEWAGE'],
-  liveWell: ['LIVE', 'BAIT'],
-  ballast: ['BALLAST'],
-};
-
 /**
  * Complete Widget Metadata Registry
  * All widgets must be defined here with consistent metadata
@@ -141,8 +124,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'single',
     title: 'GPS',
     icon: 'navigate-outline',
-    category: 'navigation',
-    description: 'Global Positioning System position and navigation data',
   },
 
   compass: {
@@ -150,8 +131,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'single',
     title: 'Compass',
     icon: 'compass-outline',
-    category: 'navigation',
-    description: 'Vessel heading and compass bearing',
   },
 
   speed: {
@@ -159,8 +138,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'single',
     title: 'Speed',
     icon: 'speedometer-outline',
-    category: 'navigation',
-    description: 'Speed over ground and through water',
   },
 
   wind: {
@@ -168,8 +145,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'single',
     title: 'Wind',
     icon: 'cloud-outline',
-    category: 'environment',
-    description: 'Wind speed and direction data',
   },
 
   depth: {
@@ -177,8 +152,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'single',
     title: 'Depth',
     icon: 'water-outline',
-    category: 'navigation',
-    description: 'Water depth from sounder',
   },
 
   autopilot: {
@@ -186,8 +159,13 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'single',
     title: 'Autopilot',
     icon: 'swap-horizontal-outline',
-    category: 'navigation',
-    description: 'Autopilot heading control and status',
+  },
+
+  navigation: {
+    id: 'navigation',
+    type: 'single',
+    title: 'Navigation',
+    icon: 'navigate-circle-outline',
   },
 
   // Multi-Instance Devices
@@ -196,9 +174,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'multi-instance',
     title: 'Engine',
     icon: 'settings-outline',
-    category: 'engine',
-    description: 'Engine parameters and performance data',
-    maxInstances: 8,
     instanceMapping: (instance: number, data?: any) => {
       const mapping = ENGINE_INSTANCE_MAP[instance];
       return (
@@ -216,52 +191,17 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'multi-instance',
     title: 'Battery',
     icon: 'battery-charging-outline',
-    category: 'power',
-    description: 'Battery voltage, current, and status',
-    maxInstances: 8,
     instanceMapping: (instance: number) => {
       const mapping = BATTERY_INSTANCE_MAP[instance];
       return mapping || { title: `BATTERY #${instance + 1}`, priority: instance + 10 };
     },
   },
 
-  tanks: {
-    id: 'tanks',
-    type: 'multi-instance',
-    title: 'Tank',
-    icon: 'cube-outline',
-    category: 'fluid',
-    description: 'Fluid tank levels and status',
-    maxInstances: 16,
-    instanceMapping: (instance: number, data?: any) => {
-      const fluidType = data?.fluidType || 'fuel';
-      const positions = TANK_POSITIONS[fluidType] || ['TANK'];
-      const position = positions[instance % positions.length] || `#${instance + 1}`;
-
-      return {
-        title: `${fluidType.toUpperCase()} ${position}`,
-        priority: instance + 1,
-        position,
-        // Use different icons based on fluid type
-        icon:
-          fluidType === 'fuel'
-            ? 'cube-outline'
-            : fluidType === 'freshWater'
-            ? 'water-outline'
-            : 'cube-outline',
-      };
-    },
-  },
-
-  // Tank Widget (singular) - for backward compatibility with createInstanceWidget
   tank: {
     id: 'tank',
     type: 'multi-instance',
     title: 'Tank',
     icon: 'cube-outline',
-    category: 'fluid',
-    description: 'Individual tank level and status',
-    maxInstances: 16,
     instanceMapping: (instance: number, data?: any) => {
       return {
         title: `Tank ${instance + 1}`,
@@ -278,9 +218,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'multi-instance',
     title: 'Temperature',
     icon: 'thermometer-outline',
-    category: 'environment',
-    description: 'Temperature sensors with NMEA 2000 source enumeration support',
-    maxInstances: 255, // NMEA 2000 supports instance 0-255
     instanceMapping: (instance: number, data?: any) => {
       // Handle location-based mapping for NMEA 0183 compatibility
       if (data?.fluidType || data?.location) {
@@ -317,9 +254,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'multi-instance',
     title: 'Weather Station',
     icon: 'partly-sunny-outline',
-    category: 'environment',
-    description: 'Atmospheric conditions monitoring (pressure, air temperature, humidity)',
-    maxInstances: 5, // Support up to 5 weather stations
     instanceMapping: (instance: number) => {
       if (instance === 0) {
         return {
@@ -344,8 +278,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'single',
     title: 'Theme',
     icon: 'color-palette-outline',
-    category: 'navigation',
-    description: 'Theme mode and brightness controls',
   },
 
   // Custom Widgets (definition-driven)
@@ -354,8 +286,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'single',
     title: 'Sailing Dashboard',
     icon: 'extension-puzzle-outline',
-    category: 'navigation',
-    description: 'Essential sailing metrics: Depth and Speed Over Ground',
   },
 
   weatherStation: {
@@ -363,8 +293,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'single',
     title: 'Weather Station',
     icon: 'extension-puzzle-outline',
-    category: 'environment',
-    description: 'Comprehensive weather data display',
   },
 
   dualEngineMonitor: {
@@ -372,8 +300,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'single',
     title: 'Twin Engine Monitor',
     icon: 'extension-puzzle-outline',
-    category: 'engine',
-    description: 'Side-by-side engine comparison',
   },
 
   crossPlatformDemo: {
@@ -381,8 +307,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'single',
     title: 'Platform Demo',
     icon: 'extension-puzzle-outline',
-    category: 'navigation',
-    description: 'Cross-platform component showcase',
   },
 
   customT1: {
@@ -390,8 +314,6 @@ export const WIDGET_METADATA_REGISTRY: Record<string, WidgetMetadata> = {
     type: 'single',
     title: 'Custom T1',
     icon: 'extension-puzzle-outline',
-    category: 'navigation',
-    description: 'Legacy custom widget',
   },
 };
 
@@ -413,42 +335,10 @@ export class WidgetMetadataRegistry {
   }
 
   /**
-   * Map NMEA 0183 temperature location to NMEA 2000 source
-   * This ensures consistency between NMEA 0183 and NMEA 2000 temperature handling
-   */
-  static mapLocationToNmeaSource(
-    location: string,
-  ): { source: number; mapping: InstanceMapping } | undefined {
-    const normalized = location.toLowerCase();
-    const sourceInfo = NMEA0183_LOCATION_MAP[normalized];
-    if (sourceInfo) {
-      const mapping = NMEA_TEMPERATURE_SOURCES[sourceInfo.source];
-      if (mapping) {
-        return { source: sourceInfo.source, mapping };
-      }
-    }
-    return undefined;
-  }
-
-  /**
-   * Get temperature source mapping by NMEA 2000 source ID
-   */
-  static getTemperatureSourceMapping(source: number): InstanceMapping | undefined {
-    return NMEA_TEMPERATURE_SOURCES[source];
-  }
-
-  /**
    * Get all available widget metadata
    */
   static getAllMetadata(): WidgetMetadata[] {
     return Object.values(WIDGET_METADATA_REGISTRY);
-  }
-
-  /**
-   * Get widgets by category
-   */
-  static getByCategory(category: WidgetCategory): WidgetMetadata[] {
-    return Object.values(WIDGET_METADATA_REGISTRY).filter((meta) => meta.category === category);
   }
 
   /**
@@ -495,14 +385,6 @@ export class WidgetMetadataRegistry {
     }
 
     return metadata.title;
-  }
-
-  /**
-   * Get widget category
-   */
-  static getCategory(widgetId: string): WidgetCategory | undefined {
-    const metadata = this.getMetadata(widgetId);
-    return metadata?.category;
   }
 }
 

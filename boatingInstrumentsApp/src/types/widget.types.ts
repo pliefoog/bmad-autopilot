@@ -36,23 +36,10 @@ export interface WidgetMeta {
   name: string;
   description: string;
   icon: string;
-  category: WidgetCategory;
   configurable: boolean;
   dataRequirements: string[];
   supportedUnits?: string[];
 }
-
-/**
- * Widget categories for organization
- */
-export type WidgetCategory =
-  | 'navigation'
-  | 'engine'
-  | 'environment'
-  | 'communication'
-  | 'safety'
-  | 'autopilot'
-  | 'utility';
 
 /**
  * Widget states for visual feedback
@@ -105,7 +92,6 @@ export interface WidgetPreset {
   id: string;
   name: string;
   description: string;
-  category: WidgetCategory;
   widgets: Omit<WidgetConfig, 'id'>[];
   thumbnail?: string;
 }

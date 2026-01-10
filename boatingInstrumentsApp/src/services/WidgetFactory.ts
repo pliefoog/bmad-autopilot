@@ -23,7 +23,6 @@ export interface WidgetInstance {
   instance?: number; // Instance number (0, 1, 2, ...)
   title: string; // Display title
   icon: string; // Ionicon name
-  category: string; // Widget category
   priority: number; // Display/sort priority
   metadata: InstanceMapping; // Full instance metadata
 }
@@ -182,14 +181,6 @@ export class WidgetFactory {
   }
 
   /**
-   * Get widget category
-   */
-  static getWidgetCategory(widgetId: string): string {
-    const { baseType } = this.parseWidgetId(widgetId);
-    return WidgetMetadataRegistry.getCategory(baseType) || 'navigation';
-  }
-
-  /**
    * Create a widget instance object with complete metadata
    */
   static createWidgetInstance(
@@ -206,7 +197,6 @@ export class WidgetFactory {
 
     const title = this.getWidgetTitle(widgetId, instanceData);
     const icon = this.getWidgetIcon(widgetId, instanceData);
-    const category = this.getWidgetCategory(widgetId);
 
     // Get instance metadata if applicable
     let instanceMetadata: InstanceMapping = {
@@ -224,7 +214,6 @@ export class WidgetFactory {
       instance,
       title,
       icon,
-      category,
       priority: instanceMetadata.priority,
       metadata: instanceMetadata,
     };
@@ -273,13 +262,6 @@ export class WidgetFactory {
    */
   static getAvailableWidgetTypes(): string[] {
     return WidgetMetadataRegistry.getAllMetadata().map((meta) => meta.id);
-  }
-
-  /**
-   * Get widget types by category
-   */
-  static getWidgetTypesByCategory(category: string): string[] {
-    return WidgetMetadataRegistry.getByCategory(category as any).map((meta) => meta.id);
   }
 
   /**

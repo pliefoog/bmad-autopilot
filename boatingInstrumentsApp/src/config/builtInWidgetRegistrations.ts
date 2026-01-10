@@ -39,7 +39,6 @@ function createWidgetConfig(
 export const DEPTH_WIDGET_REGISTRATION: WidgetRegistration = {
   widgetType: 'depth',
   displayName: 'Depth',
-  category: 'navigation',
   icon: 'water-outline',
   multiInstance: true,
   maxInstances: 3, // DPT, DBT, DBK
@@ -63,7 +62,6 @@ export const DEPTH_WIDGET_REGISTRATION: WidgetRegistration = {
 export const SPEED_WIDGET_REGISTRATION: WidgetRegistration = {
   widgetType: 'speed',
   displayName: 'Speed',
-  category: 'navigation',
   icon: 'speedometer-outline',
   multiInstance: true,
   maxInstances: 2, // GPS speed, log speed
@@ -94,7 +92,6 @@ export const SPEED_WIDGET_REGISTRATION: WidgetRegistration = {
 export const WIND_WIDGET_REGISTRATION: WidgetRegistration = {
   widgetType: 'wind',
   displayName: 'Wind',
-  category: 'navigation',
   icon: 'flag-outline',
   multiInstance: true,
   maxInstances: 2,
@@ -137,7 +134,6 @@ export const WIND_WIDGET_REGISTRATION: WidgetRegistration = {
 export const COMPASS_WIDGET_REGISTRATION: WidgetRegistration = {
   widgetType: 'compass',
   displayName: 'Compass',
-  category: 'navigation',
   icon: 'compass-outline',
   multiInstance: true,
   maxInstances: 2,
@@ -173,7 +169,6 @@ export const COMPASS_WIDGET_REGISTRATION: WidgetRegistration = {
 export const GPS_WIDGET_REGISTRATION: WidgetRegistration = {
   widgetType: 'gps',
   displayName: 'GPS',
-  category: 'navigation',
   icon: 'navigate-outline',
   multiInstance: true,
   maxInstances: 2,
@@ -223,15 +218,55 @@ export const GPS_WIDGET_REGISTRATION: WidgetRegistration = {
   },
 };
 
+// 6. Navigation Widget - Shows waypoint navigation data
+export const NAVIGATION_WIDGET_REGISTRATION: WidgetRegistration = {
+  widgetType: 'navigation',
+  displayName: 'Navigation',
+  icon: 'navigate-circle-outline',
+  multiInstance: false,
+  priority: 70,
+  expirationTimeout: 180000, // 3 minutes
+  requiredSensors: [
+    {
+      sensorType: 'navigation',
+      metricName: 'bearingToWaypoint',
+      required: true,
+      label: 'Bearing to Waypoint',
+    },
+  ],
+  optionalSensors: [
+    {
+      sensorType: 'navigation',
+      metricName: 'distanceToWaypoint',
+      required: false,
+      label: 'Distance to Waypoint',
+    },
+    {
+      sensorType: 'navigation',
+      metricName: 'crossTrackError',
+      required: false,
+      label: 'Cross Track Error',
+    },
+    {
+      sensorType: 'navigation',
+      metricName: 'velocityMadeGood',
+      required: false,
+      label: 'VMG',
+    },
+  ],
+  createWidget: (instance, sensorData) => {
+    return createWidgetConfig('navigation', instance, 'Navigation', 'navigate-circle-outline');
+  },
+};
+
 /**
  * AUTOPILOT WIDGETS
  */
 
-// 6. Autopilot Widget - Shows autopilot status and controls
+// 7. Autopilot Widget - Shows autopilot status and controls
 export const AUTOPILOT_WIDGET_REGISTRATION: WidgetRegistration = {
   widgetType: 'autopilot',
   displayName: 'Autopilot',
-  category: 'autopilot',
   icon: 'boat-outline',
   multiInstance: false,
   priority: 100,
@@ -288,7 +323,6 @@ export const AUTOPILOT_WIDGET_REGISTRATION: WidgetRegistration = {
 export const ENGINE_WIDGET_REGISTRATION: WidgetRegistration = {
   widgetType: 'engine',
   displayName: 'Engine',
-  category: 'engine',
   icon: 'cog-outline',
   multiInstance: true,
   maxInstances: 8,
@@ -353,7 +387,6 @@ export const ENGINE_WIDGET_REGISTRATION: WidgetRegistration = {
 export const BATTERY_WIDGET_REGISTRATION: WidgetRegistration = {
   widgetType: 'battery',
   displayName: 'Battery',
-  category: 'environment',
   icon: 'battery-charging-outline',
   multiInstance: true,
   maxInstances: 8,
@@ -404,7 +437,6 @@ export const BATTERY_WIDGET_REGISTRATION: WidgetRegistration = {
 export const TANK_WIDGET_REGISTRATION: WidgetRegistration = {
   widgetType: 'tank',
   displayName: 'Tank',
-  category: 'environment',
   icon: 'water',
   multiInstance: true,
   maxInstances: 8,
@@ -446,7 +478,6 @@ export const TANK_WIDGET_REGISTRATION: WidgetRegistration = {
 export const TEMPERATURE_WIDGET_REGISTRATION: WidgetRegistration = {
   widgetType: 'temperature',
   displayName: 'Temperature',
-  category: 'environment',
   icon: 'thermometer-outline',
   multiInstance: true,
   maxInstances: 8,
@@ -480,7 +511,6 @@ export const TEMPERATURE_WIDGET_REGISTRATION: WidgetRegistration = {
 export const WEATHER_WIDGET_REGISTRATION: WidgetRegistration = {
   widgetType: 'weather',
   displayName: 'Weather Station',
-  category: 'environment',
   icon: 'partly-sunny-outline',
   multiInstance: true,
   maxInstances: 5,
@@ -530,6 +560,7 @@ export const BUILT_IN_WIDGET_REGISTRATIONS: WidgetRegistration[] = [
   WIND_WIDGET_REGISTRATION, // Priority: 85
   COMPASS_WIDGET_REGISTRATION, // Priority: 80
   GPS_WIDGET_REGISTRATION, // Priority: 75
+  NAVIGATION_WIDGET_REGISTRATION, // Priority: 70
   ENGINE_WIDGET_REGISTRATION, // Priority: 70
   BATTERY_WIDGET_REGISTRATION, // Priority: 65
   TANK_WIDGET_REGISTRATION, // Priority: 60

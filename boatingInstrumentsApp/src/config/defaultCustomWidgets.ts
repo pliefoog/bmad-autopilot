@@ -228,9 +228,6 @@ export interface CustomWidgetDefinition {
   /** Human-readable description for widget picker */
   description: string;
 
-  /** Widget category for grouping in UI */
-  category: 'navigation' | 'engine' | 'environment' | 'autopilot' | 'utility' | 'custom';
-
   /** Ionicons icon name */
   icon: string;
 
@@ -456,7 +453,6 @@ export const SAILING_DASHBOARD_DEFINITION: CustomWidgetDefinition = {
   id: 'sailingDash',
   name: 'Sailing Dashboard',
   description: 'Essential sailing metrics: Depth and Speed Over Ground',
-  category: 'navigation',
   icon: 'boat-outline',
   deletable: true,
   priority: 88,
@@ -533,7 +529,6 @@ export const WEATHER_STATION_DEFINITION: CustomWidgetDefinition = {
   id: 'weatherStation',
   name: 'Weather Station',
   description: 'Comprehensive weather metrics with trend visualization',
-  category: 'environment',
   icon: 'cloud-outline',
   deletable: true,
   priority: 75,
@@ -616,7 +611,6 @@ export const DUAL_ENGINE_MONITOR_DEFINITION: CustomWidgetDefinition = {
   id: 'dualEngineMonitor',
   name: 'Twin Engine Monitor',
   description: 'Side-by-side engine comparison',
-  category: 'engine',
   icon: 'hardware-chip-outline',
   deletable: true,
   priority: 70,
@@ -676,7 +670,6 @@ export const CROSS_PLATFORM_EXAMPLE: CustomWidgetDefinition = {
   id: 'crossPlatformDemo',
   name: 'Cross-Platform Demo',
   description: 'Demonstrates platform-specific rendering',
-  category: 'utility',
   icon: 'phone-portrait-outline',
   deletable: true,
   priority: 50,
@@ -724,7 +717,6 @@ export const CUSTOM_T1_DEFINITION: CustomWidgetDefinition = {
   id: 'customT1',
   name: 'Custom T1',
   description: 'Essential sailing metrics: Depth and Speed',
-  category: 'navigation',
   icon: 'analytics-outline',
   deletable: true, // Users can remove this widget
   priority: 88, // Between depth (90) and wind (85)
@@ -876,7 +868,6 @@ export function customWidgetToRegistration(definition: CustomWidgetDefinition): 
   return {
     widgetType: definition.id,
     displayName: definition.name,
-    category: definition.category,
     icon: definition.icon,
     multiInstance: definition.multiInstance,
     maxInstances: definition.multiInstance ? -1 : 1,
@@ -887,15 +878,6 @@ export function customWidgetToRegistration(definition: CustomWidgetDefinition): 
 
     createWidget: (instance: number, sensorData: SensorValueMap): WidgetConfig => {
       return createCustomWidgetConfig(definition, instance);
-    },
-
-    validateData: (sensorData: SensorValueMap): boolean => {
-      // Ensure all required sensors have valid numeric values
-      return requiredSensors.every((dep) => {
-        const key = `${dep.sensorType}.${dep.instance ?? 0}.${dep.metricName}`;
-        const value = sensorData[key];
-        return typeof value === 'number' && !isNaN(value);
-      });
     },
   };
 }
