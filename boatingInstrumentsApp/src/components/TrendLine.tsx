@@ -62,12 +62,12 @@ export interface TrendLineProps extends SensorMetricProps {
  * TrendLine Component
  *
  * A configurable trend line chart with axis support for displaying time-series data.
- * MUST be used within TemplatedWidget (or other SensorContext provider).
+ * Uses explicit props pattern (sensorType, instance, metricKey) - no React Context.
  *
  * Usage Pattern:
- *   TrendLine metricKey="pressure" timeWindowMs={300000} showXAxis showYAxis
- *   TrendLine metricKey="depth.max" timeWindowMs={300000} - for virtual stat metric
- *   Automatically gets sensor/instance from SensorContext
+ *   <TrendLine sensorType="weather" instance={0} metricKey="pressure" timeWindowMs={300000} showXAxis showYAxis />
+ *   <TrendLine sensorType="depth" instance={0} metricKey="depth.max" timeWindowMs={300000} /> - for virtual stat metric
+ *   Sensor/instance passed explicitly via props (Jan 2025 refactor)
  *
  * Virtual Metrics Support (Dot Notation):
  * - Base metric: metricKey="depth" - renders current depth values over time
@@ -146,8 +146,14 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     return baseMnemonic;
   }, [fieldConfig?.mnemonic, baseMetric, metric]);
 
+  // Get sensor instance using explicit props (not context)
+  const sensorInstance = useNmeaStore(
+    (state) => state.getSensorInstance(sensorType, instance),
+    (a, b) => a === b
+  );
+
   // Get current unit from MetricValue to display in label (like MetricCell)
-  const currentMetric = context?.sensorInstance?.getMetric(metric);
+  const currentMetric = sensorInstance?.getMetric(metric);
   const unit = currentMetric?.unit ?? '';
   // Sanitize unit - ensure it's not just whitespace or a single period
   const sanitizedUnit = unit.trim();
@@ -293,7 +299,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       sensor: `${sensor}.${instance}.${metric}`,
       dataPoints: data.length,
       timeWindow: timeWindowMs,
-      instanceFromContext: context?.sensorInstance?.instance,
+      instanceFromProps: instance,
       sensorTimestamp,
       firstPoint: data[0],
       lastPoint: data[data.length - 1],
@@ -308,12 +314,12 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   // Get display-value stats from virtual metrics (depth.min, depth.max, depth.avg)
   // Uses consistent calculation method: SI values → stat → convert to display
   const displayStats = useMemo(() => {
-    if (!context?.sensorInstance || !metric) return undefined;
+    if (!sensorInstance || !metric) return undefined;
 
     // Use virtual metrics for consistent min/max/avg calculation
-    const minMetric = context.sensorInstance.getMetric(`${metric}.min`);
-    const maxMetric = context.sensorInstance.getMetric(`${metric}.max`);
-    const avgMetric = context.sensorInstance.getMetric(`${metric}.avg`);
+    const minMetric = sensorInstance.getMetric(`${metric}.min`);
+    const maxMetric = sensorInstance.getMetric(`${metric}.max`);
+    const avgMetric = sensorInstance.getMetric(`${metric}.avg`);
 
     if (!minMetric || !maxMetric || !avgMetric) return undefined;
 
@@ -323,7 +329,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       avg: typeof avgMetric.value === 'number' ? avgMetric.value : NaN,
       unit: minMetric.unit,
     };
-  }, [context?.sensorInstance, metric, sensorTimestamp]);
+  }, [sensorInstance, metric, sensorTimestamp]);
 
   // Derive all colors from theme
   const trendlineColor = usePrimaryLine ? theme.trendline.primary : theme.trendline.secondary;
