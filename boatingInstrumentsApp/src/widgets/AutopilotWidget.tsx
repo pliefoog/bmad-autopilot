@@ -1,5 +1,5 @@
 import React from 'react';
-import { TemplatedWidget } from '../components/TemplatedWidget';
+import TemplatedWidget from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
@@ -9,29 +9,14 @@ interface AutopilotWidgetProps {
 }
 
 /**
- * AutopilotWidget - Registry-First Declarative Display Widget
- *
- * **Multi-Sensor Architecture:**
- * - Primary: autopilot (actualHeading, targetHeading, rudderAngle, mode, headingSource)
- * - Secondary: compass (rateOfTurn)
- * - Uses sensorKey prop for compass metrics
- *
- * **Before (371 lines):**
- * - Manual metric extraction from multiple sensors
- * - Manual display value creation
- * - Manual alarm state extraction
- * - UnifiedWidgetGrid setup with explicit props
- * - Complex control button logic and command manager
- *
- * **After (60 lines):**
- * - Pure declarative display configuration
- * - Auto-fetch via MetricCells with sensorKey
- * - TemplatedWidget handles layout
- * - Display-only (control functionality removed)
- *
- * **Layout:** 2Rx2C primary (HDG/TGT, RUDR/TURN) + 2Rx2C secondary (MODE/HDG SRC with full-width)
- *
- * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
+ * Autopilot Widget - Declarative Configuration
+ * Template: 2Rx2C-SEP-2Rx2C-WIDE
+ * Primary: Actual Heading, Target Heading, Rudder Angle, Rate of Turn
+ * Secondary: Mode, Heading Source (full-width cells)
+ * Multi-sensor: Uses both 'autopilot' and 'compass' sensors
+ * 
+ * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
+ * MetricCells subscribe individually via useMetric hook. Enables fine-grained reactivity.
  */
 export const AutopilotWidget: React.FC<AutopilotWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (
@@ -39,20 +24,21 @@ export const AutopilotWidget: React.FC<AutopilotWidgetProps> = React.memo(({ id,
       template="2Rx2C-SEP-2Rx2C-WIDE"
       sensorType="autopilot"
       instanceNumber={instanceNumber}
-      additionalSensors={[{ sensorType: 'compass', instance: instanceNumber }]}
-      testID={`autopilot-widget-${instanceNumber}`}
+      testID={id}
     >
       {/* Primary Grid: Headings and Rudder */}
-      <PrimaryMetricCell metricKey="actualHeading" />
-      <PrimaryMetricCell metricKey="targetHeading" />
-      <PrimaryMetricCell metricKey="rudderAngle" />
-      <PrimaryMetricCell sensorKey="compass" metricKey="rateOfTurn" />
+      <PrimaryMetricCell sensorType="autopilot" instance={instanceNumber} metricKey="actualHeading" />
+      <PrimaryMetricCell sensorType="autopilot" instance={instanceNumber} metricKey="targetHeading" />
+      <PrimaryMetricCell sensorType="autopilot" instance={instanceNumber} metricKey="rudderAngle" />
+      <PrimaryMetricCell sensorType="compass" instance={instanceNumber} metricKey="rateOfTurn" />
 
-      {/* Secondary Grid: Mode and Heading Source (full-width cells) */}
-      <SecondaryMetricCell metricKey="mode" />
-      <SecondaryMetricCell metricKey="headingSource" />
+      {/* Secondary Grid: Mode and Heading Source */}
+      <SecondaryMetricCell sensorType="autopilot" instance={instanceNumber} metricKey="mode" />
+      <SecondaryMetricCell sensorType="autopilot" instance={instanceNumber} metricKey="headingSource" />
     </TemplatedWidget>
   );
 });
+
+AutopilotWidget.displayName = 'AutopilotWidget';
 
 export default AutopilotWidget;

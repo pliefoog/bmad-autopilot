@@ -22,6 +22,7 @@ export const TanksWidget: React.FC<TanksWidgetProps> = React.memo(({ id, instanc
         template="2Rx1C-SEP-2Rx1C"
         sensorType="tank"
         instanceNumber={instanceNumber}
+        testID={id}
       >
         {
           [

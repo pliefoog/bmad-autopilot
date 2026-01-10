@@ -1,5 +1,5 @@
 import React from 'react';
-import { TemplatedWidget } from '../components/TemplatedWidget';
+import TemplatedWidget from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
 
@@ -9,29 +9,13 @@ interface CompassWidgetProps {
 }
 
 /**
- * CompassWidget - Registry-First Declarative Implementation
- *
- * **Before (351 lines):**
- * - Manual metric extraction for headings, variation, deviation
- * - Manual display value creation and formatting
- * - Manual stale data detection
- * - UnifiedWidgetGrid with explicit props
- * - Complex heading calculation logic
- *
- * **After (~60 lines):**
- * - Pure declarative configuration
- * - Auto-fetch via MetricCells
- * - TemplatedWidget handles layout
- * - All formatting in ConversionRegistry
- *
- * **Layout:** 2Rx1C primary (TRUE/MAG headings) + 2Rx1C secondary (VAR/DEV)
- *
- * **Removed features:**
- * - Interactive mode toggle (TRUE/MAGNETIC) - not used in practice
- * - SVG CompassRose visualization - could be added back if needed
- * - Manual cardinal direction calculation - handled by formatter
- *
- * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
+ * Compass Widget - Declarative Configuration
+ * Template: 2Rx1C-SEP-2Rx1C
+ * Primary: True and Magnetic Heading
+ * Secondary: Variation and Deviation
+ * 
+ * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
+ * MetricCells subscribe individually via useMetric hook. Enables fine-grained reactivity.
  */
 export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (
@@ -39,7 +23,7 @@ export const CompassWidget: React.FC<CompassWidgetProps> = React.memo(({ id, ins
       template="2Rx1C-SEP-2Rx1C"
       sensorType="compass"
       instanceNumber={instanceNumber}
-      testID={`compass-widget-${instanceNumber}`}
+      testID={id}
     >
       {/* Primary Grid: True and Magnetic Heading */}
       <PrimaryMetricCell sensorType="compass" instance={instanceNumber} metricKey="trueHeading" />

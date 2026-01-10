@@ -1,7 +1,7 @@
 import React from 'react';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
-import { TemplatedWidget } from '../components/TemplatedWidget';
+import TemplatedWidget from '../components/TemplatedWidget';
 import { EmptyCell } from 'components/EmptyCell';
 
 interface BatteryWidgetProps {
@@ -10,39 +10,21 @@ interface BatteryWidgetProps {
 }
 
 /**
- * Battery Widget - Registry-First Declarative Implementation (Architecture v2.0)
- *
- * **Version-Based Reactivity:**
- * - Uses useSensorVersion() for efficient re-renders
- * - Eliminates timestamp subscription workaround
- * - Only re-renders when battery sensor data actually changes
- *
- * **Before (237 lines):**
- * - Manual metric extraction
- * - Manual display value creation
- * - Manual alarm state extraction
- * - Manual mnemonic mapping
- * - UnifiedWidgetGrid setup
- * - Dual subscriptions (instance + timestamp)
- *
- * **After (25 lines):**
- * - Pure configuration
- * - Auto-fetch everything
- * - TemplatedWidget handles layout
- * - MetricCells handle display
- * - Single version-based subscription
- *
- * **Layout:** 2Rx2C primary (VLT, AMP, TMP, SOC) + 2Rx2C secondary (CAP, CHEM, NOM, NAME)
- *
- * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
+ * Battery Widget - Declarative Configuration
+ * Template: 2Rx2C-SEP-2Rx2C
+ * Primary: Voltage, Current, Temperature, State of Charge
+ * Secondary: Capacity, Chemistry, Nominal Voltage
+ * 
+ * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
+ * MetricCells subscribe individually via useMetric hook. Enables fine-grained reactivity.
  */
-export const BatteryWidget: React.FC<Props> = React.memo(({ id, instanceNumber = 0 }) => {
+export const BatteryWidget: React.FC<BatteryWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (
     <TemplatedWidget
       template="2Rx2C-SEP-2Rx2C"
       sensorType="battery"
       instanceNumber={instanceNumber}
-      testID={`battery-widget-${instanceNumber}`}
+      testID={id}
     >
       {/* Primary Grid: 2x2 critical metrics */}
       <PrimaryMetricCell sensorType="battery" instance={instanceNumber} metricKey="voltage" />
@@ -58,5 +40,7 @@ export const BatteryWidget: React.FC<Props> = React.memo(({ id, instanceNumber =
     </TemplatedWidget>
   );
 });
+
+BatteryWidget.displayName = 'BatteryWidget';
 
 export default BatteryWidget;

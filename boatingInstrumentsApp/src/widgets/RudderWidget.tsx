@@ -3,7 +3,7 @@ import { View, Text } from 'react-native';
 import Svg, { Circle, Line, Polygon, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../store/themeStore';
 import { useNmeaStore } from '../store/nmeaStore';
-import { TemplatedWidget } from '../components/TemplatedWidget';
+import TemplatedWidget from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 
 interface RudderWidgetProps {
@@ -12,39 +12,21 @@ interface RudderWidgetProps {
 }
 
 /**
- * RudderWidget - Registry-First Declarative Implementation with SVG Visualization
- *
- * **Before (313 lines):**
- * - Manual metric extraction from autopilot sensor
- * - Manual display value creation and formatting
- * - Manual alarm state extraction
- * - Complex TouchableOpacity container with styling
- * - Manual separator and layout management
- *
- * **After (~110 lines):**
- * - Pure declarative configuration for metrics
- * - Auto-fetch via MetricCell
- * - TemplatedWidget handles layout
- * - SVG RudderIndicator component preserved (unique to rudder)
- *
- * **Layout:** 2Rx1C primary (rudderAngle) + Custom secondary (SVG visualization)
- *
- * **Unique Features:**
- * - SVG rudder indicator with boat outline
- * - Visual feedback for angle (color-coded: green=0°, yellow>20°, red>30°)
- * - Port/Starboard labels
- *
- * NO SUBSCRIPTIONS: Widget is pure layout, TemplatedWidget handles store access
+ * Rudder Widget - Declarative Configuration with SVG Visualization
+ * Template: 2Rx1C-SEP-NONE
+ * Primary: Rudder Angle
+ * Custom: SVG rudder indicator with boat outline
+ * 
+ * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
+ * MetricCells subscribe individually via useMetric hook. Enables fine-grained reactivity.
  */
 export const RudderWidget: React.FC<RudderWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
-  const theme = useTheme();
-
   return (
     <TemplatedWidget
       template="2Rx1C-SEP-NONE"
       sensorType="autopilot"
       instanceNumber={instanceNumber}
-      testID={`rudder-widget-${instanceNumber}`}
+      testID={id}
     >
       {/* Primary Grid: Rudder Angle */}
       <PrimaryMetricCell sensorType="autopilot" instance={instanceNumber} metricKey="rudderAngle" />
