@@ -787,22 +787,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
     return Array.from(this._history.keys());
   }
 
-  /**
-   * Re-enrich all metrics (OBSOLETE)
-   * 
-   * NOTE: With SensorDataRegistry architecture, this method is obsolete.
-   * Raw SI values are stored immutably; enrichment happens on-demand via MetricValue.
-   * This method is kept for backward compatibility but performs no operation.
-   *
-   * @deprecated Use MetricValue.enrich() which is called automatically on getMetric()
-   */
-  reEnrich(): void {
-    log.app('Re-enrichment called (no-op with AdaptiveHistoryBuffer)', () => ({
-      sensorType: this.sensorType,
-      instance: this.instance,
-      metricsCount: this._history.size,
-    }));
-  }
+
 
   /**
    * Add metric to history (internal)

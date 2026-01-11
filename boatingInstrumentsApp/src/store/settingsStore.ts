@@ -90,25 +90,10 @@ interface SettingsState {
   themeSettings: ThemeSettings;
 
   /**
-   * ⚠️ DEPRECATED: Legacy unit configuration
-   *
-   * This object is NO LONGER used for widget display.
-   * All widgets now use:
-   *   1. MetricValue.formattedValue (respects presentationStore settings)
-   *   2. presentationStore.REGION_DEFAULTS (single source of truth)
-   *
-   * **Current Usage:**
-   * - Only used internally by useUnitConversion hook
-   * - useUnitConversion only used by GPSWidget for date/time formatting (non-numeric)
-   *
-   * **Do NOT:**
-   * - Read from this in widgets (use MetricValue instead)
-   * - Add new categories here (add to presentationStore instead)
-   * - Use for sensor data conversion (use ConversionRegistry + MetricValue)
-   *
-   * @deprecated Use presentationStore.REGION_DEFAULTS for unit preferences
-   * @see src/presentation/presentationStore.ts
-   * @see src/types/MetricValue.ts
+   * Legacy unit configuration - use presentationStore.REGION_DEFAULTS instead
+   * 
+   * This object is kept for backward compatibility with useUnitConversion hook.
+   * Widgets should use MetricValue.formattedValue which respects presentationStore settings.
    */
   units: {
     depth: 'meters' | 'feet' | 'fathoms';

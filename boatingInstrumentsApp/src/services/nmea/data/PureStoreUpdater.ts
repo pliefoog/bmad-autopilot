@@ -246,7 +246,6 @@ export class PureStoreUpdater {
               data: {
                 speed: windData.windSpeed,
                 direction: windData.windAngle,
-                angle: windData.windAngle, // @deprecated - kept for backward compatibility
               },
             });
           }

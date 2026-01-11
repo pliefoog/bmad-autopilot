@@ -92,18 +92,11 @@ export interface SensorConfiguration {
   lastModified?: number; // Timestamp of last threshold change
 }
 
-/**
- * @deprecated Use SensorConfiguration instead
- * Kept for backward compatibility during migration
- */
-export type SensorAlarmThresholds = SensorConfiguration;
-
 export interface BaseSensorData {
   name: string; // Human-readable instance name
   timestamp: number; // When this data was last updated
   history?: TimeSeriesBuffer<number>; // Single-value history for most sensors
   historyMulti?: TimeSeriesBuffer<Record<string, number>>; // Multi-dimensional history for complex sensors
-  alarmThresholds?: SensorConfiguration; // Per-instance alarm configuration (deprecated field - use SensorInstance.thresholds)
   // NOTE: Display fields now managed by SensorInstance.metrics (MetricValue instances)
 }
 
@@ -139,9 +132,6 @@ export interface WindSensorData extends BaseSensorData {
   speed?: number; // PRIMARY metric - apparent wind speed
   trueDirection?: number; // Secondary metric - true wind direction
   trueSpeed?: number; // Secondary metric - true wind speed
-  // Legacy fields for backward compatibility
-  angle?: number; // @deprecated Use 'direction' instead
-  trueAngle?: number; // @deprecated Use 'trueDirection' instead
 }
 
 export interface SpeedSensorData extends BaseSensorData {

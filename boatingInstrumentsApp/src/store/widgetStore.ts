@@ -266,11 +266,8 @@ export const useWidgetStore = create<WidgetStore>()(
           set({ enableWidgetAutoRemoval: enabled });
         },
 
-        // DEPRECATED: Expiration logic moved to WidgetRegistrationService (Jan 2026)
-        // Kept for backward compatibility during migration
         cleanupExpiredWidgetsWithConfig: () => {
-          // No-op: Widget expiration now handled by WidgetRegistrationService.checkExpiredWidgets()
-          // This method is called from timer in WidgetRegistrationService.initialize()
+          // No-op: Widget expiration handled by WidgetRegistrationService.checkExpiredWidgets()
         },
 
         // ========================================

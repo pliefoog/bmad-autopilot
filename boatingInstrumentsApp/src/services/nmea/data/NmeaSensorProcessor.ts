@@ -871,7 +871,6 @@ export class NmeaSensorProcessor {
     const windData: Partial<WindSensorData> = {
       name: `Wind ${instance > 0 ? `#${instance}` : 'Sensor'}`.trim(),
       direction: normalizedAngle, // Normalized wind direction in degrees
-      angle: normalizedAngle, // @deprecated - kept for backward compatibility
       speed: windSpeedKnots, // Wind speed in knots (base unit)
       timestamp: timestamp,
     };
@@ -879,7 +878,6 @@ export class NmeaSensorProcessor {
     // Set true or apparent wind based on reference
     if (fields.reference === 'T') {
       windData.trueDirection = fields.wind_angle;
-      windData.trueAngle = fields.wind_angle; // @deprecated - kept for backward compatibility
       windData.trueSpeed = windSpeedKnots;
     }
 
@@ -925,7 +923,6 @@ export class NmeaSensorProcessor {
     const windData: Partial<WindSensorData> = {
       name: 'Wind Sensor',
       direction: normalizedAngle,
-      angle: normalizedAngle, // @deprecated
       speed: fields.wind_speed_knots,
       timestamp: timestamp,
     };
@@ -974,7 +971,6 @@ export class NmeaSensorProcessor {
     const windData: Partial<WindSensorData> = {
       name: 'Wind Sensor',
       trueDirection: normalizedAngle,
-      trueAngle: normalizedAngle, // @deprecated
       trueSpeed: fields.wind_speed_knots,
       timestamp: timestamp,
     };

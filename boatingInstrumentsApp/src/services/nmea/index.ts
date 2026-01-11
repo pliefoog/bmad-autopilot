@@ -22,9 +22,6 @@ export * from './pgnParser';
 // Autopilot command services
 export * from './AutopilotCommands';
 
-// Instance detection utilities
-export * from './instanceDetection';
-
 // NMEA data types
 export * from './types';
 

@@ -43,9 +43,8 @@ export interface TrendLineProps extends SensorMetricProps {
   maxValue?: number; // Force maximum value
   forceZero?: boolean; // Force axis to include zero (useful for depth charts)
 
-  // Threshold configuration (DEPRECATED - thresholds now auto-subscribed from alarm config)
-  // NOTE: These props are ignored. Thresholds are now derived from CriticalAlarmConfiguration
-  // and automatically converted to display units using the presentation system.
+  // Threshold configuration
+  // NOTE: Thresholds are derived from CriticalAlarmConfiguration and automatically converted to display units.
   usePrimaryLine?: boolean; // Use primary trendline color (default) vs secondary
 
   // Styling
