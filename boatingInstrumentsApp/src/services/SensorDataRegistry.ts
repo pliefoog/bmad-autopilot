@@ -171,7 +171,7 @@ export class SensorDataRegistry {
     // Service returns Map<fieldName, MetricValue> of calculated metrics
     let calculatedMetrics: Map<string, any>;
     try {
-      calculatedMetrics = this.calculatedMetricsService.compute(sensor, changedMetrics);
+      calculatedMetrics = this.calculatedMetricsService.compute(sensor);
     } catch (error) {
       log.app('❌ Error computing calculated metrics', () => ({
         sensorType,

@@ -19,7 +19,7 @@
  * **Usage:**
  * ```typescript
  * const service = new CalculatedMetricsService(registry);
- * const results = service.compute(sensorInstance, changedMetrics);
+ * const results = service.compute(sensorInstance);
  * // Returns Map of calculated metric names to MetricValue objects
  * ```
  */
@@ -278,10 +278,9 @@ export class CalculatedMetricsService {
    * Compute all applicable calculated metrics for sensor instance
    * 
    * @param sensor - Sensor instance to compute metrics for
-   * @param changedMetrics - Set of metrics that changed (used for input filtering only)
    * @returns Map of calculated metric names to MetricValue objects
    */
-  compute(sensor: SensorInstance, changedMetrics: Set<string>): Map<string, MetricValue> {
+  compute(sensor: SensorInstance): Map<string, MetricValue> {
     const allResults = new Map<string, MetricValue>();
 
     for (const calculator of this.calculators) {
@@ -290,7 +289,7 @@ export class CalculatedMetricsService {
       try {
         const results = calculator.calculate(sensor, this.registry);
         
-        // Merge results (no mutation of input changedMetrics)
+        // Merge results into accumulated map
         results.forEach((metric, key) => {
           allResults.set(key, metric);
         });
