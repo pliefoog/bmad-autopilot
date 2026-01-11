@@ -42,6 +42,7 @@
 
 import { SensorType } from '../types/SensorData';
 import { useNmeaStore } from '../store/nmeaStore';
+import { sensorRegistry } from './SensorDataRegistry';
 import { usePresentationStore } from '../presentation/presentationStore';
 import { SENSOR_CONFIG_REGISTRY, getAlarmDefaults } from '../registry/SensorConfigRegistry';
 import { DataCategory } from '../presentation/categories';
@@ -138,7 +139,7 @@ class ThresholdPresentationServiceClass {
     const thresholds = nmeaStore.getSensorThresholds(sensorType, instance);
 
     // Get defaults from registry for min/max
-    const sensorData = nmeaStore.nmeaData.sensors[sensorType]?.[instance];
+    const sensorInstance = sensorRegistry.get(sensorType, instance);
     const context = thresholds?.context || {};
     const defaults = getAlarmDefaults(sensorType, context);
 

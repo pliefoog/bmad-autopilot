@@ -6,7 +6,14 @@
  * - Connection status (UI indicators)
  * - Message metadata (count, format)
  *
- * Sensor data moved to SensorDataRegistry (outside Zustand).
+ * **Architecture Changes (Registry Refactor):**
+ * ✅ SensorDataRegistry stores all sensor instances (outside Zustand)
+ * ✅ MetricContext provides React hooks for fine-grained subscriptions
+ * ✅ Raw SI values stored immutably (no re-enrichment coordinator needed)
+ * ✅ Alarm evaluation handled by AlarmEvaluator service
+ * ✅ Zustand DevTools enabled (no class instance serialization issues)
+ * ✅ Clean separation of concerns (UI state vs data storage)
+ *
  * This enables:
  * - ✅ Zustand DevTools (no class instances in state)
  * - ✅ Targeted subscriptions (registry notifies changed metrics)
@@ -16,8 +23,6 @@
  * - sensors removed from state (use sensorRegistry.get() instead)
  * - updateSensorData delegates to sensorRegistry.update()
  * - DevTools re-enabled (no serialization issues)
- * - No ReEnrichmentCoordinator (raw SI values don't need re-enrichment)
- * - No SensorConfigCoordinator (handled elsewhere)
  */
 
 import { create } from 'zustand';

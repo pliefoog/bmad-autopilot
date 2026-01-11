@@ -735,7 +735,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
   /**
    * Update thresholds for specific metric
-   * Called by SensorConfigCoordinator when config changes
+   * Called by SensorConfigDialog when user changes threshold configuration
    *
    * @param metricKey - Metric field name
    * @param thresholds - New threshold configuration
@@ -788,12 +788,13 @@ export class SensorInstance<T extends SensorData = SensorData> {
   }
 
   /**
-   * Re-enrich all metrics
-   * Called by ReEnrichmentCoordinator on presentation change
+   * Re-enrich all metrics (OBSOLETE)
+   * 
+   * NOTE: With SensorDataRegistry architecture, this method is obsolete.
+   * Raw SI values are stored immutably; enrichment happens on-demand via MetricValue.
+   * This method is kept for backward compatibility but performs no operation.
    *
-   * NOTE: With AdaptiveHistoryBuffer, we store raw SI values.
-   * Display values are computed on-demand via MetricValue.
-   * This method is now a no-op but kept for coordinator compatibility.
+   * @deprecated Use MetricValue.enrich() which is called automatically on getMetric()
    */
   reEnrich(): void {
     log.app('Re-enrichment called (no-op with AdaptiveHistoryBuffer)', () => ({

@@ -14,6 +14,7 @@
  */
 
 import { log } from '../../../utils/logging/logger';
+import { sensorRegistry } from '../../SensorDataRegistry';
 
 import type { ParsedNmeaMessage } from '../parsing/PureNmeaParser';
 import { normalizeApparentWindAngle, normalizeTrueWindAngle } from '../../../utils/marineAngles';
@@ -329,11 +330,10 @@ export class NmeaSensorProcessor {
 
     // DBT measures depth below transducer (MEDIUM PRIORITY)
     // Get existing depth sensor to check if higher priority (DPT) already set the depth
-    const existingSensor = useNmeaStore.getState().nmeaData.sensors.depth?.[instance] as
-      | DepthSensorData
-      | undefined;
+    const existingSensor = sensorRegistry.get('depth', instance);
+    const existingDepthData = existingSensor?.getCurrentData() as DepthSensorData | undefined;
     // Only skip update if a HIGHER priority source (DPT) has already set the depth
-    const shouldUpdatePrimaryDepth = existingSensor?.depthSource !== 'DPT';
+    const shouldUpdatePrimaryDepth = existingDepthData?.depthSource !== 'DPT';
 
     const depthData: Partial<DepthSensorData> = {
       name: `Depth Sounder${instance > 0 ? ` #${instance}` : ''}`,
@@ -439,12 +439,11 @@ export class NmeaSensorProcessor {
 
     // DBK measures depth below keel (LOWEST PRIORITY)
     // Get existing depth sensor to check if higher priority (DPT/DBT) already set the depth
-    const existingSensor = useNmeaStore.getState().nmeaData.sensors.depth?.[instance] as
-      | DepthSensorData
-      | undefined;
+    const existingSensor = sensorRegistry.get('depth', instance);
+    const existingDepthData = existingSensor?.getCurrentData() as DepthSensorData | undefined;
     // Only skip update if a HIGHER priority source (DPT or DBT) has already set the depth
     const shouldUpdatePrimaryDepth =
-      !existingSensor?.depthSource || existingSensor.depthSource === 'DBK';
+      !existingDepthData?.depthSource || existingDepthData.depthSource === 'DBK';
 
     const depthData: Partial<DepthSensorData> = {
       name: `Depth Sounder${instance > 0 ? ` #${instance}` : ''}`,
@@ -2539,7 +2538,8 @@ export class NmeaSensorProcessor {
       const instance = 0; // Navigation data typically uses instance 0
 
       // Get current navigation data or initialize
-      const currentNav = useNmeaStore.getState().nmeaData.sensors.navigation?.[instance] || {};
+      const existingSensor = sensorRegistry.get('navigation', instance);
+      const currentNav = (existingSensor?.getCurrentData() as NavigationSensorData | undefined) || {};
       const navigationUpdate: Partial<NavigationSensorData> = {
         ...currentNav,
         timestamp,

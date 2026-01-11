@@ -5,6 +5,7 @@
  */
 
 import { useNmeaStore } from '../store/nmeaStore';
+import { sensorRegistry } from '../services/SensorDataRegistry';
 
 export interface DiagnosticReport {
   timestamp: number;
@@ -39,14 +40,14 @@ class MemoryDiagnostics {
   generateReport(): DiagnosticReport {
     const state = useNmeaStore.getState();
 
-    // Count history entries from sensor.history TimeSeriesBuffers
+    // Count history entries from sensor.history AdaptiveHistoryBuffers
     const historyArrays = {
-      depth: this.countSensorHistory(state.nmeaData.sensors.depth),
-      wind: this.countSensorHistory(state.nmeaData.sensors.wind),
-      speed: this.countSensorHistory(state.nmeaData.sensors.speed),
-      engine: this.countMultiInstanceHistory(state.nmeaData.sensors.engine),
-      battery: this.countMultiInstanceHistory(state.nmeaData.sensors.battery),
-      temperature: this.countMultiInstanceHistory(state.nmeaData.sensors.temperature),
+      depth: this.countSensorTypeHistory('depth'),
+      wind: this.countSensorTypeHistory('wind'),
+      speed: this.countSensorTypeHistory('speed'),
+      engine: this.countSensorTypeHistoryMulti('engine'),
+      battery: this.countSensorTypeHistoryMulti('battery'),
+      temperature: this.countSensorTypeHistoryMulti('temperature'),
     };
 
     const totalHistoryEntries =
@@ -85,15 +86,16 @@ class MemoryDiagnostics {
   /**
    * Count entries in a sensor type's history (single-instance sensors)
    */
-  private countSensorHistory(sensorGroup: Record<number, any>): number {
-    if (!sensorGroup) return 0;
-
+  private countSensorTypeHistory(sensorType: string): number {
     let total = 0;
-    Object.values(sensorGroup).forEach((sensor: any) => {
-      if (sensor?.history) {
-        const stats = sensor.history.getStats();
-        total += stats?.totalCount || 0;
-      }
+    const sensors = sensorRegistry.getAllOfType(sensorType as any);
+    
+    sensors.forEach((sensor) => {
+      const historyKeys = sensor.getHistoryKeys();
+      historyKeys.forEach((key) => {
+        const history = sensor.getHistoryForMetric(key);
+        total += history.length;
+      });
     });
 
     return total;
@@ -102,16 +104,18 @@ class MemoryDiagnostics {
   /**
    * Count entries in multi-instance history
    */
-  private countMultiInstanceHistory(sensorGroup: Record<number, any>): Record<string, number> {
+  private countSensorTypeHistoryMulti(sensorType: string): Record<string, number> {
     const counts: Record<string, number> = {};
+    const sensors = sensorRegistry.getAllOfType(sensorType as any);
 
-    if (!sensorGroup) return counts;
-
-    Object.entries(sensorGroup).forEach(([instance, sensor]: [string, any]) => {
-      if (sensor?.history) {
-        const stats = sensor.history.getStats();
-        counts[instance] = stats?.totalCount || 0;
-      }
+    sensors.forEach((sensor) => {
+      let instanceTotal = 0;
+      const historyKeys = sensor.getHistoryKeys();
+      historyKeys.forEach((key) => {
+        const history = sensor.getHistoryForMetric(key);
+        instanceTotal += history.length;
+      });
+      counts[sensor.instance.toString()] = instanceTotal;
     });
 
     return counts;

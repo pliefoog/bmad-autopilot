@@ -163,10 +163,10 @@ const App = () => {
 
   // NOTE: History pruning removed - now handled automatically by TimeSeriesBuffer
 
-  // Initialize NMEA Store v3 with ReEnrichmentCoordinator
+  // Initialize NMEA Store v4 with SensorDataRegistry
   useEffect(() => {
     initializeNmeaStore();
-    log.app('NMEA Store v3 initialized');
+    log.app('NMEA Store v4 initialized with registry architecture');
   }, []);
 
   // Load saved connection settings on mount
