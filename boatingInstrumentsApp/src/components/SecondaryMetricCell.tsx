@@ -56,7 +56,7 @@ interface SecondaryMetricCellProps extends SensorMetricProps {
  * Use for session stats, metadata, or auxiliary measurements.
  * Pattern identical to PrimaryMetricCell - NEVER add calculation logic here.
  */
-export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = ({
+export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = React.memo(({
   sensorType,
   instance,
   metricKey,
@@ -277,5 +277,8 @@ const createStyles = (
       flexShrink: 0, // Don't shrink units
     },
   });
+});
+
+SecondaryMetricCell.displayName = 'SecondaryMetricCell';
 
 export default SecondaryMetricCell;
