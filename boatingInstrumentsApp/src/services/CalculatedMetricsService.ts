@@ -78,9 +78,20 @@ export class DewPointCalculator implements MetricCalculator {
     const a = 17.27;
     const b = 237.7;
 
-    // Calculate
-    const alpha = Math.log(RH / 100) + (a * T) / (b + T);
-    const dewPoint = (b * alpha) / (a - alpha);
+    // Calculate with validation
+    const rhFraction = RH / 100;
+    if (rhFraction <= 0) return results; // Prevent log(0) or log(negative)
+
+    const alpha = Math.log(rhFraction) + (a * T) / (b + T);
+    
+    // Prevent division by zero
+    const denominator = a - alpha;
+    if (Math.abs(denominator) < 0.001) return results;
+
+    const dewPoint = (b * alpha) / denominator;
+    
+    // Validate result (dew point must be <= temperature)
+    if (!Number.isFinite(dewPoint) || dewPoint > T) return results;
 
     // Get unitType for dewPoint field
     const unitType = sensor.getUnitType('dewPoint');
@@ -106,8 +117,8 @@ export class RateOfTurnCalculator implements MetricCalculator {
   calculate(sensor: SensorInstance): Map<string, MetricValue> {
     const results = new Map<string, MetricValue>();
 
-    // Get heading history
-    const headingBuffer = (sensor as any)._history?.get('heading');
+    // Get heading history using public API
+    const headingBuffer = sensor.getHistoryBuffer('heading');
     if (!headingBuffer) return results;
 
     const allPoints = headingBuffer.getAll();
@@ -261,21 +272,29 @@ export class CalculatedMetricsService {
    * Compute all applicable calculated metrics for sensor instance
    * 
    * @param sensor - Sensor instance to compute metrics for
-   * @param changedMetrics - Set to add calculated metric names to
+   * @param changedMetrics - Set of metrics that changed (used for input filtering only)
    * @returns Map of calculated metric names to MetricValue objects
    */
   compute(sensor: SensorInstance, changedMetrics: Set<string>): Map<string, MetricValue> {
     const allResults = new Map<string, MetricValue>();
 
     for (const calculator of this.calculators) {
-      if (calculator.canCalculate(sensor.sensorType)) {
+      if (!calculator.canCalculate(sensor.sensorType)) continue;
+
+      try {
         const results = calculator.calculate(sensor, this.registry);
         
-        // Merge results and track changed metrics
+        // Merge results (no mutation of input changedMetrics)
         results.forEach((metric, key) => {
           allResults.set(key, metric);
-          changedMetrics.add(key);
         });
+      } catch (error) {
+        log.app('❌ Calculator error', () => ({
+          calculator: calculator.constructor.name,
+          sensorType: sensor.sensorType,
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        }));
       }
     }
 

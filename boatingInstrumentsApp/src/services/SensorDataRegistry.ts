@@ -165,6 +165,9 @@ export class SensorDataRegistry {
       try {
         sensor.addCalculatedMetric(fieldName, metric);
         
+        // Track calculated metrics as changed (for notification)
+        changedMetrics.add(fieldName);
+        
         // Notify subscribers of calculated metrics (with error isolation)
         const metricSubKey = this.getMetricKey(sensorType, instance, fieldName);
         const subscribers = this.subscriptions.get(metricSubKey);

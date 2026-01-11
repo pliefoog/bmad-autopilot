@@ -49,18 +49,27 @@ export class AlarmEvaluator {
 
       // Check alarm state for each metric
       for (const metricKey of metricKeys) {
-        const alarmLevel = sensorInstance.getAlarmState(metricKey);
+        try {
+          const alarmLevel = sensorInstance.getAlarmState(metricKey);
 
-        // AlarmLevel: 0=NONE, 1=STALE, 2=WARNING, 3=CRITICAL
-        if (alarmLevel >= 2) {
-          const level: AlarmLevel = alarmLevel === 3 ? 'critical' : 'warning';
+          // AlarmLevel: 0=NONE, 1=STALE, 2=WARNING, 3=CRITICAL
+          if (alarmLevel >= 2) {
+            const level: AlarmLevel = alarmLevel === 3 ? 'critical' : 'warning';
 
-          alarms.push({
-            id: `${sensorKey}.${metricKey}`,
-            message: `${sensorKey}.${metricKey}: ${level.toUpperCase()}`,
-            level,
-            timestamp: now,
-          });
+            alarms.push({
+              id: `${sensorKey}.${metricKey}`,
+              message: `${sensorKey}.${metricKey}: ${level.toUpperCase()}`,
+              level,
+              timestamp: now,
+            });
+          }
+        } catch (error) {
+          log.alarm('❌ Error evaluating alarm for metric', () => ({
+            sensorType: sensorInstance.sensorType,
+            instance: sensorInstance.instance,
+            metricKey,
+            error: error instanceof Error ? error.message : String(error),
+          }));
         }
       }
     }
