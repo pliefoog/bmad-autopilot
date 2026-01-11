@@ -552,7 +552,7 @@ export class PureStoreUpdater {
 
         // Debug: Log speed updates to trace SOG/STW
         if (update.sensorType === 'speed') {
-          log.speed('PureStoreUpdater calling updateSensorData for speed', () => ({
+          log.speed('PureStoreUpdater calling sensorRegistry.update for speed', () => ({
             sensorType: update.sensorType,
             instance: update.instance,
             data: update.data,

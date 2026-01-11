@@ -21,7 +21,7 @@
  *
  * Key changes from v3:
  * - sensors removed from state (use sensorRegistry.get() instead)
- * - updateSensorData delegates to sensorRegistry.update()
+ * - PureStoreUpdater calls sensorRegistry.update() directly
  * - DevTools re-enabled (no serialization issues)
  */
 
@@ -140,56 +140,6 @@ export const useNmeaStore = create<NmeaStore>()(
           }),
           false,
           'updateMessageMetadata',
-        );
-      },
-
-      /**
-       * Update sensor data - DELEGATED to SensorDataRegistry
-       *
-       * Key simplification from v3:
-       * - No SensorInstance creation/management here
-       * - No coordinator registration here
-       * - Registry handles everything
-       * - Store only updates UI state (message count, timestamp)
-       */
-      updateSensorData: <T extends SensorType>(
-        sensorType: T,
-        instance: number,
-        data: Partial<SensorData>,
-        messageFormat?: 'NMEA 0183' | 'NMEA 2000',
-      ) => {
-        const now = Date.now();
-
-        // Skip empty updates
-        if (!data || Object.keys(data).length === 0) {
-          return;
-        }
-
-        // DEBUG: Log incoming battery updates
-        if (sensorType === 'battery') {
-          log.battery(`📥 updateSensorData called`, () => ({
-            instance,
-            fields: Object.keys(data),
-            data: { ...data },
-          }));
-        }
-
-        // Delegate sensor update to registry
-        // Registry handles: creation, metrics update, alarm evaluation, notifications
-        sensorRegistry.update(sensorType, instance, data);
-
-        // Update UI state only (message metadata)
-        set(
-          (state) => ({
-            nmeaData: {
-              ...state.nmeaData,
-              timestamp: now,
-              messageCount: state.nmeaData.messageCount + 1,
-              messageFormat: messageFormat || state.nmeaData.messageFormat,
-            },
-          }),
-          false,
-          `updateSensorData/${sensorType}/${instance}`,
         );
       },
 

@@ -292,11 +292,6 @@ const App = () => {
   // Removed: lastError toast handler (marine WiFi connectivity is intermittent)
 
   // Dynamic widget lifecycle management - ONLY create widgets when NMEA data is present
-  // Selective subscription: only re-render when sensors actually change
-  const nmeaSensors = useNmeaStore((state) => state.nmeaData?.sensors);
-  const nmeaTimestamp = useNmeaStore((state) => state.nmeaData?.timestamp);
-  const nmeaMessageCount = useNmeaStore((state) => state.nmeaData?.messageCount);
-
   // Use getState() for stable function references (don't cause re-renders)
   // Only subscribe to data that actually needs to trigger re-renders
   const dashboard = useWidgetStore((state) => state.dashboard);
