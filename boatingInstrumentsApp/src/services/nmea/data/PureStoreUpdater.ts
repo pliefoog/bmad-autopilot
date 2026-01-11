@@ -1,13 +1,12 @@
 /**
  * Pure Store Updater Component
  *
- * Single point for updating NMEA store with intelligent throttling and batching.
+ * Single point for updating NMEA store with intelligent throttling.
  * Handles data freshness, update frequency control, and store synchronization.
  *
  * Key Principles:
  * - Single responsibility - only store updates
  * - Intelligent throttling to prevent UI thrashing
- * - Batch updates for performance
  * - Data freshness validation
  */
 
@@ -29,7 +28,6 @@ export interface UpdateResult {
 
 export interface UpdateOptions {
   throttleMs?: number;
-  forceBatch?: boolean;
   skipThrottling?: boolean;
 }
 
@@ -44,10 +42,6 @@ export class PureStoreUpdater {
   // iOS processes messages faster than web, causing too many rapid store updates
   private lastMessageProcessTime = 0;
   private readonly MESSAGE_THROTTLE_MS = 50; // Minimum 50ms between message processing
-
-  // Update statistics
-  private updateCount = 0;
-  private throttledCount = 0;
 
   static getInstance(): PureStoreUpdater {
     if (!PureStoreUpdater.instance) {
@@ -558,31 +552,6 @@ export class PureStoreUpdater {
     const lastUpdate = this.lastUpdateTimes.get(fieldKey);
     if (!lastUpdate) return false;
     return Date.now() - lastUpdate < throttleMs;
-  }
-
-  /**
-   * Get update statistics
-   */
-  getStats(): {
-    updateCount: number;
-    throttledCount: number;
-    throttleRate: number;
-  } {
-    const throttleRate = this.updateCount > 0 ? (this.throttledCount / this.updateCount) * 100 : 0;
-
-    return {
-      updateCount: this.updateCount,
-      throttledCount: this.throttledCount,
-      throttleRate: Math.round(throttleRate * 100) / 100,
-    };
-  }
-
-  /**
-   * Reset statistics
-   */
-  resetStats(): void {
-    this.updateCount = 0;
-    this.throttledCount = 0;
   }
 
   /**

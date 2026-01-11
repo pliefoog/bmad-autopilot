@@ -129,7 +129,6 @@ export class NmeaService {
   getStatus(): NmeaServiceStatus {
     const connectionStatus = this.connectionManager.getStatus();
     const parsingStats = this.parser.getStats();
-    const updateStats = this.storeUpdater.getStats();
 
     const elapsedSeconds = this.startTime ? (Date.now() - this.startTime) / 1000 : 0;
     const messagesPerSecond = elapsedSeconds > 0 ? this.messageCount / elapsedSeconds : 0;
@@ -142,12 +141,7 @@ export class NmeaService {
         failedParses: parsingStats.errorCount,
         successRate: parsingStats.successRate,
       },
-      updates: {
-        totalUpdates: updateStats.updateCount,
-        throttledUpdates: updateStats.throttledCount,
-        batchedUpdates: updateStats.batchedCount,
-        throttleRate: updateStats.throttleRate,
-      },
+      // Store update stats removed - PureStoreUpdater doesn't track statistics
       performance: {
         messagesPerSecond: Math.round(messagesPerSecond * 100) / 100,
       },
