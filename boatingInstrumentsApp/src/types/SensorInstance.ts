@@ -189,7 +189,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
       try {
         // Check if value changed
         const existingMetric = this.getMetric(fieldName);
-        const valueChanged = !existingMetric || existingMetric.si_value !== fieldValue;
+        // GPS time fields should ALWAYS trigger updates (for smooth seconds increment)
+        // even if value is same, to ensure subscription callbacks fire every update
+        const forceUpdate = this.sensorType === 'gps' && (fieldName === 'utcTime' || fieldName === 'utcDate');
+        const valueChanged = forceUpdate || !existingMetric || existingMetric.si_value !== fieldValue;
 
         if (valueChanged) {
           hasChanges = true;
