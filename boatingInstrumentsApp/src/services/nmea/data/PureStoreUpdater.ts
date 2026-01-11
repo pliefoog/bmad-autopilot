@@ -518,7 +518,7 @@ export class PureStoreUpdater {
       try {
         // Debug: Log depth updates to trace data flow
         if (update.sensorType === 'depth') {
-          log.depth('PureStoreUpdater calling updateSensorData', () => ({
+          log.depth('PureStoreUpdater calling sensorRegistry.update', () => ({
             sensorType: update.sensorType,
             instance: update.instance,
             data: update.data,
@@ -529,7 +529,7 @@ export class PureStoreUpdater {
 
         // Debug: Log battery updates to trace string field flow (chemistry field)
         if (update.sensorType === 'battery') {
-          log.app('PureStoreUpdater calling updateSensorData for battery', () => ({
+          log.app('PureStoreUpdater calling sensorRegistry.update for battery', () => ({
             sensorType: update.sensorType,
             instance: update.instance,
             data: update.data,
@@ -540,7 +540,7 @@ export class PureStoreUpdater {
 
         // Debug: Log engine updates to trace field flow
         if (update.sensorType == 'engine') {
-          log.engine('PureStoreUpdater calling updateSensorData for engine', () => ({
+          log.engine('PureStoreUpdater calling sensorRegistry.update for engine', () => ({
             sensorType: update.sensorType,
             instance: update.instance,
             data: update.data,
