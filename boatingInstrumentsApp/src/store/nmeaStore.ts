@@ -69,13 +69,8 @@ interface NmeaStore {
   setLastError: (err?: string) => void;
   setDebugMode: (enabled: boolean) => void;
 
-  // Sensor data management (delegates to sensorRegistry)
-  updateSensorData: <T extends SensorType>(
-    sensorType: T,
-    instance: number,
-    data: Partial<SensorData>,
-    messageFormat?: 'NMEA 0183' | 'NMEA 2000',
-  ) => void;
+  // NMEA message metadata (for UI display)
+  updateMessageMetadata: (messageFormat?: 'NMEA 0183' | 'NMEA 2000') => void;
 
   // Threshold management (delegates to SensorInstance)
   getSensorThresholds: (sensorType: SensorType, instance: number) => any | undefined;

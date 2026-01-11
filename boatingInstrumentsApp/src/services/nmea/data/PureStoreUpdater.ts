@@ -14,6 +14,7 @@
 import { log } from '../../../utils/logging/logger';
 
 import { useNmeaStore } from '../../../store/nmeaStore';
+import { sensorRegistry } from '../../SensorDataRegistry';
 import { nmeaSensorProcessor, type SensorUpdate } from './NmeaSensorProcessor';
 import type { ParsedNmeaMessage } from '../parsing/PureNmeaParser';
 import type { BinaryPgnFrame } from '../connection/PureConnectionManager';
@@ -561,7 +562,11 @@ export class PureStoreUpdater {
           }));
         }
 
-        useNmeaStore.getState().updateSensorData(update.sensorType, update.instance, update.data, messageFormat);
+        // Update sensor via registry (primary data path)
+        sensorRegistry.update(update.sensorType, update.instance, update.data);
+        
+        // Update UI metadata (message count, format)
+        useNmeaStore.getState().updateMessageMetadata(messageFormat);
         updatedFields.push(fieldKey);
         anyUpdated = true;
 

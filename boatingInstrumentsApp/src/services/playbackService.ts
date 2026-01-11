@@ -2,6 +2,7 @@
 import { readFileSync } from 'fs';
 import path from 'path';
 import { useNmeaStore } from '../store/nmeaStore';
+import { sensorRegistry } from './SensorDataRegistry';
 import { parseNmeaSentence } from 'nmea-simple';
 import { parseAndValidate } from '@/utils/nmeaValidator';
 
@@ -36,7 +37,7 @@ export class PlaybackService {
     const baseIntervalMs = 1000; // default 1s between sentences
     const intervalMs = Math.max(1, baseIntervalMs / this.speed);
 
-    const updateSensorData = useNmeaStore.getState().updateSensorData;
+    // Direct registry updates for playback
 
     this.timer = setInterval(() => {
       if (!this.isActive) return;

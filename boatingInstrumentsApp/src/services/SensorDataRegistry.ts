@@ -39,7 +39,6 @@ import { SensorInstance } from '../types/SensorInstance';
 import { useNmeaStore } from '../store/nmeaStore';
 import { log } from '../utils/logging/logger';
 import { AlarmEvaluator } from './AlarmEvaluator';
-import { CrossSensorCalculations } from './CrossSensorCalculations';
 import { CalculatedMetricsService } from './CalculatedMetricsService';
 
 import type { SensorType, SensorData } from '../types/SensorData';
@@ -58,12 +57,12 @@ export class SensorDataRegistry {
   private subscriptions = new Map<string, Set<SubscriptionCallback>>();
   private eventEmitter = new EventEmitter();
   private alarmEvaluator: AlarmEvaluator;
-  private crossSensorCalc: CrossSensorCalculations;
   private calculatedMetricsService: CalculatedMetricsService;
+  private alarmEvaluationDebounceTimer: NodeJS.Timeout | null = null;
+  private readonly ALARM_DEBOUNCE_MS = 1000; // Evaluate alarms max once per second
 
   constructor() {
     this.alarmEvaluator = new AlarmEvaluator(this);
-    this.crossSensorCalc = new CrossSensorCalculations(this);
     this.calculatedMetricsService = new CalculatedMetricsService(this);
   }
 
@@ -152,18 +151,9 @@ export class SensorDataRegistry {
       }
     }
 
-    // Cross-sensor calculations (true wind) - DEPRECATED, handled by CalculatedMetricsService
-    // Keeping this for backwards compatibility during transition
-    if (sensorType === 'wind' && hasChanges) {
-      // Note: True wind is now calculated by CalculatedMetricsService above
-      // This block can be removed once fully migrated
-    }
-
-    // Evaluate alarms globally (all sensors, all metrics)
-    const alarms = this.alarmEvaluator.evaluate();
-
-    // Update nmeaStore with alarms (UI state)
-    useNmeaStore.getState().updateAlarms(alarms);
+    // Debounced alarm evaluation (max once per second)
+    // Prevents excessive alarm checks when multiple sensors update rapidly
+    this.scheduleAlarmEvaluation();
 
     // Notify ONLY the subscribers for metrics that actually changed
     // This prevents unnecessary re-renders when other metrics haven't changed
@@ -195,6 +185,25 @@ export class SensorDataRegistry {
         timestamp: Date.now(),
       });
     }
+  }
+
+  /**
+   * Schedule debounced alarm evaluation
+   * Coalesces multiple rapid sensor updates into single alarm check
+   * @private
+   */
+  private scheduleAlarmEvaluation(): void {
+    // Clear existing timer
+    if (this.alarmEvaluationDebounceTimer) {
+      clearTimeout(this.alarmEvaluationDebounceTimer);
+    }
+
+    // Schedule new evaluation
+    this.alarmEvaluationDebounceTimer = setTimeout(() => {
+      const alarms = this.alarmEvaluator.evaluate();
+      useNmeaStore.getState().updateAlarms(alarms);
+      this.alarmEvaluationDebounceTimer = null;
+    }, this.ALARM_DEBOUNCE_MS);
   }
 
   /**
