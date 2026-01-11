@@ -66,10 +66,8 @@ export class PureStoreUpdater {
       const result = nmeaSensorProcessor.processMessage(parsedMessage);
 
       if (!result.success) {
-        // Log processing errors but don't treat as failures
-        if (useNmeaStore.getState().debugMode) {
-          log.app('NMEA processing error', () => ({ errors: result.errors?.join(', ') }));
-        }
+        // Log processing errors (conditional logger handles enable/disable)
+        log.app('NMEA processing error', () => ({ errors: result.errors?.join(', ') }));
         return {
           updated: false,
           updatedFields: [],
