@@ -39,6 +39,7 @@ import { useNmeaStore } from '../store/nmeaStore';
 import { log } from '../utils/logging/logger';
 import { AlarmEvaluator } from './AlarmEvaluator';
 import { CrossSensorCalculations } from './CrossSensorCalculations';
+import { CalculatedMetricsService } from './CalculatedMetricsService';
 
 import type { SensorType, SensorData } from '../types/SensorData';
 
@@ -57,10 +58,12 @@ export class SensorDataRegistry {
   private eventEmitter = new EventEmitter();
   private alarmEvaluator: AlarmEvaluator;
   private crossSensorCalc: CrossSensorCalculations;
+  private calculatedMetricsService: CalculatedMetricsService;
 
   constructor() {
     this.alarmEvaluator = new AlarmEvaluator(this);
     this.crossSensorCalc = new CrossSensorCalculations(this);
+    this.calculatedMetricsService = new CalculatedMetricsService(this);
   }
 
   /**
@@ -132,20 +135,27 @@ export class SensorDataRegistry {
       return;
     }
 
-    // Cross-sensor calculations (true wind)
-    if (sensorType === 'wind' && hasChanges) {
-      this.crossSensorCalc.calculateTrueWind(sensor);
+    // Calculate derived metrics (dewPoint, ROT, true wind)
+    // Service returns Map<fieldName, MetricValue> of calculated metrics
+    const calculatedMetrics = this.calculatedMetricsService.compute(sensor, changedMetrics);
+    
+    // Store calculated metrics in sensor history
+    for (const [fieldName, metric] of calculatedMetrics.entries()) {
+      sensor.addCalculatedMetric(fieldName, metric);
       
-      // Notify subscribers of calculated true wind metrics
-      // These are computed from apparent wind + GPS + compass, not from NMEA directly
-      const trueWindMetrics = ['trueSpeed', 'trueDirection'];
-      for (const metricKey of trueWindMetrics) {
-        const metricSubKey = this.getMetricKey(sensorType, instance, metricKey);
-        const subscribers = this.subscriptions.get(metricSubKey);
-        if (subscribers && subscribers.size > 0) {
-          subscribers.forEach((callback) => callback());
-        }
+      // Notify subscribers of calculated metrics
+      const metricSubKey = this.getMetricKey(sensorType, instance, fieldName);
+      const subscribers = this.subscriptions.get(metricSubKey);
+      if (subscribers && subscribers.size > 0) {
+        subscribers.forEach((callback) => callback());
       }
+    }
+
+    // Cross-sensor calculations (true wind) - DEPRECATED, handled by CalculatedMetricsService
+    // Keeping this for backwards compatibility during transition
+    if (sensorType === 'wind' && hasChanges) {
+      // Note: True wind is now calculated by CalculatedMetricsService above
+      // This block can be removed once fully migrated
     }
 
     // Evaluate alarms globally (all sensors, all metrics)

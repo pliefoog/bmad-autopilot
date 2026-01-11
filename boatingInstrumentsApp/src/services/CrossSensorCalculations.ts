@@ -32,34 +32,20 @@ export class CrossSensorCalculations {
   /**
    * Calculate true wind from apparent wind + boat speed + heading
    *
+   * **DEPRECATED (Jan 2026):** True wind calculation moved to CalculatedMetricsService.
+   * This method is kept for backwards compatibility but does nothing.
+   * Will be removed in next major version.
+   *
    * Dependencies:
    * - Wind sensor: apparent wind speed (AWS), apparent wind angle (AWA)
    * - GPS sensor: speed over ground (SOG), course over ground (COG)
    * - Compass sensor: heading
    *
-   * @param windSensor - Wind sensor instance
+   * @param windSensor - Wind sensor instance (unused)
+   * @deprecated Use CalculatedMetricsService instead
    */
   calculateTrueWind(windSensor: SensorInstance): void {
-    const gps = this.registry.get('gps', 0);
-    const compass = this.registry.get('compass', 0);
-
-    if (!gps || !compass) {
-      log.wind('Missing GPS or compass for true wind calculation', () => ({
-        hasGPS: !!gps,
-        hasCompass: !!compass,
-        windInstance: windSensor.instance,
-      }));
-      return;
-    }
-
-    log.wind('Calculating true wind', () => ({
-      windInstance: windSensor.instance,
-      hasGPS: true,
-      hasCompass: true,
-    }));
-
-    // Call private method on wind sensor
-    // TODO: Move this logic here or make public API in SensorInstance
-    (windSensor as any)._maybeCalculateTrueWind(gps, compass);
+    // No-op: CalculatedMetricsService now handles true wind calculation
+    // This method remains for backwards compatibility during transition
   }
 }

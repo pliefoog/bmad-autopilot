@@ -43,7 +43,6 @@ import { AdaptiveHistoryBuffer, DataPoint } from '../utils/AdaptiveHistoryBuffer
 import { getDataFields } from '../registry/SensorConfigRegistry';
 import { evaluateAlarm } from '../utils/alarmEvaluation';
 import { log } from '../utils/logging/logger';
-import { calculateTrueWind } from '../utils/calculations/windCalculations';
 
 /**
  * Enriched metric data point (backward compatibility)
@@ -249,13 +248,8 @@ export class SensorInstance<T extends SensorData = SensorData> {
     // Update timestamp
     this.timestamp = now;
 
-    // Calculate dew point for weather sensors if we have temp + humidity
-    if (this.sensorType === 'weather' && hasChanges) {
-      this._calculateDewPoint(changedMetrics);
-    }
-
-    // Note: True wind calculation for wind sensors is handled in nmeaStore
-    // after updateMetrics returns, to avoid circular dependencies
+    // Note: Calculated metrics (dewPoint, trueWind) are now handled
+    // by CalculatedMetricsService in SensorDataRegistry
 
     return { changed: hasChanges, changedMetrics };
   }
@@ -356,155 +350,6 @@ export class SensorInstance<T extends SensorData = SensorData> {
   }
 
   /**
-   * Calculate true wind if hardware values are stale or missing
-   * Only for wind sensors with apparent wind data
-   * Requires GPS (SOG, COG) and compass (heading) data
-   *
-   * @param gpsInstance GPS sensor instance for SOG/COG
-   * @param compassInstance Compass sensor instance for heading
-   */
-  private _maybeCalculateTrueWind(
-    gpsInstance?: SensorInstance<any>,
-    compassInstance?: SensorInstance<any>,
-  ): void {
-    const now = Date.now();
-    const STALENESS_THRESHOLD_MS = 1000; // 1 second
-
-    log.wind('_maybeCalculateTrueWind called', () => ({
-      hasGPS: !!gpsInstance,
-      hasCompass: !!compassInstance,
-    }));
-
-    // Check if hardware true wind values are fresh
-    const hardwareTrueSpeed = this.getMetric('trueSpeed');
-    const hardwareTrueDirection = this.getMetric('trueDirection');
-
-    if (hardwareTrueSpeed && hardwareTrueDirection) {
-      const speedAge = now - hardwareTrueSpeed.timestamp;
-      const directionAge = now - hardwareTrueDirection.timestamp;
-
-      log.wind('Hardware true wind exists', () => ({
-        speedAge,
-        directionAge,
-        threshold: STALENESS_THRESHOLD_MS,
-      }));
-
-      // If both hardware values are fresh, don't calculate
-      if (speedAge < STALENESS_THRESHOLD_MS && directionAge < STALENESS_THRESHOLD_MS) {
-        log.wind('Hardware values fresh, skipping calculation');
-        return;
-      }
-    }
-
-    // Get apparent wind from this sensor
-    const awsMetric = this.getMetric('speed');
-    const awaMetric = this.getMetric('direction');
-
-    log.wind('Checking apparent wind', () => ({
-      hasAWS: !!awsMetric,
-      hasAWA: !!awaMetric,
-      aws: awsMetric?.si_value,
-      awa: awaMetric?.si_value,
-    }));
-
-    if (!awsMetric || !awaMetric) {
-      log.wind('Missing AWS or AWA, skipping calculation');
-      return;
-    }
-    if (awsMetric.si_value === null || awaMetric.si_value === null) {
-      log.wind('AWS or AWA is null, skipping calculation');
-      return;
-    }
-
-    // Check if GPS and compass data are available
-    if (!gpsInstance || !compassInstance) {
-      log.wind('Missing GPS or compass instance, skipping calculation');
-      return;
-    }
-
-    const sogMetric = gpsInstance.getMetric('speedOverGround');
-    const cogMetric = gpsInstance.getMetric('courseOverGround');
-    const headingMetric =
-      compassInstance.getMetric('magneticHeading') ?? compassInstance.getMetric('trueHeading');
-
-    log.wind('Checking GPS/compass data', () => ({
-      hasSOG: !!sogMetric,
-      hasCOG: !!cogMetric,
-      hasHeading: !!headingMetric,
-      sog: sogMetric?.si_value,
-      cog: cogMetric?.si_value,
-      heading: headingMetric?.si_value,
-    }));
-
-    if (!sogMetric || !cogMetric || !headingMetric) {
-      log.wind('Missing SOG, COG, or heading metric - calculation requires all three', () => ({
-        hasSOG: !!sogMetric,
-        hasCOG: !!cogMetric,
-        hasHeading: !!headingMetric,
-      }));
-      return;
-    }
-    if (
-      typeof sogMetric.si_value !== 'number' ||
-      typeof cogMetric.si_value !== 'number' ||
-      typeof headingMetric.si_value !== 'number'
-    ) {
-      log.wind('SOG, COG, or heading is not numeric - calculation requires valid numbers', () => ({
-        sog: sogMetric?.si_value,
-        cog: cogMetric?.si_value,
-        heading: headingMetric?.si_value,
-      }));
-      return;
-    }
-
-    // Calculate true wind using proper vector math (all values confirmed to be numbers)
-    const trueWind = calculateTrueWind(
-      awsMetric.si_value as number,
-      awaMetric.si_value as number,
-      sogMetric.si_value,
-      cogMetric.si_value,
-      headingMetric.si_value,
-    );
-
-    log.wind('Calculated true wind', () => ({
-      input: {
-        aws: awsMetric.si_value,
-        awa: awaMetric.si_value,
-        sog: sogMetric.si_value,
-        cog: cogMetric.si_value,
-        heading: headingMetric.si_value,
-      },
-      result: trueWind,
-    }));
-
-    // Store calculated values using same field names as hardware
-    const speedUnitType = this._metricUnitTypes.get('trueSpeed');
-    const directionUnitType = this._metricUnitTypes.get('trueDirection');
-
-    log.wind('UnitTypes for true wind', () => ({
-      speedUnitType,
-      directionUnitType,
-      allUnitTypes: Array.from(this._metricUnitTypes.entries()),
-    }));
-
-    const speedMetric = speedUnitType
-      ? new MetricValue(trueWind.speed, now, speedUnitType)
-      : new MetricValue(trueWind.speed, now);
-
-    const directionMetric = directionUnitType
-      ? new MetricValue(trueWind.direction, now, directionUnitType)
-      : new MetricValue(trueWind.direction, now);
-
-    this._addToHistory('trueSpeed', speedMetric);
-    this._addToHistory('trueDirection', directionMetric);
-
-    log.wind('Stored calculated true wind', () => ({
-      trueSpeed: trueWind.speed,
-      trueDirection: trueWind.direction,
-    }));
-  }
-
-  /**
    * Get metric by field name (enriched with display values)
    *
    * Returns the latest history point with cached display values.
@@ -569,11 +414,13 @@ export class SensorInstance<T extends SensorData = SensorData> {
     }
 
     // Special handling for Rate of Turn (ROT)
+    // Note: Calculated ROT is now added to history by CalculatedMetricsService
+    // This block only handles fallback to hardware value if recent
     if (fieldName === 'rateOfTurn' && this.sensorType === 'compass') {
       const buffer = this._history.get('rateOfTurn');
       const now = Date.now();
 
-      // Check if we have fresh hardware ROT (less than 1 second old)
+      // Check if we have fresh calculated/hardware ROT (less than 1 second old)
       if (buffer) {
         const latest = buffer.getLatest();
         if (latest && typeof latest.value === 'number' && now - latest.timestamp < 1000) {
@@ -595,27 +442,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
         }
       }
 
-      // No fresh hardware ROT - calculate from heading differential
-      const calculatedROT = this._calculateROT();
-      if (calculatedROT !== null) {
-        const unitType = this._metricUnitTypes.get('rateOfTurn');
-        const metric = unitType
-          ? new MetricValue(calculatedROT, now, unitType)
-          : new MetricValue(calculatedROT, now);
-
-        // Convert MetricValue to EnrichedMetricData (on-demand, not stored in history)
-        return {
-          si_value: calculatedROT,
-          value: metric.getDisplayValue(),
-          formattedValue: metric.getFormattedValue(),
-          formattedValueWithUnit: metric.getFormattedValueWithUnit(),
-          unit: metric.getUnit(),
-          timestamp: now,
-          alarmState: this.getAlarmState('rateOfTurn'),
-        };
-      }
-
-      // Fall through to return undefined if calculation failed
+      // No recent ROT data
       return undefined;
     }
 
@@ -764,6 +591,27 @@ export class SensorInstance<T extends SensorData = SensorData> {
    */
   private _getForceTimezone(fieldName: string): 'utc' | undefined {
     return this._forceTimezones.get(fieldName);
+  }
+
+  /**
+   * Add calculated metric to history
+   * Called by CalculatedMetricsService to store computed metrics
+   * 
+   * @param fieldName - Metric field name
+   * @param metric - MetricValue to store
+   */
+  addCalculatedMetric(fieldName: string, metric: MetricValue): void {
+    this._addToHistory(fieldName, metric);
+  }
+
+  /**
+   * Get history buffer for metric (for calculators that need raw history)
+   * 
+   * @param fieldName - Metric field name
+   * @returns AdaptiveHistoryBuffer or undefined
+   */
+  getHistoryBuffer(fieldName: string): AdaptiveHistoryBuffer<number | string> | undefined {
+    return this._history.get(fieldName);
   }
 
   /**
