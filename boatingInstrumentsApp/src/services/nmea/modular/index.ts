@@ -5,7 +5,7 @@
  * - Connection management (protocol-agnostic)
  * - NMEA parsing (pure functions)
  * - Data transformation (validation & conversion)
- * - Store updates (throttling & batching)
+ * - Store updates (immediate, zero latency)
  * - Service orchestration (unified API)
  */
 
@@ -25,7 +25,7 @@ export { PureNmeaParser, pureNmeaParser } from '../parsing/PureNmeaParser';
 export type { ParsedNmeaMessage, ParsingResult } from '../parsing/PureNmeaParser';
 
 export { PureStoreUpdater, pureStoreUpdater } from '../data/PureStoreUpdater';
-export type { UpdateResult, UpdateOptions } from '../data/PureStoreUpdater';
+export type { UpdateResult } from '../data/PureStoreUpdater';
 
 // Convenience factory function for easy setup
 export const createNmeaService = (config: import('../NmeaService').NmeaServiceConfig) => {

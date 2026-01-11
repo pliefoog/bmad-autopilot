@@ -21,13 +21,10 @@ import { pgnParser } from '../pgnParser';
 
 export interface UpdateResult {
   updated: boolean;
-  batchedFields: string[];
+  updatedFields: string[];
   reason?: string;
 }
 
-export interface UpdateOptions {
-  // Placeholder for future options
-}
 
 export class PureStoreUpdater {
   private static instance: PureStoreUpdater;
@@ -72,7 +69,7 @@ export class PureStoreUpdater {
    * Process parsed NMEA message using NmeaSensorProcessor
    * Direct sensor-based processing path
    */
-  processNmeaMessage(parsedMessage: ParsedNmeaMessage, options: UpdateOptions = {}): UpdateResult {
+  processNmeaMessage(parsedMessage: ParsedNmeaMessage): UpdateResult {
     try {
       // Detect message format (NMEA 0183 vs NMEA 2000)
       const messageFormat = this.detectMessageFormat(parsedMessage);
@@ -87,18 +84,18 @@ export class PureStoreUpdater {
         }
         return {
           updated: false,
-          batchedFields: [],
+          updatedFields: [],
           reason: `Processing failed: ${result.errors?.join(', ')}`,
         };
       }
 
       // Apply sensor updates to store (with messageFormat)
       if (result.updates && result.updates.length > 0) {
-        return this.applySensorUpdates(result.updates, options, messageFormat);
+        return this.applySensorUpdates(result.updates, messageFormat);
       }
       return {
         updated: false,
-        batchedFields: [],
+        updatedFields: [],
         reason: 'No sensor updates generated',
       };
     } catch (err) {
@@ -107,7 +104,7 @@ export class PureStoreUpdater {
       }));
       return {
         updated: false,
-        batchedFields: [],
+        updatedFields: [],
         reason: `Exception: ${err instanceof Error ? err.message : 'Unknown error'}`,
       };
     }
@@ -116,19 +113,19 @@ export class PureStoreUpdater {
   /**
    * Process binary NMEA 2000 PGN frame directly
    */
-  processBinaryPgnFrame(frame: BinaryPgnFrame, options: UpdateOptions = {}): UpdateResult {
+  processBinaryPgnFrame(frame: BinaryPgnFrame): UpdateResult {
     try {
       // Convert binary frame to sensor updates based on PGN
       const updates = this.parseBinaryPgnToUpdates(frame);
 
       if (updates.length > 0) {
         // Binary frames are always NMEA 2000
-        return this.applySensorUpdates(updates, options, 'NMEA 2000');
+        return this.applySensorUpdates(updates, 'NMEA 2000');
       }
 
       return {
         updated: false,
-        batchedFields: [],
+        updatedFields: [],
         reason: 'No sensor updates generated from binary PGN',
       };
     } catch (err) {
@@ -137,7 +134,7 @@ export class PureStoreUpdater {
       }));
       return {
         updated: false,
-        batchedFields: [],
+        updatedFields: [],
         reason: `Binary frame exception: ${
           err instanceof Error ? err.message : 'Unknown error'
         }`,
@@ -416,13 +413,12 @@ export class PureStoreUpdater {
    */
   private applySensorUpdates(
     updates: SensorUpdate[],
-    options: UpdateOptions = {},
     messageFormat?: 'NMEA 0183' | 'NMEA 2000',
   ): UpdateResult {
     const updatedFields: string[] = [];
     let anyUpdated = false;
 
-    // Apply each update immediately - no throttling
+    // Apply each update immediately - no delays
     for (const update of updates) {
       const fieldKey = `${update.sensorType}.${update.instance}`;
 
@@ -487,7 +483,7 @@ export class PureStoreUpdater {
     }
     return {
       updated: anyUpdated,
-      batchedFields: updatedFields,
+      updatedFields: updatedFields,
       reason: anyUpdated ? `Updated ${updatedFields.length} sensors` : 'No updates applied',
     };
   }

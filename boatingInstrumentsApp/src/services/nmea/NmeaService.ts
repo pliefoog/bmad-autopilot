@@ -25,7 +25,7 @@ export interface NmeaServiceConfig {
     strictValidation?: boolean;
   };
   updates?: {
-    enableBatching?: boolean;
+    // Future: message filtering, validation options
   };
 }
 
@@ -199,10 +199,9 @@ export class NmeaService {
       }
 
       const parsedMessage = parseResult.data;
-      const updateOptions = this.currentConfig?.updates || {};
 
       // SIMPLIFIED: Only use NmeaSensorProcessor path (no legacy transformer)
-      this.storeUpdater.processNmeaMessage(parsedMessage, updateOptions);
+      this.storeUpdater.processNmeaMessage(parsedMessage);
     } catch (error) {
       console.error('[NmeaService] Processing error:', error);
       this.storeUpdater.updateError(
@@ -219,8 +218,7 @@ export class NmeaService {
 
     try {
       // Process the binary frame directly through the store updater
-      const updateOptions = this.currentConfig?.updates || {};
-      this.storeUpdater.processBinaryPgnFrame(frame, updateOptions);
+      this.storeUpdater.processBinaryPgnFrame(frame);
     } catch (error) {
       console.error('[NmeaService] Binary frame processing error:', error);
       this.storeUpdater.updateError(

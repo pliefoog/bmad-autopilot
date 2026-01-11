@@ -17,9 +17,6 @@ const testConfig: NmeaServiceConfig = {
     enableFallback: true,
     strictValidation: false,
   },
-  updates: {
-    enableBatching: true,
-  },
 };
 
 export async function testModularArchitecture(): Promise<void> {
