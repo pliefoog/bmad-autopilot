@@ -40,6 +40,7 @@ import { PlatformToggle } from './inputs/PlatformToggle';
 import { PlatformPicker, PlatformPickerItem } from './inputs/PlatformPicker';
 import { getAlarmDirection, getAlarmTriggerHint } from '../../utils/sensorAlarmUtils';
 import { getSensorDisplayName } from '../../utils/sensorDisplayName';
+import { sensorRegistry } from '../../services/SensorDataRegistry';
 import {
   SOUND_PATTERNS,
   MarineAudioAlertManager,
@@ -120,17 +121,16 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   const isNarrow = width < 768;
 
   /* NMEA Store Access */
-  const getAllSensorInstances = useNmeaStore((state) => state.getAllSensorInstances);
   const updateSensorThresholds = useNmeaStore((state) => state.updateSensorThresholds);
   const getSensorThresholds = useNmeaStore((state) => state.getSensorThresholds);
-  const rawSensorData = useNmeaStore((state) => state.nmeaData.sensors);
   const setConfig = useSensorConfigStore((state) => state.setConfig);
 
-  /* Available Sensors */
+  /* Available Sensors - Use sensorRegistry instead of removed nmeaData.sensors */
   const availableSensorTypes = useMemo(() => {
-    const sensorTypes = Object.keys(rawSensorData) as SensorType[];
-    return sensorTypes.filter((type) => getAllSensorInstances(type).length > 0);
-  }, [getAllSensorInstances, rawSensorData]);
+    const allSensors = sensorRegistry.getAllSensors();
+    const uniqueTypes = new Set(allSensors.map(s => s.sensorType));
+    return Array.from(uniqueTypes) as SensorType[];
+  }, []);
 
   /* Selected Sensor & Instance */
   const [selectedSensorType, setSelectedSensorType] = useState<SensorType | null>(
@@ -141,14 +141,14 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   /* Instances for Selected Sensor */
   const instances = useMemo(() => {
     if (!selectedSensorType) return [];
-    const detected = getAllSensorInstances(selectedSensorType);
-    return detected.map(({ instance, sensorInstance }) => ({
-      instance,
-      name: `${selectedSensorType} ${instance}`,
+    const sensors = sensorRegistry.getAllOfType(selectedSensorType);
+    return sensors.map((sensorInstance) => ({
+      instance: sensorInstance.instance,
+      name: `${selectedSensorType} ${sensorInstance.instance}`,
       location: undefined,
       lastUpdate: Date.now(),
     })) as SensorInstance[];
-  }, [selectedSensorType, getAllSensorInstances]);
+  }, [selectedSensorType]);
 
   /* Initialize selected sensor on open */
   useEffect(() => {

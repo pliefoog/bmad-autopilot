@@ -28,12 +28,11 @@ export function useStoreReady(): boolean {
       try {
         const state = useNmeaStore.getState();
 
-        // Verify complete store structure exists
+        // Verify store structure exists (registry-based architecture)
         const ready = !!(
           state &&
           state.nmeaData &&
-          state.nmeaData.sensors &&
-          typeof state.nmeaData.sensors === 'object'
+          typeof state.nmeaData === 'object'
         );
 
         if (ready && !isReady) {

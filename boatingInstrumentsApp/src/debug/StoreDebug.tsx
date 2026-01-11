@@ -1,13 +1,14 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
+import { sensorRegistry } from '../services/SensorDataRegistry';
 
 /**
  * Debug component to monitor store state
  * Add to App.tsx temporarily to see what's in the store
  */
 export const StoreDebug: React.FC = () => {
-  const sensors = useNmeaStore((state) => state.nmeaData.sensors);
+  const allSensors = sensorRegistry.getAllSensors();
   const messageCount = useNmeaStore((state) => state.nmeaData.messageCount);
   const timestamp = useNmeaStore((state) => state.nmeaData.timestamp);
 
@@ -15,17 +16,15 @@ export const StoreDebug: React.FC = () => {
     console.log('=== STORE DEBUG ===');
     console.log('Message count:', messageCount);
     console.log('Last update:', new Date(timestamp).toISOString());
-    console.log(
-      'Sensors:',
-      Object.keys(sensors).filter((key) => Object.keys(sensors[key as any]).length > 0),
-    );
+    const uniqueTypes = new Set(allSensors.map(s => s.sensorType));
+    console.log('Sensors:', Array.from(uniqueTypes));
 
     // Check depth sensor specifically
-    const depthSensor = sensors.depth?.[0];
+    const depthSensor = sensorRegistry.get('depth', 0);
     if (depthSensor) {
       const metrics = depthSensor.getAllMetrics();
       console.log('Depth sensor exists:', {
-        type: depthSensor.type,
+        type: depthSensor.sensorType,
         instance: depthSensor.instance,
         timestamp: depthSensor.timestamp,
         metricsCount: Object.keys(metrics).length,

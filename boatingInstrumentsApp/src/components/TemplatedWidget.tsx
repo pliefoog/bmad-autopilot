@@ -21,6 +21,7 @@ import React, { ReactElement } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 import { useNmeaStore } from '../store/nmeaStore';
+import { sensorRegistry } from '../services/SensorDataRegistry';
 import type { SensorInstance } from '../types/SensorInstance';
 import type { SensorType } from '../types/SensorData';
 import { log } from '../utils/logging/logger';
@@ -97,12 +98,28 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
 }) => {
   const theme = useTheme();
 
-  // SINGLE SUBSCRIPTION POINT: Fetch sensor instance from store
+  // SINGLE SUBSCRIPTION POINT: Fetch sensor instance from registry
   // Widgets themselves no longer subscribe - only TemplatedWidget does
-  const sensorInstance = useNmeaStore(
-    (state) => state.nmeaData.sensors[sensorType]?.[instanceNumber],
-    (a, b) => a === b, // Shallow equality check
-  );
+  // Note: We need to trigger re-renders when sensor updates, so we subscribe to a dummy state
+  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+  
+  const sensorInstance = React.useMemo(() => {
+    return sensorRegistry.get(sensorType, instanceNumber);
+  }, [sensorType, instanceNumber]);
+  
+  // Subscribe to sensor changes
+  React.useEffect(() => {
+    if (!sensorInstance) return;
+    
+    const unsubscribe = sensorRegistry.subscribe(
+      sensorType,
+      instanceNumber,
+      '*', // Subscribe to all metrics
+      () => forceUpdate()
+    );
+    
+    return unsubscribe;
+  }, [sensorType, instanceNumber, sensorInstance]);
 
   // Measure widget dimensions using onLayout
   const [widgetDimensions, setWidgetDimensions] = React.useState({ width: 0, height: 0 });

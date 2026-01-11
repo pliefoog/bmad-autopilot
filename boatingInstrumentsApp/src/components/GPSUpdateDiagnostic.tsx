@@ -6,10 +6,12 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
+import { sensorRegistry } from '../services/SensorDataRegistry';
 
 export const GPSUpdateDiagnostic: React.FC = () => {
-  const gpsTimestamp = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]?.timestamp);
-  const gpsData = useNmeaStore((state) => state.nmeaData.sensors.gps?.[0]);
+  const gpsSensor = sensorRegistry.get('gps', 0);
+  const gpsTimestamp = gpsSensor?.timestamp;
+  const gpsData = gpsSensor?.getCurrentData();
   const renderCountRef = useRef(0);
   const lastTimestampRef = useRef<number>(0);
   const lastRenderTimeRef = useRef<number>(Date.now());
