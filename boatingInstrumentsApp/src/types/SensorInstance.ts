@@ -43,7 +43,6 @@ import { AdaptiveHistoryBuffer, DataPoint } from '../utils/AdaptiveHistoryBuffer
 import { getDataFields } from '../registry/SensorConfigRegistry';
 import { evaluateAlarm } from '../utils/alarmEvaluation';
 import { log } from '../utils/logging/logger';
-import { HistoryConfiguration } from '../services/HistoryConfiguration';
 
 /**
  * Enriched metric data point (backward compatibility)
