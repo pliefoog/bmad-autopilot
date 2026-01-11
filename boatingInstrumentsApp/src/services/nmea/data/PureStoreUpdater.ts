@@ -19,9 +19,6 @@ import { nmeaSensorProcessor, type SensorUpdate } from './NmeaSensorProcessor';
 import type { ParsedNmeaMessage } from '../parsing/PureNmeaParser';
 import type { BinaryPgnFrame } from '../connection/PureConnectionManager';
 import { pgnParser } from '../pgnParser';
-// Errors and warnings ALWAYS show regardless of logging toggle
-const error = console.error.bind(console);
-const warn = console.warn.bind(console);
 
 export interface UpdateResult {
   updated: boolean;
@@ -84,7 +81,7 @@ export class PureStoreUpdater {
     // NMEA Store v2.0 focuses on clean sensor data - raw sentences not stored
     // Log for debugging if needed
     if (useNmeaStore.getState().debugMode) {
-      log('[PureStoreUpdater] Raw NMEA:', sentence);
+      log.app('Raw NMEA sentence', () => ({ sentence }));
     }
   }
 
@@ -116,7 +113,7 @@ export class PureStoreUpdater {
       if (!result.success) {
         // Log processing errors but don't treat as failures
         if (useNmeaStore.getState().debugMode) {
-          warn('[PureStoreUpdater] NMEA processing:', result.errors?.join(', '));
+          log.app('NMEA processing error', () => ({ errors: result.errors?.join(', ') }));
         }
         return {
           updated: false,
@@ -136,13 +133,15 @@ export class PureStoreUpdater {
         batchedFields: [],
         reason: 'No sensor updates generated',
       };
-    } catch (error) {
-      error('[PureStoreUpdater] Error processing NMEA message:', error);
+    } catch (err) {
+      log.app('Error processing NMEA message', () => ({
+        error: err instanceof Error ? err.message : String(err),
+      }));
       return {
         updated: false,
         throttled: false,
         batchedFields: [],
-        reason: `Exception: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        reason: `Exception: ${err instanceof Error ? err.message : 'Unknown error'}`,
       };
     }
   }
@@ -152,10 +151,6 @@ export class PureStoreUpdater {
    */
   processBinaryPgnFrame(frame: BinaryPgnFrame, options: UpdateOptions = {}): UpdateResult {
     try {
-      const hexData = Array.from(frame.data)
-        .map((b) => b.toString(16).padStart(2, '0').toUpperCase())
-        .join('');
-
       // Convert binary frame to sensor updates based on PGN
       const updates = this.parseBinaryPgnToUpdates(frame);
 
@@ -170,14 +165,16 @@ export class PureStoreUpdater {
         batchedFields: [],
         reason: 'No sensor updates generated from binary PGN',
       };
-    } catch (error) {
-      error('[PureStoreUpdater] Error processing binary PGN frame:', error);
+    } catch (err) {
+      log.app('Error processing binary PGN frame', () => ({
+        error: err instanceof Error ? err.message : String(err),
+      }));
       return {
         updated: false,
         throttled: false,
         batchedFields: [],
         reason: `Binary frame exception: ${
-          error instanceof Error ? error.message : 'Unknown error'
+          err instanceof Error ? err.message : 'Unknown error'
         }`,
       };
     }
@@ -191,7 +188,6 @@ export class PureStoreUpdater {
       .map((b) => b.toString(16).padStart(2, '0').toUpperCase())
       .join('');
 
-    const timestamp = Date.now();
     const updates: SensorUpdate[] = [];
 
     try {
@@ -203,9 +199,6 @@ export class PureStoreUpdater {
             updates.push({
               sensorType: 'depth',
               instance: 0,
-              value: depthData.depth,
-              unit: 'meters',
-              timestamp,
               data: {
                 depth: depthData.depth,
                 referencePoint: 'transducer' as const,
@@ -223,9 +216,6 @@ export class PureStoreUpdater {
             updates.push({
               sensorType: 'speed',
               instance: 0,
-              value: speedData.speed,
-              unit: 'knots',
-              timestamp,
               data: {
                 throughWater: speedData.speed,
               },
@@ -241,9 +231,6 @@ export class PureStoreUpdater {
             updates.push({
               sensorType: 'wind',
               instance: 0,
-              value: windData.windSpeed,
-              unit: 'knots',
-              timestamp,
               data: {
                 speed: windData.windSpeed,
                 direction: windData.windAngle,
@@ -260,9 +247,6 @@ export class PureStoreUpdater {
             updates.push({
               sensorType: 'gps',
               instance: 0,
-              value: gpsData.latitude, // Primary value for tracking
-              unit: 'degrees',
-              timestamp,
               data: {
                 position: {
                   latitude: gpsData.latitude,
@@ -281,9 +265,6 @@ export class PureStoreUpdater {
             updates.push({
               sensorType: 'compass',
               instance: 0,
-              value: headingData.heading,
-              unit: 'degrees',
-              timestamp,
               data: {
                 magneticHeading: headingData.heading,
               },
@@ -304,9 +285,6 @@ export class PureStoreUpdater {
                 updates.push({
                   sensorType: 'temperature',
                   instance: 0,
-                  value: envData.temperature,
-                  unit: 'celsius',
-                  timestamp,
                   data: {
                     value: envData.temperature,
                     location: 'seawater' as const,
@@ -316,7 +294,7 @@ export class PureStoreUpdater {
               }
             } else if (source === 1 || source === 2) {
               // Source 1/2 = Outside/Inside air → weather sensor
-              const weatherData: any = { timestamp };
+              const weatherData: any = {};
 
               if (envData.temperature !== undefined) {
                 weatherData.airTemperature = envData.temperature;
@@ -331,9 +309,6 @@ export class PureStoreUpdater {
               updates.push({
                 sensorType: 'weather',
                 instance: 0,
-                value: envData.pressure || envData.temperature || 0,
-                unit: envData.pressure ? 'pascals' : 'celsius',
-                timestamp,
                 data: weatherData,
               });
             } else {
@@ -351,9 +326,6 @@ export class PureStoreUpdater {
                 updates.push({
                   sensorType: 'temperature',
                   instance: source,
-                  value: envData.temperature,
-                  unit: 'celsius',
-                  timestamp,
                   data: {
                     value: envData.temperature,
                     location: location as any,
@@ -370,7 +342,7 @@ export class PureStoreUpdater {
           // Environmental Parameters (Atmospheric) - Always → weather sensor
           const atmData = pgnParser.parseEnvironmentalPgn(hexData);
           if (atmData) {
-            const weatherData: any = { timestamp };
+            const weatherData: any = {};
 
             if (atmData.temperature !== undefined) {
               weatherData.airTemperature = atmData.temperature;
@@ -385,9 +357,6 @@ export class PureStoreUpdater {
             updates.push({
               sensorType: 'weather',
               instance: atmData.instance || 0,
-              value: atmData.pressure || atmData.temperature || 0,
-              unit: atmData.pressure ? 'pascals' : 'celsius',
-              timestamp,
               data: weatherData,
             });
           }
@@ -401,9 +370,6 @@ export class PureStoreUpdater {
             updates.push({
               sensorType: 'autopilot',
               instance: 0,
-              value: rudderData.rudderAngle,
-              unit: 'degrees',
-              timestamp,
               data: {
                 rudderAngle: rudderData.rudderAngle,
               },
@@ -420,9 +386,6 @@ export class PureStoreUpdater {
             updates.push({
               sensorType: 'engine',
               instance: frame.source, // Engine instance from source address
-              value: engineData.engineSpeed,
-              unit: 'rpm',
-              timestamp,
               data: {
                 rpm: engineData.engineSpeed,
               },
@@ -438,14 +401,10 @@ export class PureStoreUpdater {
             updates.push({
               sensorType: 'battery',
               instance: batteryData.instance,
-              value: batteryData.batteryVoltage || 0,
-              unit: 'volts',
-              timestamp,
               data: {
                 voltage: batteryData.batteryVoltage,
                 current: batteryData.batteryCurrent,
-                stateOfCharge: batteryData.stateOfCharge,
-                temperature: batteryData.temperature,
+                temperature: batteryData.batteryTemperature,
               },
             });
           }
@@ -459,9 +418,6 @@ export class PureStoreUpdater {
             updates.push({
               sensorType: 'tank',
               instance: tankData.instance,
-              value: tankData.level,
-              unit: 'percent',
-              timestamp,
               data: {
                 level: tankData.level,
                 type: tankData.fluidType,
