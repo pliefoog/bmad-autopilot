@@ -54,8 +54,13 @@ export class PureStoreUpdater {
    */
   processNmeaMessage(parsedMessage: ParsedNmeaMessage): UpdateResult {
     try {
-      // Detect message format (NMEA 0183 vs NMEA 2000)
-      const messageFormat = this.detectMessageFormat(parsedMessage);
+      // Detect message format: NMEA 2000 (PCDIN/BINARY/PGN*) vs NMEA 0183
+      const messageFormat = 
+        parsedMessage.messageType === 'PCDIN' || 
+        parsedMessage.messageType === 'BINARY' ||
+        parsedMessage.messageType.startsWith('PGN')
+          ? 'NMEA 2000'
+          : 'NMEA 0183';
 
       // Process message using new NmeaSensorProcessor
       const result = nmeaSensorProcessor.processMessage(parsedMessage);
@@ -410,57 +415,9 @@ export class PureStoreUpdater {
 
       // Update sensor data in store
       try {
-        // Debug: Log depth updates to trace data flow
-        if (update.sensorType === 'depth') {
-          log.depth('PureStoreUpdater calling sensorRegistry.update', () => ({
-            sensorType: update.sensorType,
-            instance: update.instance,
-            data: update.data,
-            hasDepth: 'depth' in update.data,
-            depthValue: (update.data as any).depth,
-          }));
-        }
-
-        // Debug: Log battery updates to trace string field flow (chemistry field)
-        if (update.sensorType === 'battery') {
-          log.app('PureStoreUpdater calling sensorRegistry.update for battery', () => ({
-            sensorType: update.sensorType,
-            instance: update.instance,
-            data: update.data,
-            hasChemistry: 'chemistry' in update.data,
-            chemistryValue: (update.data as any).chemistry,
-          }));
-        }
-
-        // Debug: Log engine updates to trace field flow
-        if (update.sensorType == 'engine') {
-          log.engine('PureStoreUpdater calling sensorRegistry.update for engine', () => ({
-            sensorType: update.sensorType,
-            instance: update.instance,
-            data: update.data,
-            fields: Object.keys(update.data),
-            coolantTemp: (update.data as any).coolantTemp,
-            oilPressure: (update.data as any).oilPressure,
-          }));
-        }
-
-        // Debug: Log speed updates to trace SOG/STW
-        if (update.sensorType === 'speed') {
-          log.speed('PureStoreUpdater calling sensorRegistry.update for speed', () => ({
-            sensorType: update.sensorType,
-            instance: update.instance,
-            data: update.data,
-            fields: Object.keys(update.data),
-            overGround: (update.data as any).overGround,
-            throughWater: (update.data as any).throughWater,
-          }));
-        }
-
         // Update sensor via registry (primary data path)
         sensorRegistry.update(update.sensorType, update.instance, update.data);
         
-        // Update UI metadata (message count, format)
-        useNmeaStore.getState().updateMessageMetadata(messageFormat);
         updatedFields.push(fieldKey);
         anyUpdated = true;
       } catch (err) {
@@ -470,28 +427,17 @@ export class PureStoreUpdater {
         }));
       }
     }
+    
+    // Update UI metadata once (not per-sensor)
+    if (anyUpdated && messageFormat) {
+      useNmeaStore.getState().updateMessageMetadata(messageFormat);
+    }
+    
     return {
       updated: anyUpdated,
       updatedFields: updatedFields,
       reason: anyUpdated ? `Updated ${updatedFields.length} sensors` : 'No updates applied',
     };
-  }
-
-
-
-  /**
-   * Detect message format based on parsed message
-   */
-  private detectMessageFormat(parsedMessage: ParsedNmeaMessage): 'NMEA 0183' | 'NMEA 2000' {
-    // Detect NMEA format from message type
-    // NMEA 2000: PCDIN, BINARY, or PGN-related message types
-    // NMEA 0183: Standard sentence types (DBT, VHW, MWV, etc.)
-    const isNmea2000 = 
-      parsedMessage.messageType === 'PCDIN' || 
-      parsedMessage.messageType === 'BINARY' ||
-      parsedMessage.messageType.startsWith('PGN');
-    
-    return isNmea2000 ? 'NMEA 2000' : 'NMEA 0183';
   }
 }
 
