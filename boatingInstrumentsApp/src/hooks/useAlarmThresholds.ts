@@ -1,10 +1,9 @@
 /**
  * useAlarmThresholds Hook - Per-Instance Alarm Thresholds
  * Reads alarm thresholds from sensor instances in NMEA store
- * Subscribes to threshold updates for reactive UI changes
+ * Returns current threshold configuration for rendering alarm overlays
  */
 
-import { useEffect, useState } from 'react';
 import { useNmeaStore } from '../store/nmeaStore';
 import type { SensorType, SensorConfiguration } from '../types/SensorData';
 
@@ -30,27 +29,8 @@ export function useAlarmThresholds(
 ): AlarmThresholdValues {
   // Get threshold retrieval method from store
   const getSensorThresholds = useNmeaStore((state) => state.getSensorThresholds);
-  const sensorEventEmitter = useNmeaStore((state) => state.sensorEventEmitter);
 
-  // Local state to trigger re-renders on threshold updates
-  const [updateTrigger, setUpdateTrigger] = useState(0);
-
-  // Subscribe to threshold updates for this sensor instance
-  useEffect(() => {
-    const handleThresholdUpdate = (event: { sensorType: string; instance: number }) => {
-      if (event.sensorType === sensorType && event.instance === instance) {
-        setUpdateTrigger((prev) => prev + 1);
-      }
-    };
-
-    sensorEventEmitter.on('threshold-update', handleThresholdUpdate);
-
-    return () => {
-      sensorEventEmitter.off('threshold-update', handleThresholdUpdate);
-    };
-  }, [sensorType, instance, sensorEventEmitter]);
-
-  // Get current thresholds from store (updateTrigger ensures re-fetch)
+  // Get current thresholds from store
   const thresholds = getSensorThresholds(sensorType, instance);
 
   // Return disabled state if no thresholds configured
