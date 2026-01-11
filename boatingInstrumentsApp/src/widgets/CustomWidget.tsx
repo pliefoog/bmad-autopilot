@@ -89,18 +89,10 @@ function renderCell(
       return <EmptyCell key={`missing-${index}`} />;
     }
 
-    // Determine sensor type and instance for component
-    let sensorType: string;
-    let instance: number;
-    
-    if ((cell as any).sensorKey && additionalSensorsMap[(cell as any).sensorKey]) {
-      const additionalSensor = additionalSensorsMap[(cell as any).sensorKey];
-      sensorType = additionalSensor.type;
-      instance = additionalSensor.instance;
-    } else {
-      sensorType = primarySensorType;
-      instance = primaryInstance;
-    }
+    // Determine sensor type and instance from explicit cell definition (Jan 2025)
+    // ALL cells must specify sensorType and instance explicitly
+    const sensorType = (cell as any).sensorType || primarySensorType;
+    const instance = (cell as any).instance !== undefined ? (cell as any).instance : primaryInstance;
 
     return (
       <Component
@@ -117,20 +109,10 @@ function renderCell(
   if ('metricKey' in cell) {
     const metricKey = cell.metricKey;
     
-    // Determine sensor type and instance
-    // If cell specifies sensorKey, look it up in additionalSensorsMap
-    // Otherwise use primary sensor
-    let sensorType: string;
-    let instance: number;
-    
-    if (cell.sensorKey && additionalSensorsMap[cell.sensorKey]) {
-      const additionalSensor = additionalSensorsMap[cell.sensorKey];
-      sensorType = additionalSensor.type;
-      instance = additionalSensor.instance;
-    } else {
-      sensorType = primarySensorType;
-      instance = primaryInstance;
-    }
+    // Use explicit sensor information from cell definition (Jan 2025 pattern)
+    // ALL cells must specify sensorType and instance explicitly
+    const sensorType = cell.sensorType || primarySensorType;
+    const instance = cell.instance !== undefined ? cell.instance : primaryInstance;
     
     const cellType = cell.cellType || (isPrimary ? 'primary' : 'secondary');
 
@@ -181,23 +163,11 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
     const primarySensorType = definition?.grid?.primarySensor?.type;
     const primaryInstance = definition?.grid?.primarySensor?.instance ?? 0;
 
-    // Build additionalSensorsMap for renderCell lookups
+    // No longer need additionalSensorsMap - cells have explicit sensorType/instance (Jan 2025)
+    // Kept for backward compatibility during transition period
     const additionalSensorsMap = useMemo(() => {
-      const map: Record<string, { type: string; instance: number }> = {};
-      
-      if (definition?.grid?.additionalSensors) {
-        definition.grid.additionalSensors.forEach((sensor) => {
-          // Use sensor key if provided, otherwise use type as key
-          const key = sensor.key || sensor.type;
-          map[key] = {
-            type: sensor.type,
-            instance: sensor.instance ?? 0,
-          };
-        });
-      }
-      
-      return map;
-    }, [definition]);
+      return {};
+    }, []);
 
     // Determine primary/secondary split from GridTemplateRegistry
     const gridTemplate = definition?.grid?.template

@@ -48,39 +48,37 @@ import type { SensorType } from '../types/SensorData';
  *
  * **Most common cell type (~90% of cases)**
  *
+ * **CRITICAL (Jan 2025):** ALL cells MUST specify sensorType + instance + metricKey explicitly.
+ * Context-based sensor propagation was deprecated - see Explicit Props Pattern in copilot-instructions.md
+ *
  * @example
  * ```typescript
- * // Basic metric from primary sensor
- * { metricKey: 'depth' }
+ * // Explicit sensor specification (REQUIRED)
+ * { sensorType: 'depth', instance: 0, metricKey: 'depth' }
  *
- * // Metric from additional sensor
- * { sensorKey: 'gps', metricKey: 'speedOverGround' }
+ * // Multi-sensor widget
+ * { sensorType: 'gps', instance: 0, metricKey: 'speedOverGround' }
  *
- * // Override instance (e.g., show Engine 1 instead of Engine 0)
- * { metricKey: 'rpm', instance: 1 }
+ * // Engine comparison widget
+ * { sensorType: 'engine', instance: 0, metricKey: 'rpm' }
+ * { sensorType: 'engine', instance: 1, metricKey: 'rpm' }
  *
  * // Force cell type (override position-based detection)
- * { metricKey: 'pressure', cellType: 'secondary' }
+ * { sensorType: 'battery', instance: 0, metricKey: 'voltage', cellType: 'secondary' }
  *
  * // Future: Session statistics
- * { metricKey: 'speedOverGround', stat: 'max' }
+ * { sensorType: 'gps', instance: 0, metricKey: 'speedOverGround', stat: 'max' }
  * ```
  */
 interface MetricCellDef {
-  /** Metric key from SensorConfigRegistry (e.g., "depth", "speedOverGround") */
+  /** Sensor type from SensorData (e.g., "depth", "gps", "engine") - REQUIRED */
+  sensorType: string;
+
+  /** Sensor instance number (0 for first, 1 for second, etc.) - REQUIRED */
+  instance: number;
+
+  /** Metric key from SensorConfigRegistry (e.g., "depth", "speedOverGround") - REQUIRED */
   metricKey: string;
-
-  /**
-   * Sensor key for metrics from additionalSensors (e.g., "gps", "wind")
-   * Omit for metrics from primarySensor
-   */
-  sensorKey?: string;
-
-  /**
-   * Override sensor instance (e.g., show Engine 1 instead of Engine 0)
-   * Defaults to sensor's configured instance
-   */
-  instance?: number;
 
   /**
    * Override cell type (force primary or secondary styling)
@@ -134,6 +132,17 @@ interface ComponentCellDef {
    * Built-in: 'TrendLine', 'RudderIndicator'
    */
   component: string;
+
+  /**
+   * Sensor type (required if component needs sensor data)
+   * Example: 'weather', 'gps', 'engine'
+   */
+  sensorType?: string;
+
+  /**
+   * Sensor instance number (required if component needs sensor data)
+   */
+  instance?: number;
 
   /**
    * Metric key if component needs metric data (e.g., TrendLine)
@@ -408,19 +417,10 @@ function createCustomWidgetConfig(
     id: widgetId,
     type: definition.id, // Use definition.id as type so it matches registration widgetType
     title: definition.name,
-    enabled: true,
     settings: {
       icon: definition.icon,
       customDefinition: definition,
       deletable: definition.deletable,
-    },
-    layout: {
-      id: widgetId,
-      type: definition.id, // Use definition.id as type
-      position: { x: 0, y: 0 },
-      dimensions: { width: 2, height: 2 },
-      visible: true,
-      locked: !definition.deletable,
     },
   };
 }
@@ -478,17 +478,17 @@ export const SAILING_DASHBOARD_DEFINITION: CustomWidgetDefinition = {
     ],
 
     cells: [
-      // Row 1, Col 1: Depth (from primarySensor)
-      { metricKey: 'depth' },
+      // Row 1, Col 1: Depth (explicit sensor specification)
+      { sensorType: 'depth', instance: 0, metricKey: 'depth' },
 
-      // Row 1, Col 2: Speed Over Ground (from GPS)
-      { sensorKey: 'gps', metricKey: 'speedOverGround' },
+      // Row 1, Col 2: Speed Over Ground (explicit GPS sensor)
+      { sensorType: 'gps', instance: 0, metricKey: 'speedOverGround' },
 
-      // Row 2, Col 1: Depth Offset (from primarySensor)
-      { metricKey: 'offset' },
+      // Row 2, Col 1: Depth Offset (explicit sensor specification)
+      { sensorType: 'depth', instance: 0, metricKey: 'offset' },
 
-      // Row 2, Col 2: GPS Track (from GPS)
-      { sensorKey: 'gps', metricKey: 'track' },
+      // Row 2, Col 2: GPS Track (explicit GPS sensor)
+      { sensorType: 'gps', instance: 0, metricKey: 'track' },
     ],
   },
 };
@@ -545,15 +545,17 @@ export const WEATHER_STATION_DEFINITION: CustomWidgetDefinition = {
     },
 
     cells: [
-      // Primary Grid: Current weather metrics (4 cells, 2×2)
-      { metricKey: 'pressure' },
-      { metricKey: 'airTemperature' },
-      { metricKey: 'humidity' },
-      { metricKey: 'dewPoint' },
+      // Primary Grid: Current weather metrics (4 cells, 2×2) - explicit sensor specification
+      { sensorType: 'weather', instance: 0, metricKey: 'pressure' },
+      { sensorType: 'weather', instance: 0, metricKey: 'airTemperature' },
+      { sensorType: 'weather', instance: 0, metricKey: 'humidity' },
+      { sensorType: 'weather', instance: 0, metricKey: 'dewPoint' },
 
       // Secondary Grid: Trend visualizations (2 cells, full-width)
       {
         component: 'TrendLine',
+        sensorType: 'weather',
+        instance: 0,
         metricKey: 'pressure',
         props: {
           timeWindowMs: 300000,
@@ -564,6 +566,8 @@ export const WEATHER_STATION_DEFINITION: CustomWidgetDefinition = {
       },
       {
         component: 'TrendLine',
+        sensorType: 'weather',
+        instance: 0,
         metricKey: 'airTemperature',
         props: {
           timeWindowMs: 300000,
@@ -636,13 +640,13 @@ export const DUAL_ENGINE_MONITOR_DEFINITION: CustomWidgetDefinition = {
     ],
 
     cells: [
-      // Row 1: Engine RPM comparison
-      { metricKey: 'rpm' }, // Engine 0
-      { sensorKey: 'engine', metricKey: 'rpm', instance: 1 }, // Engine 1
+      // Row 1: Engine RPM comparison - EXPLICIT sensor specification required (Jan 2025)
+      { sensorType: 'engine', instance: 0, metricKey: 'rpm' }, // Engine 0
+      { sensorType: 'engine', instance: 1, metricKey: 'rpm' }, // Engine 1
 
-      // Row 2: Engine temperature comparison
-      { metricKey: 'coolantTemperature' }, // Engine 0
-      { sensorKey: 'engine', metricKey: 'coolantTemperature', instance: 1 }, // Engine 1
+      // Row 2: Engine temperature comparison - EXPLICIT sensor specification required (Jan 2025)
+      { sensorType: 'engine', instance: 0, metricKey: 'coolantTemp' }, // Engine 0
+      { sensorType: 'engine', instance: 1, metricKey: 'coolantTemp' }, // Engine 1
     ],
   },
 };
@@ -685,11 +689,11 @@ export const CROSS_PLATFORM_EXAMPLE: CustomWidgetDefinition = {
     },
 
     cells: [
-      // Primary: Standard metrics (all platforms)
-      { metricKey: 'latitude' },
-      { metricKey: 'longitude' },
-      { metricKey: 'speedOverGround' },
-      { metricKey: 'track' },
+      // Primary: Standard metrics (all platforms) - explicit sensor specification
+      { sensorType: 'gps', instance: 0, metricKey: 'latitude' },
+      { sensorType: 'gps', instance: 0, metricKey: 'longitude' },
+      { sensorType: 'gps', instance: 0, metricKey: 'speedOverGround' },
+      { sensorType: 'gps', instance: 0, metricKey: 'track' },
 
       // Secondary: Platform-specific component
       {
@@ -770,8 +774,8 @@ export const CUSTOM_T1_DEFINITION: CustomWidgetDefinition = {
     },
     additionalSensors: [{ type: 'gps', instance: 0, required: true }],
     cells: [
-      { metricKey: 'depth' },
-      { sensorKey: 'gps', metricKey: 'speedOverGround' },
+      { sensorType: 'depth', instance: 0, metricKey: 'depth' },
+      { sensorType: 'gps', instance: 0, metricKey: 'speedOverGround' },
       { empty: true }, // Secondary section (row 1)
       { empty: true }, // Secondary section (row 2)
     ],
@@ -806,18 +810,17 @@ export function customWidgetToRegistration(definition: CustomWidgetDefinition): 
   const requiredSensors: SensorDependency[] = [];
   const optionalSensors: SensorDependency[] = [];
 
-  // Helper to find first metricKey for a sensor from cells
-  const findMetricForSensor = (sensorType: string): string => {
+  // Helper to find first metricKey for a sensor from cells (Jan 2025: explicit sensorType pattern)
+  const findMetricForSensor = (targetSensorType: string): string => {
     if (!definition.grid?.cells) return '';
 
     for (const cell of definition.grid.cells) {
-      // Primary sensor cells have no sensorKey (implicit)
-      if (!cell.sensorKey && sensorType === definition.grid?.primarySensor?.type) {
-        return cell.metricKey || '';
-      }
-      // Additional sensor cells have explicit sensorKey
-      if (cell.sensorKey === sensorType) {
-        return cell.metricKey || '';
+      // Check if this is a metric cell with explicit sensorType
+      if ('metricKey' in cell && !('empty' in cell) && !('component' in cell)) {
+        const metricCell = cell as MetricCellDef;
+        if (metricCell.sensorType === targetSensorType) {
+          return metricCell.metricKey || '';
+        }
       }
     }
     return '';

@@ -135,17 +135,37 @@ export function useMetricValues(
 }
 
 /**
- * Hook to get sensor instance directly (non-reactive)
- * Use this when you need the full sensor instance but don't need reactivity
+ * Hook to get sensor instance with reactivity
+ * Subscribes to sensor creation events so it updates when sensor appears
  * 
  * @param sensorType - Sensor type
  * @param instance - Instance number
  * @returns SensorInstance or null
  */
 export function useSensorInstance(sensorType: SensorType, instance: number) {
-  return useMemo(() => {
-    return sensorRegistry.get(sensorType, instance);
+  const [sensor, setSensor] = useState(() => sensorRegistry.get(sensorType, instance));
+
+  useEffect(() => {
+    // Update if sensor already exists or gets created
+    const checkSensor = () => {
+      const currentSensor = sensorRegistry.get(sensorType, instance);
+      setSensor(currentSensor);
+    };
+
+    // Subscribe to sensor creation events
+    const unsubscribe = sensorRegistry.on('sensorCreated', (event) => {
+      if (event.sensorType === sensorType && event.instance === instance) {
+        checkSensor();
+      }
+    });
+
+    // Check immediately in case sensor exists now
+    checkSensor();
+
+    return unsubscribe;
   }, [sensorType, instance]);
+
+  return sensor;
 }
 
 /**
