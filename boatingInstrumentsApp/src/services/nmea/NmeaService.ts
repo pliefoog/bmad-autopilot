@@ -187,9 +187,6 @@ export class NmeaService {
     this.messageCount++;
 
     try {
-      // Add raw message to store
-      this.storeUpdater.addRawMessage(rawMessage);
-
       // Parse the message
       const parseResult = this.parser.parseSentence(rawMessage);
       if (!parseResult.success || !parseResult.data) {

@@ -49,17 +49,6 @@ export class PureStoreUpdater {
   }
 
   /**
-   * Add raw NMEA sentence to store - NMEA Store v2.0 (sensor data only)
-   */
-  addRawMessage(sentence: string): void {
-    // NMEA Store v2.0 focuses on clean sensor data - raw sentences not stored
-    // Log for debugging if needed
-    if (useNmeaStore.getState().debugMode) {
-      log.app('Raw NMEA sentence', () => ({ sentence }));
-    }
-  }
-
-  /**
    * Process parsed NMEA message using NmeaSensorProcessor
    * Direct sensor-based processing path
    */
