@@ -64,6 +64,8 @@ export class SensorDataRegistry {
   constructor() {
     this.alarmEvaluator = new AlarmEvaluator(this);
     this.calculatedMetricsService = new CalculatedMetricsService(this);
+    // Prevent EventEmitter warnings - we may have many widget subscriptions
+    this.eventEmitter.setMaxListeners(100);
   }
 
   /**
@@ -247,7 +249,6 @@ export class SensorDataRegistry {
    *
    * Events:
    * - 'sensorCreated': { sensorType, instance, timestamp }
-   * - 'threshold-update': { sensorType, instance }
    *
    * @param event - Event name
    * @param handler - Event handler
@@ -271,6 +272,12 @@ export class SensorDataRegistry {
    * Called on factory reset
    */
   destroy(): void {
+    // Cancel pending alarm evaluation
+    if (this.alarmEvaluationDebounceTimer) {
+      clearTimeout(this.alarmEvaluationDebounceTimer);
+      this.alarmEvaluationDebounceTimer = null;
+    }
+
     for (const sensor of this.sensors.values()) {
       try {
         sensor.destroy();
