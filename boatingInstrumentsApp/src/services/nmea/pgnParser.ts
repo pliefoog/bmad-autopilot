@@ -5,7 +5,6 @@
  * multi-engine, multi-battery, and multi-tank configurations.
  */
 
-import { FromPgn } from '@canboat/canboatjs';
 import { log } from '../../utils/logging/logger';
 
 export interface PgnData {
@@ -40,10 +39,8 @@ export interface TankPgnData extends PgnData {
 }
 
 export class PgnParser {
-  private fromPgn: FromPgn;
-
   constructor() {
-    this.fromPgn = new FromPgn();
+    // Self-contained PGN parser - no external dependencies
   }
 
   /**
@@ -53,21 +50,8 @@ export class PgnParser {
     try {
       const timestamp = Date.now();
 
-      // Use canboat library to parse the PGN if possible
-      let parsedData: Record<string, any> = {};
-
-      try {
-        // Attempt to parse with canboat
-        const parsed = this.fromPgn.parseString(
-          `${timestamp},0,${pgnNumber},${sourceAddress || 0},255,${data.length},${data}`,
-        );
-        if (parsed && parsed.fields) {
-          parsedData = this.extractFieldsFromCanboat(parsed.fields);
-        }
-      } catch (canboatError) {
-        // Fall back to manual parsing
-        parsedData = this.manualParsePgn(pgnNumber, data);
-      }
+      // Manual PGN parsing - self-contained implementation
+      const parsedData = this.manualParsePgn(pgnNumber, data);
 
       const basePgnData: PgnData = {
         pgn: pgnNumber,
@@ -594,46 +578,8 @@ export class PgnParser {
   }
 
   /**
-   * Extract fields from canboat parsed data
-   */
-  private extractFieldsFromCanboat(fields: any): Record<string, any> {
-    const extracted: Record<string, any> = {};
-
-    if (Array.isArray(fields)) {
-      for (const field of fields) {
-        if (field.name && field.value !== undefined) {
-          // Convert canboat field names to our naming convention
-          const fieldName = this.mapCanboatFieldName(field.name);
-          extracted[fieldName] = field.value;
-        }
-      }
-    }
-
-    return extracted;
-  }
-
-  /**
-   * Map canboat field names to our naming convention
-   */
-  private mapCanboatFieldName(canboatName: string): string {
-    const fieldMap: Record<string, string> = {
-      Instance: 'instance',
-      'Engine Speed': 'engineSpeed',
-      'Engine Boost Pressure': 'engineBoostPressure',
-      'Engine Tilt/Trim': 'engineTiltTrim',
-      'Battery Voltage': 'batteryVoltage',
-      'Battery Current': 'batteryCurrent',
-      'Battery Temperature': 'batteryTemperature',
-      'Fluid Type': 'fluidType',
-      Level: 'level',
-      Capacity: 'capacity',
-    };
-
-    return fieldMap[canboatName] || canboatName.toLowerCase().replace(/\s+/g, '');
-  }
-
-  /**
-   * Manual PGN parsing as fallback when canboat fails
+   * Manual PGN parsing for all supported PGN types
+   * Self-contained implementation - no external dependencies
    */
   private manualParsePgn(pgnNumber: number, data: string): Record<string, any> {
     const parsed: Record<string, any> = {};

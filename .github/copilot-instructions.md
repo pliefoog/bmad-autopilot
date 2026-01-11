@@ -502,7 +502,17 @@ All sensor fields MUST have `mnemonic: string` in `SensorConfigRegistry`. Startu
 
 **React Native cross-platform marine instrument display** connecting to boat NMEA networks via WiFi bridges. Runs entirely on-device (no server), transforming smartphones/tablets/desktops into comprehensive marine displays with Raymarine autopilot control.
 
-**Tech Stack:** React Native (Expo), TypeScript, Zustand state management, NMEA 0183/2000 parsing, WebSocket/TCP/UDP native modules
+**Tech Stack:** React Native (Expo), TypeScript, Zustand state management, **Self-contained NMEA 0183/2000 parsing** (no external dependencies), WebSocket/TCP/UDP native modules
+
+**⚠️ CRITICAL: Self-Contained NMEA Architecture (Jan 2025)**
+- **NO external NMEA parsing libraries** - nmea-simple and @canboat/canboatjs removed
+- **ALL NMEA parsing done in-house:**
+  - PureNmeaParser.ts: NMEA 0183 sentence parsing (15+ message types)
+  - pgnParser.ts: NMEA 2000 PGN parsing (10+ PGN types)
+  - autopilotService.ts: PGN encoding for transmission
+- **100% self-contained** - complete control over parsing logic, zero dependency risk
+- **Comprehensive coverage:** Depth, Speed, Wind, GPS, Engine, Battery, Tank, Temperature, etc.
+- **Manual byte-level parsing** with proper endianness, invalid value detection, unit conversions
 
 ## Architecture Overview
 
@@ -952,8 +962,13 @@ boatingInstrumentsApp/src/
 ├── services/
 │   ├── nmea/
 │   │   ├── connection/          # WebSocket/TCP management
-│   │   ├── parsing/             # NMEA sentence parsers
-│   │   └── data/                # Sensor processing & store updates
+│   │   ├── parsing/             # Self-contained NMEA 0183 parsers
+│   │   │   └── PureNmeaParser.ts  # ⭐ 15+ message types, zero dependencies
+│   │   ├── data/                # Sensor processing & store updates
+│   │   │   └── NmeaSensorProcessor.ts # 30+ sentence handlers
+│   │   ├── pgnParser.ts         # ⭐ Self-contained NMEA 2000 PGN parser (10+ PGNs)
+│   │   └── instanceDetection.ts # Multi-sensor detection (deprecated)
+│   ├── autopilotService.ts      # ⭐ Raymarine control + manual PGN encoding
 │   ├── SensorPresentationCache.ts  # Display caching (SI → user units)
 │   └── WidgetRegistrationService.ts # Event-driven widget detection
 ├── store/                       # Zustand stores (SINGLE SOURCE OF TRUTH)
@@ -971,14 +986,100 @@ boatingInstrumentsApp/src/
 │   └── logging/
 │       └── logger.ts           # **Conditional logging system**
 └── types/
-    └── SensorData.ts           # Sensor type definitions
+    ├── SensorData.ts           # Sensor type definitions
+    ├── MetricValue.ts          # Single metric encapsulation
+    └── SensorInstance.ts       # Sensor lifecycle management
 ```
 
 **Key files to understand:**
 - `src/store/nmeaStore.ts` - Where ALL sensor data lives
+- `src/services/nmea/parsing/PureNmeaParser.ts` - ⭐ Self-contained NMEA 0183 parser
+- `src/services/nmea/pgnParser.ts` - ⭐ Self-contained NMEA 2000 PGN parser
+- `src/services/autopilotService.ts` - ⭐ Manual PGN encoding for Raymarine
 - `src/widgets/DepthWidget.tsx` - Reference implementation for widget patterns
 - `src/services/nmea/data/NmeaSensorProcessor.ts` - NMEA → sensor data transform
 - `src/utils/logging/logger.ts` - Conditional logging implementation
+
+## NMEA Parsing Architecture (Self-Contained - Jan 2025)
+
+**⚠️ CRITICAL: Zero external dependencies for NMEA parsing**
+
+### PureNmeaParser.ts - NMEA 0183 Parsing
+**Location:** `src/services/nmea/parsing/PureNmeaParser.ts`
+**Purpose:** Parse NMEA 0183 ASCII sentences without external libraries
+**Supported Messages (15+):**
+- **Navigation:** GGA, RMC, GLL, VTG (GPS position, speed, track)
+- **Depth:** DBT, DPT, DBK (depth below transducer/keel)
+- **Speed:** VHW (speed through water, heading)
+- **Wind:** MWV, VWR, VWT (wind speed/angle, relative/true)
+- **Heading:** HDG, HDT, HDM (magnetic/true heading)
+- **Temperature:** MTW (water temperature)
+- **Engine:** RPM (engine RPM and status)
+- **Environment:** MDA (atmospheric data)
+- **Transducer:** XDR (generic transducer)
+- **Time:** ZDA (UTC date/time)
+- **NMEA 2000:** DIN (PGN wrapper)
+
+**Implementation Details:**
+- Checksum validation for data integrity
+- Field extraction with null-safe parsing
+- NaN validation for numeric conversions (Jan 2025)
+- Explicit radix for parseInt (base-10)
+- Returns ParsedNmeaMessage with structured fields
+- Zero dependencies - pure TypeScript
+
+### pgnParser.ts - NMEA 2000 PGN Parsing
+**Location:** `src/services/nmea/pgnParser.ts`
+**Purpose:** Parse NMEA 2000 binary PGN messages without external libraries
+**Supported PGNs (10+):**
+- **128267:** Water Depth (instance from SID)
+- **128259:** Speed (STW with instance)
+- **130306:** Wind Data (speed/angle with instance)
+- **129029:** GNSS Position (lat/lon with instance)
+- **127250:** Vessel Heading (magnetic/true)
+- **130310/130311:** Temperature (Environmental)
+- **127488:** Engine Parameters (RPM, boost, trim)
+- **127508/127513:** Battery Status/Config
+- **127505:** Fluid Level (tanks)
+- **Route/Waypoint:** Navigation data
+
+**Implementation Details:**
+- Manual byte-level parsing with proper endianness
+- Little-endian multi-byte conversion
+- Invalid value detection (0xFFFF, 0xFFFFFFFF)
+- Unit conversions (Kelvin→Celsius, m/s→knots, radians→degrees)
+- Instance extraction from SID bytes
+- Signed/unsigned integer handling
+- Zero dependencies - pure TypeScript
+
+### autopilotService.ts - PGN Encoding
+**Location:** `src/services/autopilotService.ts`
+**Purpose:** Encode NMEA 2000 PGN messages for Raymarine autopilot control
+**Implementation:**
+- Manual PGN message encoding (encodePgnMessage method)
+- ISO 11783 / NMEA 2000 format compliance
+- 29-bit CAN identifier construction
+- Priority, data page, PDU format handling
+- Buffer allocation and byte packing
+- Zero dependencies - pure TypeScript
+
+**Why Self-Contained:**
+1. **Full Control:** Complete control over parsing logic and edge cases
+2. **Zero Dependency Risk:** No external library updates breaking production
+3. **Performance:** Optimized for our specific sensor types
+4. **Maintainability:** All NMEA knowledge in our codebase
+5. **Bundle Size:** Reduced app size (removed ~500KB of dependencies)
+6. **Debugging:** Can trace through all parsing logic
+7. **Customization:** Easy to add custom NMEA extensions
+
+**Adding New NMEA Support:**
+1. For NMEA 0183: Add parser function to PureNmeaParser.ts
+2. For NMEA 2000: Add PGN handler to pgnParser.ts
+3. Add sensor processor to NmeaSensorProcessor.ts
+4. Register in SensorConfigRegistry.ts
+5. Create widget following existing patterns
+
+
 
 ## Critical Context for AI Agents
 

@@ -1,4 +1,3 @@
-import { ToPgn } from '@canboat/canboatjs';
 import { useNmeaStore } from '../store/nmeaStore';
 import { log } from '../utils/logging/logger';
 
@@ -348,17 +347,9 @@ export class AutopilotCommandManager {
     }
 
     try {
-      // Use canboat library to encode PGN message
-      const pgnData = {
-        pgn: pgn,
-        src: 0x99, // Source address (arbitrary)
-        dst: 0xff, // Destination (broadcast)
-        prio: 2, // Priority (high for autopilot commands)
-        fields: data,
-      };
-
-      // AC8: Implement proper message sequencing and timing
-      const encodedMessage = ToPgn(pgnData);
+      // Manual PGN encoding - self-contained implementation
+      // Format: ISO 11783 / NMEA 2000 fast packet
+      const encodedMessage = this.encodePgnMessage(pgn, data, 0x99, 0xff, 2);
 
       // AC10: Provide command confirmation feedback
       this.updateCommandStatus('sending', `Sending command PGN ${pgn}...`);
@@ -392,6 +383,57 @@ export class AutopilotCommandManager {
     let normalized = heading % 360;
     if (normalized < 0) normalized += 360;
     return normalized;
+  }
+
+  /**
+   * Manual PGN encoding for NMEA 2000 messages
+   * Self-contained implementation - no external dependencies
+   * 
+   * @param pgn PGN number (Parameter Group Number)
+   * @param data Payload data bytes
+   * @param src Source address
+   * @param dst Destination address (0xFF = broadcast)
+   * @param priority Message priority (0-7, lower = higher priority)
+   * @returns Encoded message buffer ready for transmission
+   */
+  private encodePgnMessage(
+    pgn: number,
+    data: Uint8Array,
+    src: number,
+    dst: number,
+    priority: number,
+  ): Buffer {
+    // ISO 11783 / NMEA 2000 message format
+    // Header: priority (3 bits) + reserved (1 bit) + data page (1 bit) + PDU format (8 bits) + PDU specific (8 bits) + source address (8 bits)
+    
+    const pduFormat = (pgn >> 8) & 0xFF;
+    const pduSpecific = pgn & 0xFF;
+    const dataPage = (pgn >> 16) & 0x01;
+    
+    // CAN identifier (29-bit)
+    const canId = 
+      ((priority & 0x07) << 26) |
+      (0 << 25) | // Reserved bit
+      (dataPage << 24) |
+      (pduFormat << 16) |
+      (pduSpecific << 8) |
+      (src & 0xFF);
+    
+    // Build message: 4-byte CAN ID + data length + data
+    const message = Buffer.alloc(5 + data.length);
+    
+    // CAN ID (big-endian 32-bit)
+    message.writeUInt32BE(canId, 0);
+    
+    // Data length
+    message[4] = data.length;
+    
+    // Data payload
+    data.forEach((byte, index) => {
+      message[5 + index] = byte;
+    });
+    
+    return message;
   }
 
   /**
