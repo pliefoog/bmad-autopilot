@@ -18,9 +18,7 @@ const testConfig: NmeaServiceConfig = {
     strictValidation: false,
   },
   updates: {
-    throttleMs: 500,
     enableBatching: true,
-    skipThrottling: false,
   },
 };
 

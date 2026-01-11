@@ -115,8 +115,6 @@ class InstanceDetectionService {
   private readonly INSTANCE_TIMEOUT = 30000; // 30 seconds
 
   // Event-driven detection (Phase 1 optimization)
-  private lastEventTime = new Map<string, number>();
-  private readonly EVENT_THROTTLE_MS = 100; // Max 10 events/sec per sensor instance
 
   // Callback system for instance updates
   private instanceCallbacks: ((instances: {
@@ -183,17 +181,6 @@ class InstanceDetectionService {
     instance: number;
     timestamp: number;
   }): void => {
-    // Event throttling: prevent storms during rapid updates
-    const throttleKey = `${event.sensorType}-${event.instance}`;
-    const now = Date.now();
-    const lastTime = this.lastEventTime.get(throttleKey) || 0;
-
-    if (now - lastTime < this.EVENT_THROTTLE_MS) {
-      return; // Throttled - skip this update
-    }
-
-    this.lastEventTime.set(throttleKey, now);
-
     // Get current NMEA data
     const nmeaData = useNmeaStore.getState().nmeaData;
     const currentTime = Date.now();
@@ -304,9 +291,6 @@ class InstanceDetectionService {
       clearInterval(this.scanTimer);
       this.scanTimer = null;
     }
-
-    // Clear throttle cache
-    this.lastEventTime.clear();
   }
 
   /**

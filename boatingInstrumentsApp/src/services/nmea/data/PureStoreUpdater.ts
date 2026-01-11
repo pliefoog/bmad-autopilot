@@ -1,12 +1,12 @@
 /**
  * Pure Store Updater Component
  *
- * Single point for updating NMEA store with intelligent throttling.
- * Handles data freshness, update frequency control, and store synchronization.
+ * Single point for updating NMEA store.
+ * Handles data freshness validation and store synchronization.
  *
  * Key Principles:
  * - Single responsibility - only store updates
- * - Intelligent throttling to prevent UI thrashing
+ * - Immediate updates - no throttling or delays
  * - Data freshness validation
  */
 
@@ -21,27 +21,16 @@ import { pgnParser } from '../pgnParser';
 
 export interface UpdateResult {
   updated: boolean;
-  throttled: boolean;
   batchedFields: string[];
   reason?: string;
 }
 
 export interface UpdateOptions {
-  throttleMs?: number;
-  skipThrottling?: boolean;
+  // Placeholder for future options
 }
 
 export class PureStoreUpdater {
   private static instance: PureStoreUpdater;
-
-  // Throttling management
-  private lastUpdateTimes: Map<string, number> = new Map();
-  private readonly DEFAULT_THROTTLE_MS = 1000; // 1 second default throttling
-  
-  // Global message-level throttling to prevent iOS "Maximum update depth exceeded"
-  // iOS processes messages faster than web, causing too many rapid store updates
-  private lastMessageProcessTime = 0;
-  private readonly MESSAGE_THROTTLE_MS = 50; // Minimum 50ms between message processing
 
   static getInstance(): PureStoreUpdater {
     if (!PureStoreUpdater.instance) {
@@ -85,19 +74,6 @@ export class PureStoreUpdater {
    */
   processNmeaMessage(parsedMessage: ParsedNmeaMessage, options: UpdateOptions = {}): UpdateResult {
     try {
-      // CRITICAL: Global message-level throttling for iOS
-      // Prevents "Maximum update depth exceeded" by spacing out message processing
-      const now = Date.now();
-      if (now - this.lastMessageProcessTime < this.MESSAGE_THROTTLE_MS) {
-        return {
-          updated: false,
-          throttled: true,
-          batchedFields: [],
-          reason: `Message throttled (${now - this.lastMessageProcessTime}ms since last)`,
-        };
-      }
-      this.lastMessageProcessTime = now;
-
       // Detect message format (NMEA 0183 vs NMEA 2000)
       const messageFormat = this.detectMessageFormat(parsedMessage);
 
@@ -111,7 +87,6 @@ export class PureStoreUpdater {
         }
         return {
           updated: false,
-          throttled: false,
           batchedFields: [],
           reason: `Processing failed: ${result.errors?.join(', ')}`,
         };
@@ -123,7 +98,6 @@ export class PureStoreUpdater {
       }
       return {
         updated: false,
-        throttled: false,
         batchedFields: [],
         reason: 'No sensor updates generated',
       };
@@ -133,7 +107,6 @@ export class PureStoreUpdater {
       }));
       return {
         updated: false,
-        throttled: false,
         batchedFields: [],
         reason: `Exception: ${err instanceof Error ? err.message : 'Unknown error'}`,
       };
@@ -155,7 +128,6 @@ export class PureStoreUpdater {
 
       return {
         updated: false,
-        throttled: false,
         batchedFields: [],
         reason: 'No sensor updates generated from binary PGN',
       };
@@ -165,7 +137,6 @@ export class PureStoreUpdater {
       }));
       return {
         updated: false,
-        throttled: false,
         batchedFields: [],
         reason: `Binary frame exception: ${
           err instanceof Error ? err.message : 'Unknown error'
@@ -451,18 +422,9 @@ export class PureStoreUpdater {
     const updatedFields: string[] = [];
     let anyUpdated = false;
 
-    const { throttleMs = this.DEFAULT_THROTTLE_MS, skipThrottling = false } = options;
-
-    // Apply each update independently with field-specific throttling
+    // Apply each update immediately - no throttling
     for (const update of updates) {
       const fieldKey = `${update.sensorType}.${update.instance}`;
-      // Use field-specific throttle settings (engine=0ms, wind/gps=500ms, depth=1500ms, etc.)
-      const fieldThrottle = this.getFieldThrottleMs(update.sensorType);
-      const effectiveThrottle = skipThrottling ? 0 : fieldThrottle;
-
-      if (effectiveThrottle > 0 && this.isThrottled(fieldKey, effectiveThrottle)) {
-        continue;
-      }
 
       // Update sensor data in store
       try {
@@ -519,47 +481,18 @@ export class PureStoreUpdater {
         useNmeaStore.getState().updateMessageMetadata(messageFormat);
         updatedFields.push(fieldKey);
         anyUpdated = true;
-
-        // Update throttle timestamp
-        this.lastUpdateTimes.set(fieldKey, Date.now());
       } catch (error) {
         console.error(`[PureStoreUpdater] ❌ Store update FAILED for ${fieldKey}:`, error);
       }
     }
     return {
       updated: anyUpdated,
-      throttled: false,
       batchedFields: updatedFields,
-      reason: anyUpdated ? `Updated ${updatedFields.length} sensors` : 'All updates throttled',
+      reason: anyUpdated ? `Updated ${updatedFields.length} sensors` : 'No updates applied',
     };
   }
 
-  /**
-   * Get field-specific throttle settings for sensor types
-   */
-  private getFieldThrottleMs(sensorType: string): number {
-    // NO THROTTLING: Version-based subscriptions handle efficiency at React layer
-    // Each NMEA message updates its metric immediately
-    // Store handles version counters, only changed metrics trigger re-renders
-    // This matches architecture principle: parse → update → done (no delays)
-    return 0;
-  }
 
-  /**
-   * Check if a specific field is throttled
-   */
-  private isThrottled(fieldKey: string, throttleMs: number): boolean {
-    const lastUpdate = this.lastUpdateTimes.get(fieldKey);
-    if (!lastUpdate) return false;
-    return Date.now() - lastUpdate < throttleMs;
-  }
-
-  /**
-   * Clear all throttling state
-   */
-  clearThrottling(): void {
-    this.lastUpdateTimes.clear();
-  }
 
   /**
    * Detect message format based on parsed message

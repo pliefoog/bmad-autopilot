@@ -25,9 +25,7 @@ export interface NmeaServiceConfig {
     strictValidation?: boolean;
   };
   updates?: {
-    throttleMs?: number;
     enableBatching?: boolean;
-    skipThrottling?: boolean;
   };
 }
 
@@ -38,12 +36,6 @@ export interface NmeaServiceStatus {
     successfulParses: number;
     failedParses: number;
     successRate: number;
-  };
-  updates: {
-    totalUpdates: number;
-    throttledUpdates: number;
-    batchedUpdates: number;
-    throttleRate: number;
   };
   performance: {
     messagesPerSecond: number;
