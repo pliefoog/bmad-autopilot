@@ -36,7 +36,6 @@
 
 import { EventEmitter } from 'events';
 import { SensorInstance } from '../types/SensorInstance';
-import { useNmeaStore } from '../store/nmeaStore';
 import { log } from '../utils/logging/logger';
 import { AlarmEvaluator } from './AlarmEvaluator';
 import { CalculatedMetricsService } from './CalculatedMetricsService';
@@ -141,8 +140,18 @@ export class SensorDataRegistry {
     const updateResult = sensor.updateMetrics(data);
     const { changed: hasChanges, changedMetrics } = updateResult;
 
-    // Only proceed if metrics actually changed
-    if (!hasChanges && !isNew) {
+    // Emit sensor created event FIRST (for widget detection)
+    // Important: Do this even if no data changed, so widgets detect new sensors
+    if (isNew) {
+      this.eventEmitter.emit('sensorCreated', {
+        sensorType,
+        instance,
+        timestamp: Date.now(),
+      });
+    }
+
+    // Only proceed with notifications if metrics actually changed
+    if (!hasChanges) {
       return;
     }
 
@@ -160,20 +169,10 @@ export class SensorDataRegistry {
       calculatedMetrics = new Map(); // Continue with empty map
     }
     
-    // Store calculated metrics in sensor history
+    // Store calculated metrics in sensor history (DO NOT notify yet - happens after main loop)
     for (const [fieldName, metric] of calculatedMetrics.entries()) {
       try {
         sensor.addCalculatedMetric(fieldName, metric);
-        
-        // Track calculated metrics as changed (for notification)
-        changedMetrics.add(fieldName);
-        
-        // Notify subscribers of calculated metrics (with error isolation)
-        const metricSubKey = this.getMetricKey(sensorType, instance, fieldName);
-        const subscribers = this.subscriptions.get(metricSubKey);
-        if (subscribers && subscribers.size > 0) {
-          this.notifySubscribers(subscribers, sensorType, instance, fieldName);
-        }
       } catch (error) {
         log.app('❌ Error storing calculated metric', () => ({
           sensorType,
@@ -181,6 +180,8 @@ export class SensorDataRegistry {
           fieldName,
           error: error instanceof Error ? error.message : String(error),
         }));
+        // Remove from map if storage failed
+        calculatedMetrics.delete(fieldName);
       }
     }
 
@@ -210,13 +211,25 @@ export class SensorDataRegistry {
       }
     }
 
-    // Emit sensor created event (for widget detection)
-    if (isNew) {
-      this.eventEmitter.emit('sensorCreated', {
-        sensorType,
-        instance,
-        timestamp: Date.now(),
-      });
+    // Notify calculated metrics subscribers AFTER main metrics
+    // This ensures correct order: base metrics first, then derived metrics
+    for (const [fieldName] of calculatedMetrics.entries()) {
+      const metricSubKey = this.getMetricKey(sensorType, instance, fieldName);
+      const subscribers = this.subscriptions.get(metricSubKey);
+      if (subscribers && subscribers.size > 0) {
+        this.notifySubscribers(subscribers, sensorType, instance, fieldName);
+      }
+      
+      // Also notify virtual stats for calculated metrics
+      const virtualStats = ['min', 'max', 'avg'];
+      for (const stat of virtualStats) {
+        const virtualMetricKey = `${fieldName}.${stat}`;
+        const virtualSubKey = this.getMetricKey(sensorType, instance, virtualMetricKey);
+        const virtualSubscribers = this.subscriptions.get(virtualSubKey);
+        if (virtualSubscribers && virtualSubscribers.size > 0) {
+          this.notifySubscribers(virtualSubscribers, sensorType, instance, virtualMetricKey);
+        }
+      }
     }
   }
 
@@ -312,6 +325,13 @@ export class SensorDataRegistry {
     metricName: string,
     callback: SubscriptionCallback,
   ): () => void {
+    // Check if registry is destroyed
+    if (this.destroyed) {
+      log.app('⚠️ Cannot subscribe to destroyed registry', () => ({ sensorType, instance, metricName }));
+      // Return no-op unsubscribe function
+      return () => {};
+    }
+
     // Input validation
     if (typeof callback !== 'function') {
       throw new Error('Subscription callback must be a function');

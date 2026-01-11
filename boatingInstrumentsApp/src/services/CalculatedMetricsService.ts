@@ -127,7 +127,9 @@ export class RateOfTurnCalculator implements MetricCalculator {
     const latest = allPoints[allPoints.length - 1];
     const previous = allPoints[allPoints.length - 2];
 
-    if (!previous || typeof latest.value !== 'number' || typeof previous.value !== 'number') {
+    // Defensive: Validate both points exist and are numbers
+    if (!latest || !previous) return results;
+    if (typeof latest.value !== 'number' || typeof previous.value !== 'number') {
       return results;
     }
 

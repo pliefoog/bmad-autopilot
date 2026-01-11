@@ -37,7 +37,7 @@
  */
 
 import { MetricValue } from './MetricValue';
-import { SensorType, SensorData, SensorConfiguration, MetricThresholds } from './SensorData';
+import { SensorType, SensorData, MetricThresholds } from './SensorData';
 import { DataCategory } from '../presentation/categories';
 import { AdaptiveHistoryBuffer, DataPoint } from '../utils/AdaptiveHistoryBuffer';
 import { getDataFields } from '../registry/SensorConfigRegistry';
