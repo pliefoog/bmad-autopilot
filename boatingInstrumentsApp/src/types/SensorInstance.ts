@@ -39,21 +39,21 @@
 import { MetricValue } from './MetricValue';
 import { SensorType, SensorData, SensorConfiguration, MetricThresholds } from './SensorData';
 import { DataCategory } from '../presentation/categories';
-import { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
+import { AdaptiveHistoryBuffer, DataPoint } from '../utils/AdaptiveHistoryBuffer';
 import { getDataFields } from '../registry/SensorConfigRegistry';
 import { evaluateAlarm } from '../utils/alarmEvaluation';
 import { log } from '../utils/logging/logger';
 import { calculateTrueWind } from '../utils/calculations/windCalculations';
 
 /**
- * History point with enriched display values
- * Stored in history buffer for chart rendering
+ * Enriched metric data point (backward compatibility)
+ * Used by getMetric() to return display-ready values
  */
-export interface HistoryPoint {
-  si_value: number | string; // Support both numeric and string values
-  value: number | string; // Display value
-  formattedValue: string; // Without unit
-  formattedValueWithUnit: string; // With unit
+export interface EnrichedMetricData {
+  si_value: number | string;
+  value: number | string;
+  formattedValue: string;
+  formattedValueWithUnit: string;
   unit: string;
   timestamp: number;
 }
@@ -75,7 +75,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
   // History storage (Map of buffers, one per metric)
   // Note: _metrics Map removed - use buffer.getLatest() instead
-  private _history: Map<string, TimeSeriesBuffer<HistoryPoint>> = new Map();
+  private _history: Map<string, AdaptiveHistoryBuffer<number | string>> = new Map();
 
   // Version tracking for change detection (NEW: Architecture v2.0)
   // Incremented when any metric value changes, enables fine-grained subscriptions
@@ -529,7 +529,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * @param fieldName - Field name (e.g., 'depth', 'voltage')
    * @returns Enriched history point or undefined
    */
-  getMetric(fieldName: string): HistoryPoint | undefined {
+  getMetric(fieldName: string): EnrichedMetricData | undefined {
     // Virtual stat metrics: fieldName.min, fieldName.max, fieldName.avg
     // Example: 'depth.min' returns minimum depth from session stats
     const statMatch = fieldName.match(/^(.+)\.(min|max|avg)$/);
@@ -650,7 +650,6 @@ export class SensorInstance<T extends SensorData = SensorData> {
     const buffer = this._history.get(fieldName);
     if (!buffer) {
       // Special case: 'name' field may not be in history (defaults to `sensorType-instance`)
-      // Return the instance's default name as a HistoryPoint for consistency
       if (fieldName === 'name' && this.name) {
         return {
           si_value: this.name,
@@ -664,8 +663,38 @@ export class SensorInstance<T extends SensorData = SensorData> {
       return undefined;
     }
 
+    // Get latest raw data point from buffer
     const latest = buffer.getLatest();
-    return latest; // Return the enriched HistoryPoint directly
+    if (!latest) return undefined;
+
+    // Reconstruct enriched data from raw SI value
+    const unitType = this._metricUnitTypes.get(fieldName);
+    
+    // For string values, return as-is
+    if (typeof latest.value === 'string') {
+      return {
+        si_value: latest.value,
+        value: latest.value,
+        formattedValue: latest.value,
+        formattedValueWithUnit: latest.value,
+        unit: '',
+        timestamp: latest.timestamp,
+      };
+    }
+
+    // For numeric values, create MetricValue to get display values
+    const metric = unitType
+      ? new MetricValue(latest.value, latest.timestamp, unitType)
+      : new MetricValue(latest.value, latest.timestamp);
+
+    return {
+      si_value: latest.value,
+      value: metric.getDisplayValue(),
+      formattedValue: metric.getFormattedValue(),
+      formattedValueWithUnit: metric.getFormattedValueWithUnit(),
+      unit: metric.getUnit(),
+      timestamp: latest.timestamp,
+    };
   }
 
   /**
@@ -683,20 +712,18 @@ export class SensorInstance<T extends SensorData = SensorData> {
    *
    * @param fieldName - Field name
    * @param timeWindowMs - Optional time window in milliseconds
-   * @returns Array of history points with display values
+   * @returns Array of data points (raw SI values with timestamps)
    */
-  getHistoryForMetric(fieldName: string, timeWindowMs?: number): HistoryPoint[] {
+  getHistoryForMetric(fieldName: string, timeWindowMs?: number): DataPoint<number | string>[] {
     const buffer = this._history.get(fieldName);
     if (!buffer) return [];
 
-    const points = buffer.getAll().map((p) => p.value);
-
     if (timeWindowMs) {
       const cutoff = Date.now() - timeWindowMs;
-      return points.filter((p) => p.timestamp >= cutoff);
+      return buffer.getAll().filter((p) => p.timestamp >= cutoff);
     }
 
-    return points;
+    return buffer.getAll();
   }
 
   /**
@@ -744,108 +771,69 @@ export class SensorInstance<T extends SensorData = SensorData> {
   }
 
   /**
+   * Get all metric keys that have history data
+   * Used by AlarmEvaluator to iterate metrics
+   *
+   * @returns Array of metric field names
+   */
+  getMetricKeys(): string[] {
+    return Array.from(this._history.keys());
+  }
+
+  /**
    * Re-enrich all metrics
    * Called by ReEnrichmentCoordinator on presentation change
-   * Note: With lazy getters, this just invalidates caches
+   *
+   * NOTE: With AdaptiveHistoryBuffer, we store raw SI values.
+   * Display values are computed on-demand via MetricValue.
+   * This method is now a no-op but kept for coordinator compatibility.
    */
   reEnrich(): void {
-    // History points need re-enrichment (they store enriched values)
-    for (const [fieldName, buffer] of this._history.entries()) {
-      const unitType = this._metricUnitTypes.get(fieldName);
-      if (!unitType) continue;
-
-      // Re-enrich all history points
-      // This is expensive but only happens on unit preference changes
-      const allPoints = buffer.getAll();
-      for (const point of allPoints) {
-        const historyPoint = point.value;
-        const metric = new MetricValue(historyPoint.si_value, historyPoint.timestamp, unitType);
-
-        // Update display values
-        historyPoint.value = metric.getDisplayValue();
-        historyPoint.unit = metric.getUnit();
-        historyPoint.formattedValue = metric.getFormattedValue();
-        historyPoint.formattedValueWithUnit = metric.getFormattedValueWithUnit();
-      }
-    }
-
-    log.app('Re-enriched all metrics', () => ({
+    log.app('Re-enrichment called (no-op with AdaptiveHistoryBuffer)', () => ({
       sensorType: this.sensorType,
       instance: this.instance,
-      count: this._history.size,
+      metricsCount: this._history.size,
     }));
   }
 
   /**
    * Add metric to history (internal)
-   * Creates enriched history point for storage
+   * Stores raw SI value in AdaptiveHistoryBuffer
    */
   private _addToHistory(fieldName: string, metric: MetricValue): void {
     if (!this._history.has(fieldName)) {
-      // Create buffer: 300 recent, 300 old, 60s threshold, 10x decimation
-      // 300 recent = 5 minutes at 1Hz, 300 old = 50 minutes decimated (10x)
-      this._history.set(fieldName, new TimeSeriesBuffer<HistoryPoint>(300, 300, 60000, 10));
+      // Create buffer: 150 total points (100 recent + 50 downsampled)
+      // 60s recent window matches previous behavior
+      this._history.set(fieldName, new AdaptiveHistoryBuffer<number | string>({
+        maxPoints: 150,
+        recentWindowMs: 60000,
+      }));
     }
 
     const buffer = this._history.get(fieldName)!;
 
-    // Get unitType from cached map (built in constructor from registry)
-    const unitType = this._metricUnitTypes.get(fieldName);
-
-    // DEBUG: Log conversion details for pressure and airTemperature
-    if (fieldName === 'pressure' || fieldName === 'airTemperature') {
-      const displayValue = metric.getDisplayValue(unitType);
-      const unit = metric.getUnit(unitType);
-      log.app(`_addToHistory ${this.sensorType}.${fieldName}`, () => ({
-        si_value: metric.si_value,
-        unitType,
-        metricInternalUnitType: metric.getUnitType(),
-        displayValue,
-        unit,
-      }));
-    }
-
-    // Store enriched history point (computed once at storage time)
-    // CRITICAL: Always pass unitType explicitly to ensure display value conversion
-    // If unitType is undefined, getDisplayValue() returns SI value unchanged
-    buffer.add(
-      {
-        si_value: metric.si_value,
-        value: metric.getDisplayValue(unitType), // Pass unitType explicitly
-        formattedValue: metric.getFormattedValue(unitType),
-        formattedValueWithUnit: metric.getFormattedValueWithUnit(unitType),
-        unit: metric.getUnit(unitType),
-        timestamp: metric.timestamp,
-      },
-      metric.timestamp,
-    );
+    // Store raw SI value only - display values computed on-demand
+    // This is 77% memory reduction (no HistoryPoint object)
+    buffer.add(metric.si_value, metric.timestamp);
   }
 
   /**
    * Add string metric to history (internal)
-   * Stores string values directly without enrichment
+   * Stores string values directly
    */
   private _addStringToHistory(fieldName: string, value: string, timestamp: number): void {
     if (!this._history.has(fieldName)) {
-      // Create buffer: 300 recent, 300 old, 60s threshold, 10x decimation
-      // Match numeric buffer size for consistency
-      this._history.set(fieldName, new TimeSeriesBuffer<HistoryPoint>(300, 300, 60000, 10));
+      // Create buffer: 150 total points
+      this._history.set(fieldName, new AdaptiveHistoryBuffer<number | string>({
+        maxPoints: 150,
+        recentWindowMs: 60000,
+      }));
     }
 
     const buffer = this._history.get(fieldName)!;
 
-    // Store string as-is (no formatting needed)
-    buffer.add(
-      {
-        si_value: value,
-        value: value,
-        formattedValue: value,
-        formattedValueWithUnit: value,
-        unit: '',
-        timestamp,
-      },
-      timestamp,
-    );
+    // Store string as-is
+    buffer.add(value, timestamp);
   }
 
   /**

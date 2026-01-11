@@ -43,13 +43,12 @@ export class AlarmEvaluator {
     for (const sensorInstance of sensors) {
       const sensorKey = `${sensorInstance.sensorType}:${sensorInstance.instance}`;
 
-      // Get all metric keys from history
-      // TODO: Replace with public API once SensorInstance exposes getMetricKeys()
-      const historyMap = (sensorInstance as any)._history as Map<string, any>;
-      if (!historyMap || historyMap.size === 0) continue;
+      // Get all metric keys from sensor instance
+      const metricKeys = sensorInstance.getMetricKeys();
+      if (metricKeys.length === 0) continue;
 
       // Check alarm state for each metric
-      for (const metricKey of historyMap.keys()) {
+      for (const metricKey of metricKeys) {
         const alarmLevel = sensorInstance.getAlarmState(metricKey);
 
         // AlarmLevel: 0=NONE, 1=STALE, 2=WARNING, 3=CRITICAL

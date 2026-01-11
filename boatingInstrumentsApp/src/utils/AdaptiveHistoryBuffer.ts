@@ -146,6 +146,21 @@ export class AdaptiveHistoryBuffer<T extends number | string> {
   }
 
   /**
+   * Get most recent data point
+   *
+   * @returns Latest data point or undefined if buffer is empty
+   */
+  getLatest(): DataPoint<T> | undefined {
+    if (this.recentBuffer.length > 0) {
+      return this.recentBuffer[this.recentBuffer.length - 1];
+    }
+    if (this.downsampledBuffer.length > 0) {
+      return this.downsampledBuffer[this.downsampledBuffer.length - 1];
+    }
+    return undefined;
+  }
+
+  /**
    * Get data points within time range
    *
    * @param startTime - Start timestamp
