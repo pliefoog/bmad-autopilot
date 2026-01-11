@@ -17,7 +17,7 @@ interface SpeedWidgetProps {
  * Virtual metrics: Uses .max and .avg suffixes for session statistics
  * 
  * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
- * MetricCells subscribe individually via useMetric hook. Enables fine-grained reactivity.
+ * MetricCells subscribe individually via MetricContext hooks (useMetricValue). Enables fine-grained reactivity.
  */
 export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (

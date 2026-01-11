@@ -71,18 +71,13 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
   // Cached lookups (built once, referenced by all metrics)
   private _metricUnitTypes: Map<string, DataCategory> = new Map();
+  private _forceTimezones: Map<string, 'utc' | undefined> = new Map();
   private _alarmStates: Map<string, 0 | 1 | 2 | 3> = new Map();
   private _thresholds: Map<string, MetricThresholds> = new Map();
 
   // History storage (Map of buffers, one per metric)
   // Note: _metrics Map removed - use buffer.getLatest() instead
   private _history: Map<string, AdaptiveHistoryBuffer<number | string>> = new Map();
-
-  // Version tracking for change detection (NEW: Architecture v2.0)
-  // Incremented when any metric value changes, enables fine-grained subscriptions
-  private _version: number = 0;
-  // Per-metric version counters for ultra-fine-grained subscriptions
-  private _metricVersions: Map<string, number> = new Map();
 
   // Metadata
   name: string;
@@ -106,6 +101,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
     for (const field of fields) {
       if (field.unitType) {
         this._metricUnitTypes.set(field.key, field.unitType);
+      }
+      // Cache forceTimezone if present
+      if ('forceTimezone' in field) {
+        this._forceTimezones.set(field.key, field.forceTimezone);
       }
     }
 
@@ -213,19 +212,6 @@ export class SensorInstance<T extends SensorData = SensorData> {
             // Add to history
             this._addToHistory(fieldName, metric);
 
-            // Increment per-metric version for fine-grained subscriptions
-            const currentMetricVersion = this._metricVersions.get(fieldName) ?? 0;
-            this._metricVersions.set(fieldName, currentMetricVersion + 1);
-
-            // DEBUG: Log version increment for GPS time fields
-            if (this.sensorType === 'gps' && (fieldName === 'utcTime' || fieldName === 'utcDate')) {
-              log.gps(`🔢 ${fieldName} version incremented`, () => ({
-                version: currentMetricVersion + 1,
-                value: fieldValue,
-                formatted: metric.formattedValue,
-              }));
-            }
-
             // Evaluate alarm with priority logic
             const thresholds = this._thresholds.get(fieldName);
             const staleThreshold = thresholds?.staleThresholdMs ?? 5000;
@@ -249,10 +235,6 @@ export class SensorInstance<T extends SensorData = SensorData> {
               value: fieldValue,
             }));
             this._addStringToHistory(fieldName, fieldValue, now);
-
-            // Increment per-metric version for string values too
-            const currentMetricVersion = this._metricVersions.get(fieldName) ?? 0;
-            this._metricVersions.set(fieldName, currentMetricVersion + 1);
           }
           // Boolean values are stored but don't have history/alarms currently
         }
@@ -264,19 +246,12 @@ export class SensorInstance<T extends SensorData = SensorData> {
       }
     }
 
-    // Check if timestamp changed (important for GPS time updates)
-    const timestampChanged = this.timestamp !== now;
+    // Update timestamp
     this.timestamp = now;
-
-    // Increment sensor-level version if any metric changed OR if timestamp changed
-    // This ensures GPS time field updates trigger re-renders even when lat/lon unchanged
-    if (hasChanges || timestampChanged) {
-      this._version++;
-    }
 
     // Calculate dew point for weather sensors if we have temp + humidity
     if (this.sensorType === 'weather' && hasChanges) {
-      this._calculateDewPoint();
+      this._calculateDewPoint(changedMetrics);
     }
 
     // Note: True wind calculation for wind sensors is handled in nmeaStore
@@ -290,13 +265,15 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * Only for weather sensors with both airTemperature and humidity
    * Formula: Td = (b*α)/(a-α), where α = ln(RH/100) + (a*T)/(b+T)
    * Constants: a = 17.27, b = 237.7
+   * 
+   * @param changedMetrics - Set to add 'dewPoint' to if calculation succeeds
    */
-  private _calculateDewPoint(): void {
+  private _calculateDewPoint(changedMetrics: Set<string>): void {
     const tempMetric = this.getMetric('airTemperature');
     const humidityMetric = this.getMetric('humidity');
 
     if (!tempMetric || !humidityMetric) return;
-    if (tempMetric.si_value === null || humidityMetric.si_value === null) return;
+    if (typeof tempMetric.si_value !== 'number' || typeof humidityMetric.si_value !== 'number') return;
 
     const T = tempMetric.si_value; // Celsius
     const RH = humidityMetric.si_value; // Percentage 0-100
@@ -321,6 +298,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
     // Only add to history (metrics Map was removed in refactor)
     this._addToHistory('dewPoint', metric);
+    
+    // Mark dewPoint as changed so subscribers get notified
+    // This is needed because dewPoint is calculated, not parsed from NMEA
+    changedMetrics.add('dewPoint');
   }
 
   /**
@@ -354,10 +335,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
     // Get previous point (second most recent)
     const previous = history[history.length - 2];
-    if (!previous || latest.si_value === null || previous.si_value === null) return null;
+    if (!previous || typeof latest.value !== 'number' || typeof previous.value !== 'number') return null;
 
-    const currentHeading = latest.si_value;
-    const previousHeading = previous.si_value;
+    const currentHeading = latest.value;
+    const previousHeading = previous.value;
     const deltaTime = (latest.timestamp - previous.timestamp) / 1000; // Convert to seconds
 
     // Need reasonable time delta (at least 100ms, max 5s for accuracy)
@@ -464,11 +445,11 @@ export class SensorInstance<T extends SensorData = SensorData> {
       return;
     }
     if (
-      sogMetric.si_value === null ||
-      cogMetric.si_value === null ||
-      headingMetric.si_value === null
+      typeof sogMetric.si_value !== 'number' ||
+      typeof cogMetric.si_value !== 'number' ||
+      typeof headingMetric.si_value !== 'number'
     ) {
-      log.wind('SOG, COG, or heading is null - calculation requires valid values', () => ({
+      log.wind('SOG, COG, or heading is not numeric - calculation requires valid numbers', () => ({
         sog: sogMetric?.si_value,
         cog: cogMetric?.si_value,
         heading: headingMetric?.si_value,
@@ -476,10 +457,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
       return;
     }
 
-    // Calculate true wind using proper vector math
+    // Calculate true wind using proper vector math (all values confirmed to be numbers)
     const trueWind = calculateTrueWind(
-      awsMetric.si_value,
-      awaMetric.si_value,
+      awsMetric.si_value as number,
+      awaMetric.si_value as number,
       sogMetric.si_value,
       cogMetric.si_value,
       headingMetric.si_value,
@@ -549,9 +530,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
       if (historyData.length === 0) return undefined;
 
       // Extract SI values from history points for min/max/avg calculation
-      // NOTE: We use si_value (not display value) because MetricValue will convert to display units
+      // NOTE: AdaptiveHistoryBuffer stores raw values directly (number or string)
+      // point.value IS the si_value (not a MetricValue object)
       const siValues = historyData
-        .map((point) => point.value.si_value)
+        .map((point) => point.value)
         .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
 
       if (siValues.length === 0) return undefined;
@@ -594,8 +576,22 @@ export class SensorInstance<T extends SensorData = SensorData> {
       // Check if we have fresh hardware ROT (less than 1 second old)
       if (buffer) {
         const latest = buffer.getLatest();
-        if (latest && latest.si_value !== null && now - latest.timestamp < 1000) {
-          return latest; // Use hardware value
+        if (latest && typeof latest.value === 'number' && now - latest.timestamp < 1000) {
+          // Reconstruct EnrichedMetricData from DataPoint
+          const unitType = this._metricUnitTypes.get('rateOfTurn');
+          const metric = unitType
+            ? new MetricValue(latest.value, latest.timestamp, unitType)
+            : new MetricValue(latest.value, latest.timestamp);
+
+          return {
+            si_value: latest.value,
+            value: metric.getDisplayValue(),
+            formattedValue: metric.getFormattedValue(),
+            formattedValueWithUnit: metric.getFormattedValueWithUnit(),
+            unit: metric.getUnit(),
+            timestamp: latest.timestamp,
+            alarmState: this.getAlarmState('rateOfTurn'),
+          };
         }
       }
 
@@ -722,8 +718,9 @@ export class SensorInstance<T extends SensorData = SensorData> {
       const previousState = this._alarmStates.get(metricKey) ?? 0;
       const staleThreshold = thresholds.staleThresholdMs ?? 5000;
 
+      // evaluateAlarm expects number or string, EnrichedMetricData.si_value can be either
       const newState = evaluateAlarm(
-        metric.si_value,
+        typeof metric.si_value === 'number' ? metric.si_value : 0,
         metric.timestamp,
         thresholds,
         previousState,
@@ -766,9 +763,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * @returns 'utc' or undefined
    */
   private _getForceTimezone(fieldName: string): 'utc' | undefined {
-    const fields = getDataFields(this.sensorType);
-    const field = fields.find((f) => f.key === fieldName);
-    return field && 'forceTimezone' in field ? field.forceTimezone : undefined;
+    return this._forceTimezones.get(fieldName);
   }
 
   /**
@@ -823,102 +818,6 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
     // Filter to only numeric SI values
     const values = history
-      .map((p) => p.si_value)
-      .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
-
-    if (values.length === 0) return undefined;
-
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
-
-    return { min, max, avg };
-  }
-
-  /**
-   * Get formatted session statistics for a metric
-   *
-   * Calculates min/max/avg from history and formats in user's selected units.
-   * On-demand calculation - only computes when called.
-   *
-   * @param metricKey - Metric field name
-   * @returns Object with formatted min/max/avg or undefined
-   *
-   * @example
-   * ```typescript
-   * const stats = depthInstance.getFormattedSessionStats('depth');
-   * console.log(stats.formattedMinValue);  // "5.2" (in user's units)
-   * console.log(stats.formattedMaxValue);  // "8.7" (in user's units)
-   * console.log(stats.formattedAvgValue);  // "6.5" (in user's units)
-   * console.log(stats.unit);               // "ft"
-   * ```
-   */
-  getFormattedSessionStats(metricKey: string):
-    | {
-        formattedMinValue: string;
-        formattedMaxValue: string;
-        formattedAvgValue: string;
-        unit: string;
-      }
-    | undefined {
-    const stats = this.getSessionStats(metricKey);
-    if (!stats) return undefined;
-
-    // Get unitType for this metric
-    const unitType = this._metricUnitTypes.get(metricKey);
-    if (!unitType) {
-      // No unitType - return SI values as strings
-      return {
-        formattedMinValue: stats.min.toFixed(1),
-        formattedMaxValue: stats.max.toFixed(1),
-        formattedAvgValue: stats.avg.toFixed(1),
-        unit: '',
-      };
-    }
-
-    // Create MetricValue instances to leverage existing formatting
-    const minMetric = new MetricValue(stats.min, Date.now(), unitType);
-    const maxMetric = new MetricValue(stats.max, Date.now(), unitType);
-    const avgMetric = new MetricValue(stats.avg, Date.now(), unitType);
-
-    return {
-      formattedMinValue: minMetric.getFormattedValue(),
-      formattedMaxValue: maxMetric.getFormattedValue(),
-      formattedAvgValue: avgMetric.getFormattedValue(),
-      unit: minMetric.getUnit(),
-    };
-  }
-
-  /**
-   * Get display-value session statistics for a metric (numeric, for charting)
-   *
-   * Returns min/max/avg in user's selected display units as numbers (not formatted strings).
-   * Used by TrendLine for Y-axis range calculation.
-   *
-   * @param metricKey - Metric field name
-   * @returns Object with numeric min/max/avg in display units or undefined
-   *
-   * @example
-   * ```typescript
-   * const stats = depthInstance.getDisplayValueStats('depth');
-   * console.log(stats.min);  // 5.2 (numeric, in user's units)
-   * console.log(stats.max);  // 8.7 (numeric, in user's units)
-   * console.log(stats.unit); // "ft"
-   * ```
-   */
-  getDisplayValueStats(metricKey: string):
-    | {
-        min: number;
-        max: number;
-        avg: number;
-        unit: string;
-      }
-    | undefined {
-    const history = this.getHistoryForMetric(metricKey);
-    if (history.length === 0) return undefined;
-
-    // Use display values from history (already converted to user's units)
-    const values = history
       .map((p) => p.value)
       .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
 
@@ -928,86 +827,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
     const max = Math.max(...values);
     const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
 
-    // Get unit from first history point (all points have same unit)
-    const unit = history[0]?.unit ?? '';
-
-    // DEBUG: Log stats calculation for pressure
-    if (metricKey === 'pressure') {
-      log.app(`getDisplayValueStats ${this.sensorType}.${metricKey}`, () => ({
-        historyCount: history.length,
-        min,
-        max,
-        avg,
-        unit,
-        firstValue: history[0]?.value,
-        lastValue: history[history.length - 1]?.value,
-        sampleValues: values.slice(0, 5),
-      }));
-    }
-
-    return { min, max, avg, unit };
-  }
-
-  /**
-   * Get sensor-level version counter (NEW: Architecture v2.0)
-   * Increments whenever any metric value changes
-   * Used for coarse-grained subscriptions (entire sensor)
-   *
-   * @returns Current sensor version number
-   *
-   * @example
-   * ```typescript
-   * const depthInstance = useNmeaStore(
-   *   (state) => state.nmeaData.sensors.depth?.[0],
-   *   (a, b) => a?.version === b?.version // Compare versions instead of object references
-   * );
-   * ```
-   */
-  get version(): number {
-    return this._version;
-  }
-
-  /**
-   * Get per-metric version counter (NEW: Architecture v2.0)
-   * Increments only when specific metric changes
-   * Used for fine-grained subscriptions (single metric)
-   *
-   * @param metricKey - Metric field name
-   * @returns Current metric version number or 0 if metric not found
-   *
-   * @example
-   * ```typescript
-   * const useMetric = (sensorType, instance, metricKey) => {
-   *   return useNmeaStore(
-   *     (state) => {
-   *       const sensor = state.nmeaData.sensors[sensorType]?.[instance];
-   *       return sensor ? {
-   *         value: sensor.getMetric(metricKey),
-   *         version: sensor.getMetricVersion(metricKey)
-   *       } : null;
-   *     },
-   *     (a, b) => a?.version === b?.version // Only re-render when THIS metric changes
-   *   );
-   * };
-   * ```
-   */
-  getMetricVersion(metricKey: string): number {
-    // Check if this is a virtual stat metric (e.g., "depth.min", "depth.max")
-    const statMatch = metricKey.match(/^(.+)\.(min|max|avg)$/);
-    if (statMatch) {
-      const [, baseMetric] = statMatch;
-      // Use base metric's version (e.g., depth.min → depth version)
-      // This ensures virtual metrics trigger updates when the base metric changes
-      //
-      // TODO: Potential optimization - cache calculated virtual metrics
-      //   Current: Re-renders on EVERY base metric update (even if min/max unchanged)
-      //   Trade-off: Extra renders vs. complexity (acceptable for <10 Hz updates)
-      //   Future: Cache virtual metrics with separate version counters if performance issues
-      //   See: REGISTRY-FIRST-WIDGET-TRANSFORMATION.md Option B analysis
-      return this._metricVersions.get(baseMetric) ?? 0;
-    }
-
-    return this._metricVersions.get(metricKey) ?? 0;
+    return { min, max, avg };
   }
 
   /**

@@ -135,6 +135,17 @@ export class SensorDataRegistry {
     // Cross-sensor calculations (true wind)
     if (sensorType === 'wind' && hasChanges) {
       this.crossSensorCalc.calculateTrueWind(sensor);
+      
+      // Notify subscribers of calculated true wind metrics
+      // These are computed from apparent wind + GPS + compass, not from NMEA directly
+      const trueWindMetrics = ['trueSpeed', 'trueDirection'];
+      for (const metricKey of trueWindMetrics) {
+        const metricSubKey = this.getMetricKey(sensorType, instance, metricKey);
+        const subscribers = this.subscriptions.get(metricSubKey);
+        if (subscribers && subscribers.size > 0) {
+          subscribers.forEach((callback) => callback());
+        }
+      }
     }
 
     // Evaluate alarms globally (all sensors, all metrics)
@@ -150,6 +161,18 @@ export class SensorDataRegistry {
       const subscribers = this.subscriptions.get(metricSubKey);
       if (subscribers && subscribers.size > 0) {
         subscribers.forEach((callback) => callback());
+      }
+      
+      // ALSO notify virtual stat metric subscribers (e.g., depth.min, depth.max, depth.avg)
+      // Virtual metrics depend on the base metric's history, so they change when base changes
+      const virtualStats = ['min', 'max', 'avg'];
+      for (const stat of virtualStats) {
+        const virtualMetricKey = `${metricKey}.${stat}`;
+        const virtualSubKey = this.getMetricKey(sensorType, instance, virtualMetricKey);
+        const virtualSubscribers = this.subscriptions.get(virtualSubKey);
+        if (virtualSubscribers && virtualSubscribers.size > 0) {
+          virtualSubscribers.forEach((callback) => callback());
+        }
       }
     }
 

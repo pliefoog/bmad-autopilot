@@ -16,7 +16,7 @@ interface AutopilotWidgetProps {
  * Multi-sensor: Uses both 'autopilot' and 'compass' sensors
  * 
  * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
- * MetricCells subscribe individually via useMetric hook. Enables fine-grained reactivity.
+ * MetricCells subscribe individually via MetricContext hooks (useMetricValue). Enables fine-grained reactivity.
  */
 export const AutopilotWidget: React.FC<AutopilotWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (

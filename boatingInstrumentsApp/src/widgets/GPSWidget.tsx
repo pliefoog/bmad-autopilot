@@ -15,7 +15,7 @@ interface GPSWidgetProps {
  * Secondary: UTC Date, UTC Time (datetime formatting with forceTimezone: 'utc')
  * 
  * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
- * MetricCells subscribe individually via useMetric hook. This enables fine-grained
+ * MetricCells subscribe individually via MetricContext hooks (useMetricValue). This enables fine-grained
  * reactivity - only affected cells re-render on updates.
  */
 export const GPSWidget: React.FC<GPSWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {

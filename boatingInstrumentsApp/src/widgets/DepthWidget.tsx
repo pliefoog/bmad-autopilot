@@ -15,7 +15,7 @@ interface DepthWidgetProps {
  * Secondary: Session minimum and maximum depth
  * 
  * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
- * MetricCells subscribe individually via useMetric hook. This enables fine-grained
+ * MetricCells subscribe individually via MetricContext hooks (useMetricValue). This enables fine-grained
  * reactivity - only affected cells re-render on updates.
  */
 export const DepthWidget: React.FC<DepthWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {

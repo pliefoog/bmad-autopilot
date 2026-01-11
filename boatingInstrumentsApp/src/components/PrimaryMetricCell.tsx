@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../store/themeStore';
 import { FlashingText } from './FlashingText';
@@ -73,13 +73,18 @@ interface PrimaryMetricCellProps extends SensorMetricProps {
  * - Unit: 12pt, regular, theme.textSecondary
  * - Auto-scales based on cellHeight and cellWidth
  *
+ * **Performance Optimization:**
+ * - Wrapped with React.memo to prevent parent-triggered re-renders
+ * - Only re-renders when props actually change (sensor type, instance, metric key, sizing)
+ * - Reduces React Native bridge crossings on high-frequency dashboards (64 cells × 10Hz updates)
+ *
  * **For AI Agents:**
- * This component is "dumb" - it just displays what it fetches.
+ * This component is "dumb" - it just displays what it fetches via MetricContext hooks.
  * All logic happens in SensorInstance (metric calculation, virtual stats) and
  * ConversionRegistry (unit conversion + formatting).
  * NEVER add calculation logic here - extend SensorInstance.getMetric() instead.
  */
-export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
+const PrimaryMetricCellComponent: React.FC<PrimaryMetricCellProps> = ({
   sensorType,
   instance,
   metricKey,
@@ -275,6 +280,27 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
     </View>
   );
 };
+
+// React.memo wrapper prevents re-renders when parent updates but props haven't changed
+export const PrimaryMetricCell = memo(
+  PrimaryMetricCellComponent,
+  (prevProps, nextProps) => {
+    // Custom comparison: only re-render if these props actually changed
+    return (
+      prevProps.sensorType === nextProps.sensorType &&
+      prevProps.instance === nextProps.instance &&
+      prevProps.metricKey === nextProps.metricKey &&
+      prevProps.cellWidth === nextProps.cellWidth &&
+      prevProps.cellHeight === nextProps.cellHeight &&
+      prevProps.testID === nextProps.testID &&
+      // Deep comparison for optional fontSize object
+      ((!prevProps.fontSize && !nextProps.fontSize) ||
+        (prevProps.fontSize?.mnemonic === nextProps.fontSize?.mnemonic &&
+          prevProps.fontSize?.value === nextProps.fontSize?.value &&
+          prevProps.fontSize?.unit === nextProps.fontSize?.unit))
+    );
+  }
+);
 
 const createStyles = (
   theme: any,

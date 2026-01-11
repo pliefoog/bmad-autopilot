@@ -55,6 +55,11 @@ interface SecondaryMetricCellProps extends SensorMetricProps {
  * Secondary cells display less critical metrics in bottom section of widgets.
  * Use for session stats, metadata, or auxiliary measurements.
  * Pattern identical to PrimaryMetricCell - NEVER add calculation logic here.
+ *
+ * **Performance Optimization:**
+ * - Wrapped with React.memo to prevent parent-triggered re-renders
+ * - Only re-renders when props actually change (sensor type, instance, metric key, sizing)
+ * - Reduces React Native bridge crossings on high-frequency dashboards (64 cells × 10Hz updates)
  */
 export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = React.memo(({
   sensorType,

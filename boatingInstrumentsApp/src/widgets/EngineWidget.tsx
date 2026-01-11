@@ -15,7 +15,7 @@ interface EngineWidgetProps {
  * Secondary: Fuel Rate, Engine Hours (full-width cells)
  * 
  * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
- * MetricCells subscribe individually via useMetric hook. Enables fine-grained reactivity.
+ * MetricCells subscribe individually via MetricContext hooks (useMetricValue). Enables fine-grained reactivity.
  */
 export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, instanceNumber = 0 }) => {
   return (
