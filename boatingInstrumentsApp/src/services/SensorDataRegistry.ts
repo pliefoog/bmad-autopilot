@@ -10,7 +10,7 @@
  * - ✅ Targeted subscriptions (only notify changed metrics)
  * - ✅ Single source of truth for sensor data
  * - ✅ Event-driven architecture (widget detection, alarms)
- * - ✅ Cross-sensor calculations (true wind)
+ * - ✅ Calculated metrics via CalculatedMetricsService (dewPoint, ROT, true wind)
  *
  * **Usage:**
  * ```typescript
@@ -31,6 +31,7 @@
  * This is the foundation of the new architecture. All sensor data lives here.
  * React components subscribe via MetricProvider, services query directly.
  * Replaces the old pattern of storing sensors in nmeaStore.
+ * Integrates CalculatedMetricsService for cross-sensor calculations.
  */
 
 import { EventEmitter } from 'events';

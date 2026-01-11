@@ -1,25 +1,24 @@
 /**
  * CrossSensorCalculations - Cross-Sensor Dependency Logic
  *
- * **Purpose:**
- * Handles calculations that require data from multiple sensor types.
- * Primary use case: True wind calculation from apparent wind + GPS + compass.
+ * **DEPRECATED (Jan 2026):**
+ * Cross-sensor calculations moved to CalculatedMetricsService.
+ * This class remains for backwards compatibility but does nothing.
+ * Will be removed in next major version.
  *
- * **Key Features:**
- * - True wind speed calculation (AWS → TWS using boat speed)
- * - True wind angle calculation (AWA → TWA using heading + COG)
- * - Dependency validation (checks for required sensors)
+ * **Migration:**
+ * Use CalculatedMetricsService instead - it handles:
+ * - True wind calculation (AWS + GPS + compass → TWS/TWD)
+ * - Dew point calculation (temperature + humidity → dew point)
+ * - Rate of turn calculation (heading history → ROT)
  *
- * **Usage:**
- * ```typescript
- * const calculator = new CrossSensorCalculations(sensorRegistry);
- * calculator.calculateTrueWind(windSensor);
- * ```
+ * **Previous Purpose (OBSOLETE):**
+ * Handled calculations requiring multiple sensor types.
+ * Logic moved to Strategy Pattern in CalculatedMetricsService.
  *
  * **For AI Agents:**
- * This service implements the cross-sensor dependency logic that was
- * previously embedded in SensorInstance._maybeCalculateTrueWind().
- * Called when wind sensor updates in SensorDataRegistry.
+ * This file is deprecated. All cross-sensor calculations now in
+ * CalculatedMetricsService.ts with proper Strategy Pattern architecture.
  */
 
 import { log } from '../utils/logging/logger';

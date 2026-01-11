@@ -255,50 +255,6 @@ export class SensorInstance<T extends SensorData = SensorData> {
   }
 
   /**
-   * Calculate dew point using Magnus formula
-   * Only for weather sensors with both airTemperature and humidity
-   * Formula: Td = (b*α)/(a-α), where α = ln(RH/100) + (a*T)/(b+T)
-   * Constants: a = 17.27, b = 237.7
-   * 
-   * @param changedMetrics - Set to add 'dewPoint' to if calculation succeeds
-   */
-  private _calculateDewPoint(changedMetrics: Set<string>): void {
-    const tempMetric = this.getMetric('airTemperature');
-    const humidityMetric = this.getMetric('humidity');
-
-    if (!tempMetric || !humidityMetric) return;
-    if (typeof tempMetric.si_value !== 'number' || typeof humidityMetric.si_value !== 'number') return;
-
-    const T = tempMetric.si_value; // Celsius
-    const RH = humidityMetric.si_value; // Percentage 0-100
-
-    // Validate ranges
-    if (RH <= 0 || RH > 100 || T < -40 || T > 50) return;
-
-    // Magnus formula constants
-    const a = 17.27;
-    const b = 237.7;
-
-    // Calculate
-    const alpha = Math.log(RH / 100) + (a * T) / (b + T);
-    const dewPoint = (b * alpha) / (a - alpha);
-
-    // Store as computed metric (reuse existing MetricValue infrastructure)
-    const now = Date.now();
-    const unitType = this._metricUnitTypes.get('dewPoint');
-    const metric = unitType
-      ? new MetricValue(dewPoint, now, unitType)
-      : new MetricValue(dewPoint, now);
-
-    // Only add to history (metrics Map was removed in refactor)
-    this._addToHistory('dewPoint', metric);
-    
-    // Mark dewPoint as changed so subscribers get notified
-    // This is needed because dewPoint is calculated, not parsed from NMEA
-    changedMetrics.add('dewPoint');
-  }
-
-  /**
    * Calculate Rate of Turn (ROT) from heading differential
    * Only for compass sensors with heading history
    * Formula: ROT (°/min) = (Δheading / Δt_seconds) × 60
