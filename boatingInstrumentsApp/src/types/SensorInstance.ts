@@ -524,6 +524,15 @@ export class SensorInstance<T extends SensorData = SensorData> {
   }
 
   /**
+   * Get all history buffer keys (for diagnostics)
+   *
+   * @returns Array of field names that have history buffers
+   */
+  getHistoryKeys(): string[] {
+    return Array.from(this._history.keys());
+  }
+
+  /**
    * Get session statistics for a metric
    *
    * @param metricKey - Metric field name
