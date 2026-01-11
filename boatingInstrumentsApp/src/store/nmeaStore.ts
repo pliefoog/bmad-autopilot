@@ -15,12 +15,10 @@
  */
 
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
 import { EventEmitter } from 'events';
 import { SensorInstance } from '../types/SensorInstance';
 import { ReEnrichmentCoordinator } from '../utils/ReEnrichmentCoordinator';
 import { SensorConfigCoordinator } from '../utils/SensorConfigCoordinator';
-import { getAlarmDefaults } from '../registry/SensorConfigRegistry';
 import { log } from '../utils/logging/logger';
 
 import type { SensorsData, SensorType, SensorData, SensorConfiguration } from '../types/SensorData';
@@ -70,6 +68,7 @@ interface NmeaStore {
     sensorType: T,
     instance: number,
     data: Partial<SensorData>,
+    messageFormat?: 'NMEA 0183' | 'NMEA 2000',
   ) => void;
 
   getSensorInstance: <T extends SensorType>(
@@ -99,7 +98,7 @@ interface NmeaStore {
     instance: number,
     metricName: string,
     options?: { timeWindowMs?: number },
-  ) => { value: number; timestamp: number }[];
+  ) => { value: string | number; timestamp: number }[];
 
   getSessionStats: <T extends SensorType>(
     sensorType: T,
@@ -112,13 +111,13 @@ interface NmeaStore {
   performFactoryReset: () => void;
 }
 
-// Alarm evaluation throttle to prevent excessive re-evaluation
-const ALARM_EVALUATION_THROTTLE_MS = 1000;
-let lastAlarmEvaluation = 0;
-
 /**
  * Evaluate alarms from all sensor instances
  * SensorInstance provides getAlarmState(metricKey) returning numeric 0|1|2|3
+ * 
+ * TODO: Architectural Issue - Accessing private _history via type cast
+ * SensorInstance should provide public method: getMetricKeys(): string[]
+ * to avoid (sensorInstance as any)._history pattern
  */
 function evaluateAlarms(sensors: SensorsData): Alarm[] {
   const alarms: Alarm[] = [];
@@ -129,7 +128,8 @@ function evaluateAlarms(sensors: SensorsData): Alarm[] {
     Object.entries(instances).forEach(([instanceNum, sensorInstance]) => {
       if (!(sensorInstance instanceof SensorInstance)) return;
 
-      // Access _history Map to get all metric keys
+      // TODO: Replace with public API when available
+      // Accessing private _history Map to get all metric keys
       const historyMap = (sensorInstance as any)._history as Map<string, any>;
       if (!historyMap || historyMap.size === 0) return;
 
@@ -186,6 +186,7 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
       compass: {},
       autopilot: {},
       navigation: {},
+      weather: {},
     },
     timestamp: Date.now(),
     messageCount: 0,
@@ -251,7 +252,6 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
 
     // Get or create sensor instance
     let sensorInstance = currentState.nmeaData.sensors[sensorType]?.[instance];
-    let needsStoreUpdate = isNewInstance;
 
     if (!sensorInstance) {
       // Create new instance with simplified constructor (no thresholds parameter)
@@ -265,7 +265,6 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
         sensorType,
         instance,
       }));
-      needsStoreUpdate = true;
     }
 
     // Update metrics - returns true if any values actually changed
@@ -311,6 +310,10 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
         hasCompass: !!compassInstance,
       }));
       if (gpsInstance && compassInstance) {
+        // TODO: Architectural Issue - Accessing private method via type cast
+        // Options: 1) Make _maybeCalculateTrueWind public, or
+        //          2) Move true wind calculation to separate service, or
+        //          3) Let SensorInstance calculate internally on updateMetrics
         (sensorInstance as any)._maybeCalculateTrueWind(gpsInstance, compassInstance);
       } else {
         log.wind('Missing GPS or compass instance for true wind calculation');
@@ -322,10 +325,12 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
     // Now that widgets don't subscribe (only TemplatedWidget + MetricCells do),
     // we can safely skip updates when nothing changed - fine-grained reactivity works!
     if (hasChanges) {
-      log.gps(`✅ Calling set() - hasChanges=true`, () => ({
-        sensorType,
-        instance,
-      }));
+      if (sensorType === 'gps') {
+        log.gps(`✅ Calling set() - hasChanges=true`, () => ({
+          sensorType,
+          instance,
+        }));
+      }
       
       set((state) => {
         const newNmeaData = {
@@ -344,7 +349,6 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
 
         // Evaluate alarms on every update when changes detected
         const alarms = evaluateAlarms(newNmeaData.sensors);
-        lastAlarmEvaluation = now;
 
         return {
           nmeaData: newNmeaData,
@@ -356,13 +360,11 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
     // Emit sensor created event ONLY for new instances
     // Widget detection only needs to know when sensors first appear
     if (isNewInstance) {
-      setTimeout(() => {
-        get().sensorEventEmitter.emit('sensorCreated', {
-          sensorType,
-          instance,
-          timestamp: now,
-        });
-      }, 0);
+      get().sensorEventEmitter.emit('sensorCreated', {
+        sensorType,
+        instance,
+        timestamp: now,
+      });
     }
   },
 
@@ -386,44 +388,45 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
 
   /**
    * Update sensor thresholds
+   * 
+   * ⚠️ DEPRECATED PATTERN - This method doesn't properly work with SensorInstance API
+   * 
+   * SensorInstance.updateThresholds(metricKey, thresholds) expects per-metric calls,
+   * but this method receives a SensorConfiguration with multiple metrics.
+   * 
+   * Current implementation: Does nothing (no-op to prevent TypeScript errors)
+   * Proper fix: SensorConfigCoordinator handles threshold syncing directly
    */
   updateSensorThresholds: <T extends SensorType>(
     sensorType: T,
     instance: number,
     thresholds: Partial<SensorConfiguration>,
   ) => {
-    set((state) => {
-      const sensorInstance = state.nmeaData.sensors[sensorType]?.[instance];
-      if (!sensorInstance) {
-        log.app('Cannot update thresholds - sensor not found', () => ({
-          sensorType,
-          instance,
-        }));
-        return state;
-      }
-
-      // Update thresholds on SensorInstance
-      sensorInstance.updateThresholds(thresholds);
-
-      // Trigger re-evaluation of alarms
-      const alarms = evaluateAlarms(state.nmeaData.sensors);
-
-      return {
-        nmeaData: {
-          ...state.nmeaData,
-          timestamp: Date.now(),
-        },
-        alarms,
-      };
-    });
+    // NO-OP: SensorConfigCoordinator handles threshold syncing
+    // This method exists only for backward compatibility
+    log.app('updateSensorThresholds called (no-op - handled by SensorConfigCoordinator)', () => ({
+      sensorType,
+      instance,
+      hasMetrics: !!thresholds.metrics,
+      metricCount: thresholds.metrics ? Object.keys(thresholds.metrics).length : 0,
+    }));
   },
 
   /**
    * Get sensor thresholds
+   * 
+   * ⚠️ DEPRECATED PATTERN - SensorInstance doesn't expose thresholds directly
+   * 
+   * Returns undefined - callers should use SensorConfigStore instead:
+   * - getConfig(sensorType, instance) for full configuration
+   * - ThresholdPresentationService for enriched display values
    */
   getSensorThresholds: <T extends SensorType>(sensorType: T, instance: number) => {
-    const sensorInstance = get().nmeaData.sensors[sensorType]?.[instance];
-    return sensorInstance?.thresholds;
+    log.app('getSensorThresholds called (deprecated - use SensorConfigStore.getConfig)', () => ({
+      sensorType,
+      instance,
+    }));
+    return undefined;
   },
 
   /**
@@ -447,6 +450,7 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
 
   /**
    * Get session statistics for a specific metric
+   * Only works for numeric metrics - returns null for string metrics
    */
   getSessionStats: <T extends SensorType>(sensorType: T, instance: number, metricName: string) => {
     const history = get().getSensorHistory(sensorType, instance, metricName);
@@ -455,10 +459,18 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
       return { min: null, max: null, avg: null };
     }
 
-    const values = history.map((h) => h.value);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
+    // Filter to only numeric values (skip string metrics like GPS coordinates)
+    const numericValues = history
+      .map((h) => h.value)
+      .filter((v): v is number => typeof v === 'number');
+
+    if (numericValues.length === 0) {
+      return { min: null, max: null, avg: null };
+    }
+
+    const min = Math.min(...numericValues);
+    const max = Math.max(...numericValues);
+    const avg = numericValues.reduce((sum, v) => sum + v, 0) / numericValues.length;
 
     return { min, max, avg };
   },
@@ -472,13 +484,22 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
    * Factory reset - clear all sensor data
    */
   performFactoryReset: () => {
-    // Unregister all sensor instances from ReEnrichmentCoordinator
+    // Unregister all sensor instances from coordinators
     const state = get();
     Object.values(state.nmeaData.sensors).forEach((instances) => {
       Object.values(instances).forEach((sensorInstance) => {
         if (sensorInstance instanceof SensorInstance) {
-          ReEnrichmentCoordinator.unregister(sensorInstance);
-          sensorInstance.destroy();
+          try {
+            ReEnrichmentCoordinator.unregister(sensorInstance);
+            SensorConfigCoordinator.unregister(sensorInstance);
+            sensorInstance.destroy();
+          } catch (error) {
+            log.app('Error destroying sensor instance during factory reset', () => ({
+              sensorType: sensorInstance.sensorType,
+              instance: sensorInstance.instance,
+              error: error instanceof Error ? error.message : String(error),
+            }));
+          }
         }
       });
     });
@@ -499,6 +520,7 @@ export const useNmeaStore = create<NmeaStore>()((set, get) => ({
           compass: {},
           autopilot: {},
           navigation: {},
+          weather: {},
         },
         timestamp: Date.now(),
         messageCount: 0,
