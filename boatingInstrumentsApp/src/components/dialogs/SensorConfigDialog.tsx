@@ -236,17 +236,22 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     return enriched;
   }, [selectedSensorType, selectedInstance, initialMetric]);
 
+  /* Get current sensor instance data */
+  const getSensorInstance = useCallback(() => {
+    if (!selectedSensorType) return undefined;
+    return sensorRegistry.get(selectedSensorType, selectedInstance);
+  }, [selectedSensorType, selectedInstance]);
+
   /* Initialize Form Data */
   const initialFormData: SensorFormData = useMemo(() => {
-    const currentSensorData = selectedSensorType
-      ? rawSensorData[selectedSensorType]?.[selectedInstance]
-      : undefined;
+    const sensorInstance = getSensorInstance();
+    const sensorName = sensorInstance?.getName();
     const displayName = selectedSensorType
       ? getSensorDisplayName(
           selectedSensorType,
           selectedInstance,
           currentThresholds,
-          currentSensorData?.name,
+          sensorName,
         )
       : '';
 
@@ -301,8 +306,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     currentThresholds,
     requiresMetricSelection,
     sensorConfig,
-    rawSensorData,
     initialEnrichedThresholds,
+    getSensorInstance,
   ]);
 
   const [formData, setFormData] = useState<SensorFormData>(initialFormData);
@@ -688,9 +693,9 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
           return null;
         }
 
-        const sensorData = rawSensorData[selectedSensorType]?.[selectedInstance];
+        const sensorInstance = getSensorInstance();
         const hardwareValue = field.hardwareField
-          ? (sensorData as any)?.[field.hardwareField]
+          ? sensorInstance?.getMetric(field.hardwareField)?.si_value
           : undefined;
         const isReadOnly =
           field.iostate === 'readOnly' ||
@@ -880,7 +885,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
             return null;
         }
       });
-  }, [selectedSensorType, formData, rawSensorData, selectedInstance, theme, updateField]);
+  }, [selectedSensorType, formData, selectedInstance, theme, updateField, getSensorInstance]);
 
   /* Empty State */
   if (availableSensorTypes.length === 0) {
