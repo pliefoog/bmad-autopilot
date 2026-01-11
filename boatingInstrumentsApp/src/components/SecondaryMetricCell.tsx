@@ -279,7 +279,6 @@ const createStyles = (
       flexShrink: 0, // Don't shrink units
     },
   });
-});
 
 SecondaryMetricCell.displayName = 'SecondaryMetricCell';
 
