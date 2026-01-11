@@ -12,7 +12,7 @@ import { log } from '../utils/logging/logger';
 import '../utils/memoryProfiler'; // Register profiler functions
 import '../utils/memoryDiagnostics'; // Register diagnostic functions
 import { useTheme } from '../store/themeStore';
-import { useNmeaStore, initializeNmeaStore } from '../store/nmeaStore';
+import { useNmeaStore } from '../store/nmeaStore';
 import { useWidgetStore } from '../store/widgetStore';
 import { useAlarmStore } from '../store/alarmStore';
 import { useOnboarding } from '../hooks/useOnboarding';
@@ -162,12 +162,7 @@ const App = () => {
   } = useOnboarding();
 
   // NOTE: History pruning removed - now handled automatically by TimeSeriesBuffer
-
-  // Initialize NMEA Store v4 with SensorDataRegistry
-  useEffect(() => {
-    initializeNmeaStore();
-    log.app('NMEA Store v4 initialized with registry architecture');
-  }, []);
+  // NOTE: NMEA Store v4 auto-initializes (Zustand pattern) - no manual init needed
 
   // Load saved connection settings on mount
   useEffect(() => {
