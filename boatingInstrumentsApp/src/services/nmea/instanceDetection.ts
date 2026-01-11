@@ -440,7 +440,7 @@ class InstanceDetectionService {
 
     // Check each engine instance for recent data
     Object.entries(engineSensors).forEach(([instanceStr, engineData]: [string, any]) => {
-      const instance = parseInt(instanceStr);
+      const instance = parseInt(instanceStr, 10);
       if (engineData && engineData.timestamp) {
         // CRITICAL FIX: Verify actual measurement data exists
         const hasEngineData =
@@ -535,7 +535,7 @@ class InstanceDetectionService {
 
     // Check each tank instance for recent data
     Object.entries(tankSensors).forEach(([instanceStr, tankData]: [string, any]) => {
-      const instance = parseInt(instanceStr);
+      const instance = parseInt(instanceStr, 10);
       if (tankData && tankData.timestamp) {
         // CRITICAL FIX: Verify actual measurement data exists
         const hasTankData = tankData.level != null || tankData.capacity != null;
@@ -641,7 +641,7 @@ class InstanceDetectionService {
     const temperatureSensors = sensors.temperature || {};
 
     Object.entries(temperatureSensors).forEach(([instanceStr, tempData]: [string, any]) => {
-      const instance = parseInt(instanceStr);
+      const instance = parseInt(instanceStr, 10);
       if (tempData && tempData.timestamp) {
         // CRITICAL FIX: Verify actual measurement data exists
         const hasTemperatureData = tempData.temperature != null;

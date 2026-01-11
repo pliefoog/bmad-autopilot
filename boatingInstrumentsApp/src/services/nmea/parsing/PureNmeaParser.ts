@@ -258,10 +258,10 @@ function parseGGAFields(parts: string[]): Record<string, any> {
       latitude_dir: parts[3],
       longitude_raw: parts[4],
       longitude_dir: parts[5],
-      fix_quality: parts[6] ? parseInt(parts[6]) : null,
-      satellites: parts[7] ? parseInt(parts[7]) : null,
-      hdop: parts[8] ? parseFloat(parts[8]) : null,
-      altitude: parts[9] ? parseFloat(parts[9]) : null,
+      fix_quality: parts[6] ? (isNaN(parseInt(parts[6], 10)) ? null : parseInt(parts[6], 10)) : null,
+      satellites: parts[7] ? (isNaN(parseInt(parts[7], 10)) ? null : parseInt(parts[7], 10)) : null,
+      hdop: parts[8] ? (isNaN(parseFloat(parts[8])) ? null : parseFloat(parts[8])) : null,
+      altitude: parts[9] ? (isNaN(parseFloat(parts[9])) ? null : parseFloat(parts[9])) : null,
     };
   }
 
@@ -280,10 +280,10 @@ function parseVTGFields(parts: string[]): Record<string, any> {
       field_8: parts[8], // Km/h indicator
       field_9: parts[9], // Mode
       // Parsed values
-      track_true: parts[1] ? parseFloat(parts[1]) : null,
-      track_magnetic: parts[3] ? parseFloat(parts[3]) : null,
-      speed_knots: parts[5] ? parseFloat(parts[5]) : null,
-      speed_kmh: parts[7] ? parseFloat(parts[7]) : null,
+      track_true: parts[1] ? (isNaN(parseFloat(parts[1])) ? null : parseFloat(parts[1])) : null,
+      track_magnetic: parts[3] ? (isNaN(parseFloat(parts[3])) ? null : parseFloat(parts[3])) : null,
+      speed_knots: parts[5] ? (isNaN(parseFloat(parts[5])) ? null : parseFloat(parts[5])) : null,
+      speed_kmh: parts[7] ? (isNaN(parseFloat(parts[7])) ? null : parseFloat(parts[7])) : null,
       mode: parts[9],
     };
   }
@@ -317,9 +317,9 @@ function parseMWVFields(parts: string[]): Record<string, any> {
       field_4: parts[4], // Speed unit
       field_5: parts[5], // Status
       // Parsed values
-      wind_angle: parts[1] ? parseFloat(parts[1]) : null,
+      wind_angle: parts[1] ? (isNaN(parseFloat(parts[1])) ? null : parseFloat(parts[1])) : null,
       reference: parts[2],
-      wind_speed: parts[3] ? parseFloat(parts[3]) : null,
+      wind_speed: parts[3] ? (isNaN(parseFloat(parts[3])) ? null : parseFloat(parts[3])) : null,
       speed_unit: parts[4],
       status: parts[5],
     };
@@ -389,11 +389,11 @@ function parseZDAFields(parts: string[]): Record<string, any> {
       field_6: parts[6], // Local zone minutes
       // Parsed values
       time: parts[1] || null,
-      day: parts[2] ? parseInt(parts[2]) : null,
-      month: parts[3] ? parseInt(parts[3]) : null,
-      year: parts[4] ? parseInt(parts[4]) : null,
-      lz_hours: parts[5] ? parseInt(parts[5]) : null,
-      lz_minutes: parts[6] ? parseInt(parts[6]) : null,
+      day: parts[2] ? (isNaN(parseInt(parts[2], 10)) ? null : parseInt(parts[2], 10)) : null,
+      month: parts[3] ? (isNaN(parseInt(parts[3], 10)) ? null : parseInt(parts[3], 10)) : null,
+      year: parts[4] ? (isNaN(parseInt(parts[4], 10)) ? null : parseInt(parts[4], 10)) : null,
+      lz_hours: parts[5] ? (isNaN(parseInt(parts[5], 10)) ? null : parseInt(parts[5], 10)) : null,
+      lz_minutes: parts[6] ? (isNaN(parseInt(parts[6], 10)) ? null : parseInt(parts[6], 10)) : null,
     };
   }
 
@@ -408,10 +408,10 @@ function parseHDGFields(parts: string[]): Record<string, any> {
       field_4: parts[4], // Magnetic variation
       field_5: parts[5], // Variation direction
       // Parsed values
-      magnetic_heading: parts[1] ? parseFloat(parts[1]) : null,
-      magnetic_deviation: parts[2] ? parseFloat(parts[2]) : null,
+      magnetic_heading: parts[1] ? (isNaN(parseFloat(parts[1])) ? null : parseFloat(parts[1])) : null,
+      magnetic_deviation: parts[2] ? (isNaN(parseFloat(parts[2])) ? null : parseFloat(parts[2])) : null,
       deviation_dir: parts[3],
-      magnetic_variation: parts[4] ? parseFloat(parts[4]) : null,
+      magnetic_variation: parts[4] ? (isNaN(parseFloat(parts[4])) ? null : parseFloat(parts[4])) : null,
       variation_dir: parts[5],
     };
   }
@@ -425,9 +425,9 @@ function parseDPTFields(parts: string[]): Record<string, any> {
       field_2: parts[2], // Offset
       field_3: parts[3], // Maximum range
       // Parsed values
-      depth_meters: parts[1] ? parseFloat(parts[1]) : null,
-      offset: parts[2] ? parseFloat(parts[2]) : null,
-      max_range: parts[3] ? parseFloat(parts[3]) : null,
+      depth_meters: parts[1] ? (isNaN(parseFloat(parts[1])) ? null : parseFloat(parts[1])) : null,
+      offset: parts[2] ? (isNaN(parseFloat(parts[2])) ? null : parseFloat(parts[2])) : null,
+      max_range: parts[3] ? (isNaN(parseFloat(parts[3])) ? null : parseFloat(parts[3])) : null,
     };
   }
 
@@ -451,10 +451,10 @@ function parseVHWFields(parts: string[]): Record<string, any> {
       field_7: parts[7], // Speed km/h
       field_8: parts[8], // Km/h indicator
       // Parsed values
-      heading_true: parts[1] ? parseFloat(parts[1]) : null,
-      heading_magnetic: parts[3] ? parseFloat(parts[3]) : null,
-      speed_knots: parts[5] ? parseFloat(parts[5]) : null,
-      speed_kmh: parts[7] ? parseFloat(parts[7]) : null,
+      heading_true: parts[1] ? (isNaN(parseFloat(parts[1])) ? null : parseFloat(parts[1])) : null,
+      heading_magnetic: parts[3] ? (isNaN(parseFloat(parts[3])) ? null : parseFloat(parts[3])) : null,
+      speed_knots: parts[5] ? (isNaN(parseFloat(parts[5])) ? null : parseFloat(parts[5])) : null,
+      speed_kmh: parts[7] ? (isNaN(parseFloat(parts[7])) ? null : parseFloat(parts[7])) : null,
     };
   }
 
@@ -498,11 +498,11 @@ function parseVWTFields(parts: string[]): Record<string, any> {
       field_7: parts[7], // Wind speed km/h
       field_8: parts[8], // km/h indicator
       // Parsed values
-      wind_angle: parts[1] ? parseFloat(parts[1]) : null,
+      wind_angle: parts[1] ? (isNaN(parseFloat(parts[1])) ? null : parseFloat(parts[1])) : null,
       direction: parts[2],
-      wind_speed_knots: parts[3] ? parseFloat(parts[3]) : null,
-      wind_speed_ms: parts[5] ? parseFloat(parts[5]) : null,
-      wind_speed_kmh: parts[7] ? parseFloat(parts[7]) : null,
+      wind_speed_knots: parts[3] ? (isNaN(parseFloat(parts[3])) ? null : parseFloat(parts[3])) : null,
+      wind_speed_ms: parts[5] ? (isNaN(parseFloat(parts[5])) ? null : parseFloat(parts[5])) : null,
+      wind_speed_kmh: parts[7] ? (isNaN(parseFloat(parts[7])) ? null : parseFloat(parts[7])) : null,
     };
   }
 
