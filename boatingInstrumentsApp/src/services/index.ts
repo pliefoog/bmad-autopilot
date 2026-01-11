@@ -23,10 +23,10 @@ export * from './autopilotMonitoringService';
 export * from './gracefulDegradationService';
 export * from './autopilotReconnectionService';
 // REMOVED: layoutService - deleted during architectural cleanup
-export * from './playbackService';
+// REMOVED: playbackService - deleted (dead code from pre-registry architecture)
+// REMOVED: mockServer - deleted (test-only utility, not used in production app)
+// REMOVED: stressTestService - deleted (test-only utility, not used in production app)
 export * from './connectionDefaults';
-export * from './mockServer';
-export * from './stressTestService';
 
 // Service initialization with registry
 export const initServices = async () => {

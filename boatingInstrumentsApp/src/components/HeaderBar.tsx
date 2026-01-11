@@ -43,8 +43,6 @@ interface HeaderBarProps {
   // Developer tools props (development only)
   onStartPlayback?: () => void;
   onStopPlayback?: () => void;
-  onStartStressTest?: () => void;
-  onStopStressTest?: () => void;
 }
 
 const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -60,8 +58,6 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   onShowAutopilotControl,
   onStartPlayback,
   onStopPlayback,
-  onStartStressTest,
-  onStopStressTest,
 }) => {
   const theme = useTheme();
   const { connectionStatus } = useNmeaStore();
