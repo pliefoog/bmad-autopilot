@@ -212,7 +212,9 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = React.mem
       <Text style={styles.value}>{displayValue}</Text>
     </View>
   );
-};
+});
+
+SecondaryMetricCell.displayName = 'SecondaryMetricCell';
 
 const createStyles = (
   theme: any,
