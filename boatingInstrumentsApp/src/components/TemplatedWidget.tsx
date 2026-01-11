@@ -144,7 +144,7 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
   // Build header title: "Battery 1 - House Bank" or "Battery 2 - Service"
   // For multi-instance widgets, always show instance number (1-based for user display)
   const baseTitle =
-    widgetMetadata?.type === 'multi'
+    widgetMetadata?.type === 'multi-instance'
       ? `${widgetMetadata.title} ${instanceNumber + 1}`
       : widgetMetadata?.title ?? sensorType.toUpperCase();
 
