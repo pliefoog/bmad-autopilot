@@ -2,12 +2,12 @@ import React, { useMemo } from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Polyline, Line, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../store/themeStore';
-import { useNmeaStore } from '../store/nmeaStore';
 import { SensorType, SensorMetricProps } from '../types/SensorData';
 import { useCategoryPresentation } from '../presentation/useCategoryPresentation';
 import { useAlarmThresholds } from '../hooks/useAlarmThresholds';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
 import { log } from '../utils/logging/logger';
+import { useMetricValue, useSensorInstance, useMetricHistory } from '../contexts/MetricContext';
 
 // Default dimensions for TrendLine (baseline for responsive scaling)
 const DEFAULT_TRENDLINE_WIDTH = 300;
@@ -146,14 +146,11 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     return baseMnemonic;
   }, [fieldConfig?.mnemonic, baseMetric, metric]);
 
-  // Get sensor instance using explicit props (not context)
-  const sensorInstance = useNmeaStore(
-    (state) => state.getSensorInstance(sensorType, instance),
-    (a, b) => a === b
-  );
+  // Get sensor instance using MetricContext (not nmeaStore)
+  const sensorInstance = useSensorInstance(sensorType, instance);
 
   // Get current unit from MetricValue to display in label (like MetricCell)
-  const currentMetric = sensorInstance?.getMetric(metric);
+  const currentMetric = useMetricValue(sensorType, instance, metric);
   const unit = currentMetric?.unit ?? '';
   // Sanitize unit - ensure it's not just whitespace or a single period
   const sanitizedUnit = unit.trim();
@@ -277,39 +274,35 @@ export const TrendLine: React.FC<TrendLineProps> = ({
 
   const thresholdType = alarmThresholds.thresholdType;
 
-  // Subscribe to sensor timestamp to trigger updates when new data arrives
-  const sensorTimestamp = useNmeaStore((state) => {
-    if (!sensor) return undefined;
-    return state.nmeaData.sensors[sensor as import('../types/SensorData').SensorType]?.[instance]
-      ?.timestamp;
-  });
+  // Fetch history using MetricContext hook (replaces getSensorHistory from nmeaStore)
+  const rawTrendData = useMetricHistory(sensorType, instance, metric, { timeWindowMs });
 
-  // Get stable reference to getSensorHistory (won't change between renders)
-  const getSensorHistory = useNmeaStore((state) => state.getSensorHistory);
-
-  // Fetch history when sensor updates (memoized to prevent infinite loops)
-  // Note: Use getSensorHistory which internally uses TimeSeriesBuffer.getInWindow()
-  // for efficient windowed queries (optimized in Phase 4)
+  // Convert DataPoint<number | string>[] to { value: number, timestamp: number }[]
+  // Filter out non-numeric values
   const trendData = useMemo(() => {
-    if (!sensor || instance === undefined || !metric) return [];
-    const data = getSensorHistory(sensor, instance, metric, { timeWindowMs });
+    const numericData = rawTrendData
+      .filter((point): point is { value: number; timestamp: number } => 
+        typeof point.value === 'number' && Number.isFinite(point.value)
+      )
+      .map((point) => ({
+        value: point.value,
+        timestamp: point.timestamp,
+      }));
 
     // Conditional DEBUG logging for TrendLine history fetch
     log.uiTrendline('TrendLine history fetch', () => ({
       sensor: `${sensor}.${instance}.${metric}`,
-      dataPoints: data.length,
+      dataPoints: numericData.length,
       timeWindow: timeWindowMs,
       instanceFromProps: instance,
-      sensorTimestamp,
-      firstPoint: data[0],
-      lastPoint: data[data.length - 1],
+      firstPoint: numericData[0],
+      lastPoint: numericData[numericData.length - 1],
       // For pressure debugging: show first 3 values
-      sampleValues: data.slice(0, 3).map((p) => p.value),
+      sampleValues: numericData.slice(0, 3).map((p) => p.value),
     }));
 
-    return data;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sensor, instance, metric, timeWindowMs, sensorTimestamp]);
+    return numericData;
+  }, [rawTrendData, sensor, instance, metric, timeWindowMs]);
 
   // Get display-value stats from virtual metrics (depth.min, depth.max, depth.avg)
   // Uses consistent calculation method: SI values → stat → convert to display
@@ -329,7 +322,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       avg: typeof avgMetric.value === 'number' ? avgMetric.value : NaN,
       unit: minMetric.unit,
     };
-  }, [sensorInstance, metric, sensorTimestamp]);
+  }, [sensorInstance, metric, currentMetric]);
 
   // Derive all colors from theme
   const trendlineColor = usePrimaryLine ? theme.trendline.primary : theme.trendline.secondary;

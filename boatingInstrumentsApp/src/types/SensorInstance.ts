@@ -56,6 +56,7 @@ export interface EnrichedMetricData {
   formattedValueWithUnit: string;
   unit: string;
   timestamp: number;
+  alarmState: 0 | 1 | 2 | 3;
 }
 
 /**
@@ -568,7 +569,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
         ? new MetricValue(statValue, now, unitType)
         : new MetricValue(statValue, now);
 
-      // Convert to HistoryPoint format
+      // Convert to EnrichedMetricData format
       return {
         si_value: statValue,
         value: metric.getDisplayValue(),
@@ -576,6 +577,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
         formattedValueWithUnit: metric.getFormattedValueWithUnit(),
         unit: metric.getUnit(),
         timestamp: now,
+        alarmState: this.getAlarmState(baseField),
       };
     }
 
@@ -596,7 +598,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
             ? new MetricValue(latest.si_value, latest.timestamp, unitType, forceTimezone)
             : new MetricValue(latest.si_value, latest.timestamp, undefined, forceTimezone);
 
-          // Convert MetricValue to HistoryPoint
+          // Convert MetricValue to EnrichedMetricData
           return {
             si_value: latest.si_value,
             value: metric.getDisplayValue(),
@@ -604,6 +606,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
             formattedValueWithUnit: metric.getFormattedValueWithUnit(),
             unit: metric.getUnit(),
             timestamp: latest.timestamp,
+            alarmState: this.getAlarmState('utcDate'),
           };
         }
       }
@@ -631,7 +634,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
           ? new MetricValue(calculatedROT, now, unitType)
           : new MetricValue(calculatedROT, now);
 
-        // Convert MetricValue to HistoryPoint (on-demand, not stored in history)
+        // Convert MetricValue to EnrichedMetricData (on-demand, not stored in history)
         return {
           si_value: calculatedROT,
           value: metric.getDisplayValue(),
@@ -639,6 +642,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
           formattedValueWithUnit: metric.getFormattedValueWithUnit(),
           unit: metric.getUnit(),
           timestamp: now,
+          alarmState: this.getAlarmState('rateOfTurn'),
         };
       }
 
@@ -658,6 +662,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
           formattedValueWithUnit: this.name,
           unit: '',
           timestamp: this.timestamp,
+          alarmState: this.getAlarmState('name'),
         };
       }
       return undefined;
@@ -679,6 +684,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
         formattedValueWithUnit: latest.value,
         unit: '',
         timestamp: latest.timestamp,
+        alarmState: this.getAlarmState(fieldName),
       };
     }
 
@@ -694,6 +700,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
       formattedValueWithUnit: metric.getFormattedValueWithUnit(),
       unit: metric.getUnit(),
       timestamp: latest.timestamp,
+      alarmState: this.getAlarmState(fieldName),
     };
   }
 

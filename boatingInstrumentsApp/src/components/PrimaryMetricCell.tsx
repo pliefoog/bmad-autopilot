@@ -7,8 +7,7 @@ import type { AlarmLevel } from '../types/AlarmTypes';
 import type { SensorType, SensorMetricProps } from '../types/SensorData';
 import { getSensorField } from '../registry/SensorConfigRegistry';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
-import { useMetric } from '../hooks/useMetric';
-import { useNmeaStore } from '../store/nmeaStore';
+import { useMetricValue, useSensorInstance } from '../contexts/MetricContext';
 
 /**
  * PrimaryMetricCell Props (Explicit Props Pattern - Dec 2024 Refactor)
@@ -92,17 +91,15 @@ export const PrimaryMetricCell: React.FC<PrimaryMetricCellProps> = ({
 }) => {
   const theme = useTheme();
 
-  // ARCHITECTURE v2.0: Subscribe to specific metric using fine-grained subscription
-  // Now uses explicit props instead of context
-  const metricValue = useMetric(sensorType, instance, metricKey);
+  // Subscribe to specific metric using MetricContext
+  // This replaces the old useMetric hook that subscribed to nmeaStore
+  const metricValue = useMetricValue(sensorType, instance, metricKey);
 
-  // Get sensor instance directly from store for getMetric() calls
-  const sensorInstance = useNmeaStore((state) => state.getSensorInstance(sensorType, instance));
+  // Get sensor instance for string field handling
+  const sensorInstance = useSensorInstance(sensorType, instance);
 
-  // NOTE: Removed fallback to contextMetric (sensorInstance.getMetric()) because
-  // it's NOT reactive and causes erratic updates. The fallback pattern made
-  // components "stuck" on stale values when subscribedMetric was briefly null.
-  // Now we ONLY use the reactive subscription from useMetric.
+  // NOTE: MetricContext provides fine-grained subscriptions via SensorDataRegistry.
+  // Only re-renders when THIS specific metric changes, not the entire sensor.
 
   // Extract base field name for registry lookup (remove .min/.max/.avg suffix if present)
   const baseMetricKey = metricKey.replace(/\.(min|max|avg)$/, '');

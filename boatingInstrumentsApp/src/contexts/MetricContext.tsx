@@ -31,6 +31,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { sensorRegistry } from '../services/SensorDataRegistry';
 import type { SensorType } from '../types/SensorData';
 import type { EnrichedMetricData } from '../types/SensorInstance';
+import type { DataPoint } from '../utils/AdaptiveHistoryBuffer';
 
 /**
  * Hook to subscribe to a single metric value
@@ -163,4 +164,61 @@ export function useSensorCreated(
       sensorRegistry.off('sensorCreated', callback);
     };
   }, [callback]);
+}
+
+/**
+ * Hook to subscribe to metric history (for trend lines)
+ * Fetches history data and re-subscribes when metric changes
+ * 
+ * @param sensorType - Sensor type
+ * @param instance - Instance number
+ * @param metricKey - Metric field name
+ * @param options - History options (timeWindowMs, etc.)
+ * @returns Array of DataPoints
+ */
+export function useMetricHistory(
+  sensorType: SensorType,
+  instance: number,
+  metricKey: string,
+  options?: { timeWindowMs?: number },
+): DataPoint<number | string>[] {
+  const getHistory = useMemo(() => {
+    return () => {
+      const sensor = sensorRegistry.get(sensorType, instance);
+      if (!sensor) return [];
+      
+      const historyData = sensor.getHistoryForMetric(metricKey);
+      
+      // Filter by time window if specified
+      if (options?.timeWindowMs) {
+        const cutoffTime = Date.now() - options.timeWindowMs;
+        return historyData.filter((point) => point.timestamp >= cutoffTime);
+      }
+      
+      return historyData;
+    };
+  }, [sensorType, instance, metricKey, options?.timeWindowMs]);
+
+  const [history, setHistory] = useState<DataPoint<number | string>[]>(getHistory());
+
+  useEffect(() => {
+    // Subscribe to metric changes (history updates trigger metric change)
+    const unsubscribe = sensorRegistry.subscribe(
+      sensorType,
+      instance,
+      metricKey,
+      () => {
+        // Metric changed, re-fetch history
+        setHistory(getHistory());
+      },
+    );
+
+    // Update immediately
+    setHistory(getHistory());
+
+    // Cleanup on unmount
+    return unsubscribe;
+  }, [sensorType, instance, metricKey, getHistory]);
+
+  return history;
 }
