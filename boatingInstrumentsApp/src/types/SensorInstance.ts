@@ -124,9 +124,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * @param data - Partial sensor data with SI values
    * @returns true if any metric values changed
    */
-  updateMetrics(data: Partial<T>): boolean {
+  updateMetrics(data: Partial<T>): { changed: boolean; changedMetrics: Set<string> } {
     const fields = getDataFields(this.sensorType);
     let hasChanges = false;
+    const changedMetrics = new Set<string>();
     const now = Date.now();
 
     for (const field of fields) {
@@ -192,6 +193,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
         if (valueChanged) {
           hasChanges = true;
+          changedMetrics.add(fieldName);
 
           if (field.valueType === 'number') {
             // Get unitType for this field
@@ -277,7 +279,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
     // Note: True wind calculation for wind sensors is handled in nmeaStore
     // after updateMetrics returns, to avoid circular dependencies
 
-    return hasChanges;
+    return { changed: hasChanges, changedMetrics };
   }
 
   /**

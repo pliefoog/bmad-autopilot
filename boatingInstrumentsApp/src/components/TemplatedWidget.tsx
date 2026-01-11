@@ -98,28 +98,12 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
 }) => {
   const theme = useTheme();
 
-  // SINGLE SUBSCRIPTION POINT: Fetch sensor instance from registry
-  // Widgets themselves no longer subscribe - only TemplatedWidget does
-  // Note: We need to trigger re-renders when sensor updates, so we subscribe to a dummy state
-  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
-  
+  // NO SUBSCRIPTIONS: TemplatedWidget is pure layout
+  // MetricCells subscribe individually via useMetricValue hook (fine-grained updates)
+  // This eliminates cascading re-renders and perceived slowness
   const sensorInstance = React.useMemo(() => {
     return sensorRegistry.get(sensorType, instanceNumber);
   }, [sensorType, instanceNumber]);
-  
-  // Subscribe to sensor changes
-  React.useEffect(() => {
-    if (!sensorInstance) return;
-    
-    const unsubscribe = sensorRegistry.subscribe(
-      sensorType,
-      instanceNumber,
-      '*', // Subscribe to all metrics
-      () => forceUpdate()
-    );
-    
-    return unsubscribe;
-  }, [sensorType, instanceNumber, sensorInstance]);
 
   // Measure widget dimensions using onLayout
   const [widgetDimensions, setWidgetDimensions] = React.useState({ width: 0, height: 0 });

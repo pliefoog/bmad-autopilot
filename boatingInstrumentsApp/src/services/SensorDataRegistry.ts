@@ -123,8 +123,9 @@ export class SensorDataRegistry {
       }));
     }
 
-    // Update metrics - returns true if any changes occurred
-    const hasChanges = sensor.updateMetrics(data);
+    // Update metrics - returns { changed, changedMetrics }
+    const updateResult = sensor.updateMetrics(data);
+    const { changed: hasChanges, changedMetrics } = updateResult;
 
     // Only proceed if metrics actually changed
     if (!hasChanges && !isNew) {
@@ -142,16 +143,13 @@ export class SensorDataRegistry {
     // Update nmeaStore with alarms (UI state)
     useNmeaStore.getState().updateAlarms(alarms);
 
-    // Notify subscribers - for now notify all metrics of this sensor
-    // TODO: Track which specific metrics changed and only notify those
-    const historyMap = (sensor as any)._history as Map<string, any>;
-    if (historyMap) {
-      for (const metricKey of historyMap.keys()) {
-        const metricSubKey = this.getMetricKey(sensorType, instance, metricKey);
-        const subscribers = this.subscriptions.get(metricSubKey);
-        if (subscribers && subscribers.size > 0) {
-          subscribers.forEach((callback) => callback());
-        }
+    // Notify ONLY the subscribers for metrics that actually changed
+    // This prevents unnecessary re-renders when other metrics haven't changed
+    for (const metricKey of changedMetrics) {
+      const metricSubKey = this.getMetricKey(sensorType, instance, metricKey);
+      const subscribers = this.subscriptions.get(metricSubKey);
+      if (subscribers && subscribers.size > 0) {
+        subscribers.forEach((callback) => callback());
       }
     }
 
