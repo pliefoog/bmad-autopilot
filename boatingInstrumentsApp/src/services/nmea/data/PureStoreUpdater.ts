@@ -27,14 +27,8 @@ export interface UpdateResult {
 
 
 export class PureStoreUpdater {
-  private static instance: PureStoreUpdater;
-
-  static getInstance(): PureStoreUpdater {
-    if (!PureStoreUpdater.instance) {
-      PureStoreUpdater.instance = new PureStoreUpdater();
-    }
-    return PureStoreUpdater.instance;
-  }
+  // Stateless utility class - no singleton needed
+  constructor() {}
 
   /**
    * Update connection status in store
@@ -390,8 +384,11 @@ export class PureStoreUpdater {
           break;
         }
       }
-    } catch (error) {
-      console.error(`[PureStoreUpdater] Error parsing PGN ${frame.pgn}:`, error);
+    } catch (err) {
+      log.app('Error parsing PGN', () => ({
+        pgn: frame.pgn,
+        error: err instanceof Error ? err.message : String(err),
+      }));
     }
 
     return updates;
@@ -477,8 +474,11 @@ export class PureStoreUpdater {
         useNmeaStore.getState().updateMessageMetadata(messageFormat);
         updatedFields.push(fieldKey);
         anyUpdated = true;
-      } catch (error) {
-        console.error(`[PureStoreUpdater] ❌ Store update FAILED for ${fieldKey}:`, error);
+      } catch (err) {
+        log.app('Store update failed', () => ({
+          sensor: fieldKey,
+          error: err instanceof Error ? err.message : String(err),
+        }));
       }
     }
     return {
@@ -506,5 +506,5 @@ export class PureStoreUpdater {
   }
 }
 
-// Export singleton instance
-export const pureStoreUpdater = PureStoreUpdater.getInstance();
+// Export instance - stateless utility
+export const pureStoreUpdater = new PureStoreUpdater();

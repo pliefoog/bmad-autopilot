@@ -24,9 +24,6 @@ export interface NmeaServiceConfig {
     enableFallback?: boolean;
     strictValidation?: boolean;
   };
-  updates?: {
-    // Future: message filtering, validation options
-  };
 }
 
 export interface NmeaServiceStatus {
@@ -68,7 +65,7 @@ export class NmeaService {
   constructor() {
     this.connectionManager = new PureConnectionManager();
     this.parser = PureNmeaParser.getInstance();
-    this.storeUpdater = PureStoreUpdater.getInstance();
+    this.storeUpdater = new PureStoreUpdater();
 
     this.setupConnectionEvents();
   }
@@ -92,11 +89,10 @@ export class NmeaService {
         // Connection failures are normal in boat environments - no error logging
         return false;
       }
-    } catch (error) {
-      console.error('[NmeaService] Start error:', error);
-      this.storeUpdater.updateError(
-        `Start failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      log.app('Service start error', () => ({ error: errorMsg }));
+      this.storeUpdater.updateError(`Start failed: ${errorMsg}`);
       return false;
     }
   }
@@ -110,8 +106,10 @@ export class NmeaService {
       await this.connectionManager.disconnect();
       this.isRunning = false;
       this.currentConfig = null;
-    } catch (error) {
-      console.error('[NmeaService] Stop error:', error);
+    } catch (err) {
+      log.app('Service stop error', () => ({
+        error: err instanceof Error ? err.message : String(err),
+      }));
     }
   }
 
@@ -202,11 +200,10 @@ export class NmeaService {
 
       // SIMPLIFIED: Only use NmeaSensorProcessor path (no legacy transformer)
       this.storeUpdater.processNmeaMessage(parsedMessage);
-    } catch (error) {
-      console.error('[NmeaService] Processing error:', error);
-      this.storeUpdater.updateError(
-        `Processing error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      log.app('Message processing error', () => ({ error: errorMsg }));
+      this.storeUpdater.updateError(`Processing error: ${errorMsg}`);
     }
   }
 
@@ -219,11 +216,10 @@ export class NmeaService {
     try {
       // Process the binary frame directly through the store updater
       this.storeUpdater.processBinaryPgnFrame(frame);
-    } catch (error) {
-      console.error('[NmeaService] Binary frame processing error:', error);
-      this.storeUpdater.updateError(
-        `Binary frame error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      log.app('Binary frame error', () => ({ error: errorMsg, pgn: frame.pgn }));
+      this.storeUpdater.updateError(`Binary frame error: ${errorMsg}`);
     }
   }
 }
