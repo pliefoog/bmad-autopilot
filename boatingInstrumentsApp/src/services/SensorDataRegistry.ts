@@ -37,8 +37,10 @@ import { EventEmitter } from 'events';
 import { SensorInstance } from '../types/SensorInstance';
 import { useNmeaStore } from '../store/nmeaStore';
 import { log } from '../utils/logging/logger';
+import { AlarmEvaluator } from './AlarmEvaluator';
+import { CrossSensorCalculations } from './CrossSensorCalculations';
 
-import type { SensorType, SensorData, Alarm, AlarmLevel } from '../types/SensorData';
+import type { SensorType, SensorData } from '../types/SensorData';
 
 /**
  * Subscription callback type
@@ -53,6 +55,13 @@ export class SensorDataRegistry {
   private sensors = new Map<string, SensorInstance>();
   private subscriptions = new Map<string, Set<SubscriptionCallback>>();
   private eventEmitter = new EventEmitter();
+  private alarmEvaluator: AlarmEvaluator;
+  private crossSensorCalc: CrossSensorCalculations;
+
+  constructor() {
+    this.alarmEvaluator = new AlarmEvaluator(this);
+    this.crossSensorCalc = new CrossSensorCalculations(this);
+  }
 
   /**
    * Generate unique key for sensor
@@ -114,31 +123,35 @@ export class SensorDataRegistry {
       }));
     }
 
-    // Update metrics - returns array of changed metric keys
-    const changedMetrics = sensor.updateMetrics(data);
+    // Update metrics - returns true if any changes occurred
+    const hasChanges = sensor.updateMetrics(data);
 
     // Only proceed if metrics actually changed
-    if (changedMetrics.length === 0 && !isNew) {
+    if (!hasChanges && !isNew) {
       return;
     }
 
     // Cross-sensor calculations (true wind)
-    if (sensorType === 'wind' && changedMetrics.length > 0) {
-      this.calculateTrueWind(sensor);
+    if (sensorType === 'wind' && hasChanges) {
+      this.crossSensorCalc.calculateTrueWind(sensor);
     }
 
     // Evaluate alarms globally (all sensors, all metrics)
-    const alarms = this.evaluateAlarms();
+    const alarms = this.alarmEvaluator.evaluate();
 
     // Update nmeaStore with alarms (UI state)
-    useNmeaStore.getState().setAlarms(alarms);
+    useNmeaStore.getState().updateAlarms(alarms);
 
-    // Notify subscribers of changed metrics
-    for (const metricKey of changedMetrics) {
-      const metricSubKey = this.getMetricKey(sensorType, instance, metricKey);
-      const subscribers = this.subscriptions.get(metricSubKey);
-      if (subscribers && subscribers.size > 0) {
-        subscribers.forEach((callback) => callback());
+    // Notify subscribers - for now notify all metrics of this sensor
+    // TODO: Track which specific metrics changed and only notify those
+    const historyMap = (sensor as any)._history as Map<string, any>;
+    if (historyMap) {
+      for (const metricKey of historyMap.keys()) {
+        const metricSubKey = this.getMetricKey(sensorType, instance, metricKey);
+        const subscribers = this.subscriptions.get(metricSubKey);
+        if (subscribers && subscribers.size > 0) {
+          subscribers.forEach((callback) => callback());
+        }
       }
     }
 
@@ -165,10 +178,10 @@ export class SensorDataRegistry {
   subscribe(
     sensorType: SensorType,
     instance: number,
-    metricKey: string,
+    metricName: string,
     callback: SubscriptionCallback,
   ): () => void {
-    const metricKey = this.getMetricKey(sensorType, instance, metricKey);
+    const metricKey = this.getMetricKey(sensorType, instance, metricName);
 
     if (!this.subscriptions.has(metricKey)) {
       this.subscriptions.set(metricKey, new Set());
@@ -210,66 +223,6 @@ export class SensorDataRegistry {
    */
   off(event: string, handler: (...args: any[]) => void): void {
     this.eventEmitter.off(event, handler);
-  }
-
-  /**
-   * Calculate true wind from apparent wind + boat speed + heading
-   * Cross-sensor dependency: wind sensor uses GPS and compass data
-   *
-   * @param windSensor - Wind sensor instance
-   */
-  private calculateTrueWind(windSensor: SensorInstance): void {
-    const gps = this.get('gps', 0);
-    const compass = this.get('compass', 0);
-
-    if (!gps || !compass) {
-      log.wind('Missing GPS or compass instance for true wind calculation');
-      return;
-    }
-
-    log.wind('Calculating true wind', () => ({
-      hasGPS: !!gps,
-      hasCompass: !!compass,
-    }));
-
-    // Call private method (TODO: make this public API in SensorInstance)
-    (windSensor as any)._maybeCalculateTrueWind(gps, compass);
-  }
-
-  /**
-   * Evaluate alarms from all sensor instances
-   * Returns array of active alarms (warning + critical)
-   *
-   * @returns Array of alarms
-   */
-  private evaluateAlarms(): Alarm[] {
-    const alarms: Alarm[] = [];
-    const now = Date.now();
-
-    for (const [key, sensorInstance] of this.sensors) {
-      // Get all metric keys from history (TODO: use public API)
-      const historyMap = (sensorInstance as any)._history as Map<string, any>;
-      if (!historyMap || historyMap.size === 0) continue;
-
-      // Check alarm state for each metric
-      for (const metricKey of historyMap.keys()) {
-        const alarmLevel = sensorInstance.getAlarmState(metricKey);
-
-        // AlarmLevel: 0=NONE, 1=STALE, 2=WARNING, 3=CRITICAL
-        if (alarmLevel >= 2) {
-          const level: AlarmLevel = alarmLevel === 3 ? 'critical' : 'warning';
-
-          alarms.push({
-            id: `${key}.${metricKey}`,
-            message: `${key}.${metricKey}: ${level.toUpperCase()}`,
-            level,
-            timestamp: now,
-          });
-        }
-      }
-    }
-
-    return alarms;
   }
 
   /**
