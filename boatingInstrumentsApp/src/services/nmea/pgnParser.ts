@@ -6,6 +6,7 @@
  */
 
 import { FromPgn } from '@canboat/canboatjs';
+import { log } from '../../utils/logging/logger';
 
 export interface PgnData {
   pgn: number;
@@ -82,7 +83,10 @@ export class PgnParser {
 
       return basePgnData;
     } catch (error) {
-      console.error(`[PgnParser] Error parsing PGN ${pgnNumber}:`, error);
+      log.app('[PgnParser] Error parsing PGN', () => ({
+        pgnNumber,
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return null;
     }
   }
@@ -683,7 +687,10 @@ export class PgnParser {
           break;
       }
     } catch (error) {
-      console.warn(`[PgnParser] Manual parsing failed for PGN ${pgnNumber}:`, error);
+      log.app(`Manual parsing failed for PGN`, () => ({
+        pgn: pgnNumber,
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
 
     return parsed;

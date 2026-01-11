@@ -41,6 +41,7 @@
  */
 
 import { SensorType } from '../types/SensorData';
+import { log } from '../utils/logging/logger';
 import { useNmeaStore } from '../store/nmeaStore';
 import { sensorRegistry } from './SensorDataRegistry';
 import { usePresentationStore } from '../presentation/presentationStore';
@@ -114,11 +115,10 @@ class ThresholdPresentationServiceClass {
     // Get category for this sensor/metric
     const category = this.getCategoryForSensor(sensorType, metric);
     if (!category) {
-      console.warn(
-        `[ThresholdPresentationService] No category found for ${sensorType}${
-          metric ? `.${metric}` : ''
-        }`,
-      );
+      log.app('[ThresholdPresentationService] No category found', () => ({
+        sensorType,
+        metric,
+      }));
       return null;
     }
 
@@ -126,11 +126,11 @@ class ThresholdPresentationServiceClass {
     const presentationStore = usePresentationStore.getState();
     const presentation = presentationStore.getPresentationForCategory(category);
     if (!presentation) {
-      console.error(
-        `[ThresholdPresentationService] No presentation found for category '${category}' (${sensorType}${
-          metric ? `.${metric}` : ''
-        })`,
-      );
+      log.app('[ThresholdPresentationService] No presentation found for category', () => ({
+        category,
+        sensorType,
+        metric,
+      }));
       return null;
     }
 
@@ -166,9 +166,11 @@ class ThresholdPresentationServiceClass {
         maxSI = defaults.metrics[metric].max;
       } else {
         // Fallback to reasonable defaults based on category
-        console.warn(
-          `[ThresholdPresentationService] No defaults found for ${sensorType}.${metric}, using fallback range for category '${category}'`,
-        );
+        log.app('[ThresholdPresentationService] No defaults found for metric, using fallback', () => ({
+          sensorType,
+          metric,
+          category,
+        }));
         const fallback = this.getFallbackRange(category);
         minSI = fallback.min;
         maxSI = fallback.max;
@@ -185,9 +187,10 @@ class ThresholdPresentationServiceClass {
         maxSI = defaults.max;
       } else {
         // Fallback to reasonable defaults based on category
-        console.warn(
-          `[ThresholdPresentationService] No defaults found for ${sensorType}, using fallback range for category '${category}'`,
-        );
+        log.app('[ThresholdPresentationService] No defaults found for sensor, using fallback', () => ({
+          sensorType,
+          category,
+        }));
         const fallback = this.getFallbackRange(category);
         minSI = fallback.min;
         maxSI = fallback.max;
@@ -225,11 +228,12 @@ class ThresholdPresentationServiceClass {
 
     // Min/Max should always exist due to fallback, but add safety check
     if (minSI === undefined || maxSI === undefined) {
-      console.error(
-        `[ThresholdPresentationService] minSI or maxSI is undefined for ${sensorType}${
-          metric ? `.${metric}` : ''
-        }`,
-      );
+      log.app('[ThresholdPresentationService] minSI or maxSI is undefined', () => ({
+        sensorType,
+        metric,
+        minSI,
+        maxSI,
+      }));
       const fallback = this.getFallbackRange(category);
       minSI = minSI ?? fallback.min;
       maxSI = maxSI ?? fallback.max;
@@ -279,31 +283,32 @@ class ThresholdPresentationServiceClass {
   private getCategoryForSensor(sensorType: SensorType, metric?: string): DataCategory | null {
     const config = SENSOR_CONFIG_REGISTRY[sensorType];
     if (!config) {
-      console.error(
-        `[ThresholdPresentationService] No config found for sensor type '${sensorType}'`,
-      );
+      log.app('[ThresholdPresentationService] No config found for sensor type', () => ({
+        sensorType,
+      }));
       return null;
     }
 
     // For multi-metric sensors, REQUIRE metric parameter
     if (config.alarmSupport === 'multi-metric') {
       if (!metric) {
-        console.error(
-          `[ThresholdPresentationService] Multi-metric sensor '${sensorType}' requires metric parameter`,
-        );
+        log.app('[ThresholdPresentationService] Multi-metric sensor requires metric parameter', () => ({
+          sensorType,
+        }));
         return null;
       }
       if (!config.alarmMetrics) {
-        console.error(
-          `[ThresholdPresentationService] Multi-metric sensor '${sensorType}' has no alarmMetrics defined`,
-        );
+        log.app('[ThresholdPresentationService] Multi-metric sensor has no alarmMetrics defined', () => ({
+          sensorType,
+        }));
         return null;
       }
       const metricConfig = config.alarmMetrics.find((m) => m.key === metric);
       if (!metricConfig?.unitType) {
-        console.warn(
-          `[ThresholdPresentationService] No unitType found for ${sensorType}.${metric}`,
-        );
+        log.app('[ThresholdPresentationService] No unitType found for metric', () => ({
+          sensorType,
+          metric,
+        }));
       }
       return metricConfig?.unitType || null;
     }
@@ -312,7 +317,7 @@ class ThresholdPresentationServiceClass {
     // Priority: field that appears in defaults.threshold (indicates primary alarm field)
     const fieldWithUnit = config.fields.find((f) => f.unitType);
     if (!fieldWithUnit?.unitType) {
-      console.warn(`[ThresholdPresentationService] No field with unitType found for ${sensorType}`);
+      log.app(`No field with unitType found for ${sensorType}`, () => ({}));
     }
     return (fieldWithUnit?.unitType as DataCategory) || null;
   }

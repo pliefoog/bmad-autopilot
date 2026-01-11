@@ -19,6 +19,7 @@
 
 import { Platform, AppState, AppStateStatus } from 'react-native';
 import { useEffect, useState, useCallback } from 'react';
+import { log } from './logging/logger';
 
 // ============================================================================
 // Platform Detection
@@ -416,7 +417,9 @@ export class DesktopOptimizationManager {
       try {
         listener(state);
       } catch (error) {
-        console.error('[Desktop] Error in power state listener:', error);
+        log.app('[Desktop] Error in power state listener', () => ({
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     }
   }
@@ -544,14 +547,16 @@ export class ThermalManager {
       try {
         listener(config);
       } catch (error) {
-        console.error('[Thermal] Error in listener:', error);
+        log.app('[Thermal] Error in listener', () => ({
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     }
 
     if (state === ThermalState.CRITICAL) {
-      console.error('[Thermal] CRITICAL: Device overheating, performance severely throttled');
+      log.app('[Thermal] CRITICAL: Device overheating, performance severely throttled');
     } else if (state === ThermalState.SERIOUS) {
-      console.warn('[Thermal] SERIOUS: Device hot, reducing performance');
+      log.app('[Thermal] SERIOUS: Device hot, reducing performance');
     }
   }
 

@@ -2034,13 +2034,13 @@ export class NmeaSensorProcessor {
         utcDate.getUTCMonth() !== month ||
         utcDate.getUTCDate() !== day
       ) {
-        console.warn(`[NmeaSensorProcessor] Invalid RMC date/time: ${date}/${time}`);
+        log.app(`Invalid RMC date/time: ${date}/${time}`, () => ({}));
         return null;
       }
 
       return utcDate;
     } catch (error) {
-      console.warn(`[NmeaSensorProcessor] Failed to parse RMC date/time: ${date}/${time}`, error);
+      log.app(`Failed to parse RMC date/time: ${date}/${time}`, () => ({ error: error instanceof Error ? error.message : String(error) }));
       return null;
     }
   }
@@ -2659,13 +2659,13 @@ export class NmeaSensorProcessor {
 
       // Validate the parsed time
       if (isNaN(utcDate.getTime())) {
-        console.warn(`[NmeaSensorProcessor] Invalid GGA time: ${time}`);
+        log.app(`Invalid GGA time: ${time}`, () => ({}));
         return null;
       }
 
       return utcDate;
     } catch (error) {
-      console.warn(`[NmeaSensorProcessor] Failed to parse GGA time: ${time}`, error);
+      log.app(`Failed to parse GGA time: ${time}`, () => ({ error: error instanceof Error ? error.message : String(error) }));
       return null;
     }
   }
@@ -2743,18 +2743,16 @@ export class NmeaSensorProcessor {
         utcDate.getUTCMonth() !== month - 1 ||
         utcDate.getUTCDate() !== day
       ) {
-        console.warn(
-          `[NmeaSensorProcessor] Invalid ZDA date/time: ${year}-${month}-${day} ${time}`,
-        );
+        log.app(`Invalid ZDA date/time: ${year}-${month}-${day} ${time}`);
         return null;
       }
 
       return utcDate;
     } catch (error) {
-      console.warn(
-        `[NmeaSensorProcessor] Failed to parse ZDA date/time: ${year}-${month}-${day} ${time}`,
-        error,
-      );
+      log.app('NmeaSensorProcessor: Failed to parse ZDA date/time', () => ({
+        year, month, day, time,
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return null;
     }
   }

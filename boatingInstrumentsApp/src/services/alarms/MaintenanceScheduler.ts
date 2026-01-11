@@ -7,6 +7,7 @@ import { Alarm, AlarmLevel } from '../../store/alarmStore';
 import { VesselContext } from './PriorityQueueManager';
 import { NmeaDataSnapshot } from './VesselContextDetector';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { log } from '../../utils/logging/logger';
 
 /**
  * Maintenance schedule item
@@ -984,7 +985,9 @@ export class MaintenanceScheduler {
         this.loadDefaultMaintenanceItems();
       }
     } catch (error) {
-      console.error('MaintenanceScheduler: Failed to load from storage', error);
+      log.app('MaintenanceScheduler: Failed to load from storage', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       this.loadDefaultMaintenanceItems();
     }
   }
@@ -1000,7 +1003,9 @@ export class MaintenanceScheduler {
 
       await AsyncStorage.setItem(this.storageKey, JSON.stringify(data));
     } catch (error) {
-      console.error('MaintenanceScheduler: Failed to save to storage', error);
+      log.app('MaintenanceScheduler: Failed to save to storage', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 

@@ -4,6 +4,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { log } from '../../utils/logging/logger';
 
 export interface WiFiCredentials {
   host: string;
@@ -51,7 +52,9 @@ class SecureStorageServiceImpl implements SecureStorageService {
       // Also save to connection history
       await this.saveConnectionHistory(credentials.host, credentials.port);
     } catch (error) {
-      console.error('Failed to save WiFi credentials:', error);
+      log.app('Failed to save WiFi credentials', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`WiFi credentials save failed: ${error}`);
     }
   }
@@ -67,7 +70,9 @@ class SecureStorageServiceImpl implements SecureStorageService {
       const credentials = JSON.parse(credentialsData) as WiFiCredentials;
       return credentials;
     } catch (error) {
-      console.error('Failed to load WiFi credentials:', error);
+      log.app('Failed to load WiFi credentials', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`WiFi credentials load failed: ${error}`);
     }
   }
@@ -76,7 +81,9 @@ class SecureStorageServiceImpl implements SecureStorageService {
     try {
       await AsyncStorage.removeItem(this.WIFI_CREDENTIALS_KEY);
     } catch (error) {
-      console.error('Failed to clear WiFi credentials:', error);
+      log.app('Failed to clear WiFi credentials', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`WiFi credentials clear failed: ${error}`);
     }
   }
@@ -102,7 +109,9 @@ class SecureStorageServiceImpl implements SecureStorageService {
 
       await AsyncStorage.setItem(this.CONNECTION_HISTORY_KEY, JSON.stringify(history));
     } catch (error) {
-      console.error('Failed to save connection history:', error);
+      log.app('Failed to save connection history', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       // Don't throw here as this is not critical functionality
     }
   }
@@ -118,7 +127,9 @@ class SecureStorageServiceImpl implements SecureStorageService {
       const history = JSON.parse(historyData) as WiFiCredentials[];
       return history;
     } catch (error) {
-      console.error('Failed to load connection history:', error);
+      log.app('Failed to load connection history', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return [];
     }
   }
@@ -127,7 +138,9 @@ class SecureStorageServiceImpl implements SecureStorageService {
     try {
       await AsyncStorage.removeItem(this.CONNECTION_HISTORY_KEY);
     } catch (error) {
-      console.error('Failed to clear connection history:', error);
+      log.app('Failed to clear connection history', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Connection history clear failed: ${error}`);
     }
   }

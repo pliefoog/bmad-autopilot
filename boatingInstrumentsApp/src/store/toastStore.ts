@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector, devtools } from 'zustand/middleware';
+import { log } from '../utils/logging/logger';
 
 export interface ToastAction {
   label: string;
@@ -87,7 +88,9 @@ export const useToastStore = create<ToastStore>()(
         );
 
         if (recentToasts.length >= MAX_TOASTS_PER_WINDOW) {
-          console.warn('[ToastStore] Rate limit exceeded, blocking toast:', toastData.message);
+          log.app('[ToastStore] Rate limit exceeded, blocking toast', () => ({
+            message: toastData.message,
+          }));
           return 'rate_limited'; // Return dummy ID
         }
         const id = generateId();

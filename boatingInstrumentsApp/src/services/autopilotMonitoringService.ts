@@ -1,6 +1,7 @@
 import { SafetyEvent, SystemHealthMetrics } from './autopilotSafetyManager';
 import { ErrorMessage } from './autopilotErrorManager';
 import { QueuedCommand } from './autopilotCommandQueue';
+import { log } from '../utils/logging/logger';
 
 /**
  * Log levels for different types of events
@@ -467,16 +468,14 @@ export class AutopilotMonitoringService {
       this.logEntries.shift();
     }
 
-    // Console output for development
-    const consoleMethods = {
-      [LogLevel.DEBUG]: console.debug,
-      [LogLevel.INFO]: console.info,
-      [LogLevel.WARN]: console.warn,
-      [LogLevel.ERROR]: console.error,
-      [LogLevel.CRITICAL]: console.error,
-    };
+    // Log output through conditional logging system
+    const logMessageWithContext = () => ({
+      eventType,
+      level,
+      data,
+    });
 
-    consoleMethods[level](`[${eventType}] ${message}`, data);
+    log.app(`[${eventType}] ${message}`, logMessageWithContext);
   }
 
   /**

@@ -22,6 +22,7 @@ import {
 } from '../../src/services/alarms/AlarmConfigurationManager';
 import { CriticalAlarmType, AlarmEscalationLevel } from '../../src/services/alarms/types';
 import { AlarmLevel } from '../../src/store/alarmStore';
+import { log } from '../../utils/logging/logger';
 
 interface AlarmHistoryListProps {
   maxItems?: number;
@@ -63,7 +64,9 @@ export const AlarmHistoryList: React.FC<AlarmHistoryListProps> = ({
 
       setHistory(filtered);
     } catch (error) {
-      console.error('Failed to load alarm history:', error);
+      log.app('Failed to load alarm history', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       Alert.alert('Error', 'Failed to load alarm history');
     } finally {
       setLoading(false);

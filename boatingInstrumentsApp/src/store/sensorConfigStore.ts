@@ -19,6 +19,7 @@ import { persist, createJSONStorage, devtools } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SensorType, SensorConfiguration } from '../types/SensorData';
 import { useToastStore } from './toastStore';
+import { log } from '../utils/logging/logger';
 
 /**
  * Unique sensor configuration key
@@ -187,10 +188,11 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
         // Migration strategy: Clean slate on version mismatch
         migrate: (persistedState: any, version: number) => {
           if (version !== 3) {
-            console.warn(
-              '[SensorConfigStore] Migration: Clearing configs due to schema version change',
-              `(stored: v${version}, expected: v3 - category→unitType refactor)`,
-            );
+            log.app('[SensorConfigStore] Migration: Clearing configs due to schema version change', () => ({
+              storedVersion: version,
+              expectedVersion: 3,
+              reason: 'category→unitType refactor',
+            }));
 
             // Show user-friendly notification
             useToastStore.getState().addToast({
@@ -214,7 +216,9 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
         onRehydrateStorage: () => {
           return (state, error) => {
             if (error) {
-              console.error('[SensorConfigStore] Hydration error:', error);
+              log.app('[SensorConfigStore] Hydration error', () => ({
+                error: error instanceof Error ? error.message : String(error),
+              }));
             } else {
               const configCount = Object.keys(state?.configs || {}).length;
             }

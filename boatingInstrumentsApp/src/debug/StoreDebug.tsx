@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useNmeaStore } from '../store/nmeaStore';
 import { sensorRegistry } from '../services/SensorDataRegistry';
+import { log } from '../utils/logging/logger';
 
 /**
  * Debug component to monitor store state
@@ -13,43 +14,38 @@ export const StoreDebug: React.FC = () => {
   const timestamp = useNmeaStore((state) => state.nmeaData.timestamp);
 
   useEffect(() => {
-    console.log('=== STORE DEBUG ===');
-    console.log('Message count:', messageCount);
-    console.log('Last update:', new Date(timestamp).toISOString());
     const uniqueTypes = new Set(allSensors.map(s => s.sensorType));
-    console.log('Sensors:', Array.from(uniqueTypes));
+    log.app('[StoreDebug] Store state', () => ({
+      messageCount,
+      lastUpdate: new Date(timestamp).toISOString(),
+      sensorTypes: Array.from(uniqueTypes),
+    }));
 
-    // Check depth sensor specifically
     const depthSensor = sensorRegistry.get('depth', 0);
     if (depthSensor) {
       const metrics = depthSensor.getAllMetrics();
-      console.log('Depth sensor exists:', {
+      log.app('[StoreDebug] Depth sensor', () => ({
         type: depthSensor.sensorType,
         instance: depthSensor.instance,
         timestamp: depthSensor.timestamp,
         metricsCount: Object.keys(metrics).length,
         metrics: Object.keys(metrics),
-        isSensorInstance: depthSensor.constructor.name,
-        hasGetMetric: typeof depthSensor.getMetric === 'function',
-        hasUpdateMetrics: typeof depthSensor.updateMetrics === 'function',
-        _metricsType: depthSensor._metrics ? depthSensor._metrics.constructor.name : 'undefined',
-        _metricsSize: depthSensor._metrics ? depthSensor._metrics.size : 'N/A',
-      });
+      }));
 
       const depthMetric = depthSensor.getMetric('depth');
       if (depthMetric) {
-        console.log('Depth metric:', {
+        log.app('[StoreDebug] Depth metric', () => ({
           si_value: depthMetric.si_value,
           value: depthMetric.value,
           unit: depthMetric.unit,
           formattedValue: depthMetric.formattedValue,
           formattedValueWithUnit: depthMetric.formattedValueWithUnit,
-        });
+        }));
       } else {
-        console.log('❌ Depth metric NOT FOUND');
+        log.app('[StoreDebug] Depth metric NOT FOUND');
       }
     } else {
-      console.log('❌ No depth sensor in store');
+      log.app('[StoreDebug] No depth sensor in store');
     }
   }, [sensors, messageCount, timestamp]);
 

@@ -26,7 +26,6 @@ export const MemoryMonitor: React.FC<MemoryMonitorProps> = ({
 
   useEffect(() => {
     if (!memoryProfiler.isAvailable()) {
-      console.warn('[MemoryMonitor] Memory profiling not available');
       return;
     }
 

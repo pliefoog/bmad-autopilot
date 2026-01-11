@@ -25,34 +25,29 @@ export interface UpdateResult {
   reason?: string;
 }
 
+/**
+ * Update connection status in store
+ */
+export function updateConnectionStatus(status: {
+  state: 'disconnected' | 'connecting' | 'connected' | 'error';
+}): void {
+  // Map connection manager states to store states
+  const storeState = status.state === 'error' ? 'disconnected' : status.state;
+  useNmeaStore.getState().setConnectionStatus(storeState);
+}
 
-export class PureStoreUpdater {
-  // Stateless utility class - no singleton needed
-  constructor() {}
+/**
+ * Update error in store
+ */
+export function updateError(error: string): void {
+  useNmeaStore.getState().setLastError(error);
+}
 
-  /**
-   * Update connection status in store
-   */
-  updateConnectionStatus(status: {
-    state: 'disconnected' | 'connecting' | 'connected' | 'error';
-  }): void {
-    // Map connection manager states to store states
-    const storeState = status.state === 'error' ? 'disconnected' : status.state;
-    useNmeaStore.getState().setConnectionStatus(storeState);
-  }
-
-  /**
-   * Update error in store
-   */
-  updateError(error: string): void {
-    useNmeaStore.getState().setLastError(error);
-  }
-
-  /**
-   * Process parsed NMEA message using NmeaSensorProcessor
-   * Direct sensor-based processing path
-   */
-  processNmeaMessage(parsedMessage: ParsedNmeaMessage): UpdateResult {
+/**
+ * Process parsed NMEA message using NmeaSensorProcessor
+ * Direct sensor-based processing path
+ */
+export function processNmeaMessage(parsedMessage: ParsedNmeaMessage): UpdateResult {
     try {
       // Detect message format: NMEA 2000 (PCDIN/BINARY/PGN*) vs NMEA 0183
       const messageFormat = 
@@ -77,7 +72,7 @@ export class PureStoreUpdater {
 
       // Apply sensor updates to store (with messageFormat)
       if (result.updates && result.updates.length > 0) {
-        return this.applySensorUpdates(result.updates, messageFormat);
+        return applySensorUpdates(result.updates, messageFormat);
       }
       return {
         updated: false,
@@ -96,42 +91,42 @@ export class PureStoreUpdater {
     }
   }
 
-  /**
-   * Process binary NMEA 2000 PGN frame directly
-   */
-  processBinaryPgnFrame(frame: BinaryPgnFrame): UpdateResult {
-    try {
-      // Convert binary frame to sensor updates based on PGN
-      const updates = this.parseBinaryPgnToUpdates(frame);
+/**
+ * Process binary NMEA 2000 PGN frame directly
+ */
+export function processBinaryPgnFrame(frame: BinaryPgnFrame): UpdateResult {
+  try {
+    // Convert binary frame to sensor updates based on PGN
+    const updates = parseBinaryPgnToUpdates(frame);
 
-      if (updates.length > 0) {
-        // Binary frames are always NMEA 2000
-        return this.applySensorUpdates(updates, 'NMEA 2000');
-      }
-
-      return {
-        updated: false,
-        updatedFields: [],
-        reason: 'No sensor updates generated from binary PGN',
-      };
-    } catch (err) {
-      log.app('Error processing binary PGN frame', () => ({
-        error: err instanceof Error ? err.message : String(err),
-      }));
-      return {
-        updated: false,
-        updatedFields: [],
-        reason: `Binary frame exception: ${
-          err instanceof Error ? err.message : 'Unknown error'
-        }`,
-      };
+    if (updates.length > 0) {
+      // Binary frames are always NMEA 2000
+      return applySensorUpdates(updates, 'NMEA 2000');
     }
+    
+    return {
+      updated: false,
+      updatedFields: [],
+      reason: 'No sensor updates generated from binary PGN',
+    };
+  } catch (err) {
+    log.app('Error processing binary PGN frame', () => ({
+      error: err instanceof Error ? err.message : String(err),
+    }));
+    return {
+      updated: false,
+      updatedFields: [],
+      reason: `Binary frame exception: ${
+        err instanceof Error ? err.message : 'Unknown error'
+      }`,
+    };
   }
+}
 
-  /**
-   * Parse binary PGN frame to sensor updates
-   */
-  private parseBinaryPgnToUpdates(frame: BinaryPgnFrame): SensorUpdate[] {
+/**
+ * Parse binary PGN frame to sensor updates
+ */
+function parseBinaryPgnToUpdates(frame: BinaryPgnFrame): SensorUpdate[] {
     const hexData = Array.from(frame.data)
       .map((b) => b.toString(16).padStart(2, '0').toUpperCase())
       .join('');
@@ -386,21 +381,21 @@ export class PureStoreUpdater {
     return updates;
   }
 
-  /**
-   * Apply sensor updates from NmeaSensorProcessor to NMEA Store v2.0
-   *
-   * ARCHITECTURE v2.0: NO MERGING - Each update passes through independently
-   * - Each NMEA message → one metric update → immediate updateSensorData call
-   * - No accumulation, no batching, no merging across updates
-   * - SensorInstance handles versioning, history, and change detection
-   * - Version counters only increment when values actually change
-   *
-   * WHY NO MERGING:
-   * - Battery XDR sends 4 separate messages (V/I/C/P) that should trigger 4 separate updates
-   * - Merging causes: "fields: Array(3)" instead of "fields: Array(1)"
-   * - Each metric should update independently to trigger fine-grained subscriptions
-   */
-  private applySensorUpdates(
+/**
+ * Apply sensor updates from NmeaSensorProcessor to NMEA Store v2.0
+ *
+ * ARCHITECTURE v2.0: NO MERGING - Each update passes through independently
+ * - Each NMEA message → one metric update → immediate updateSensorData call
+ * - No accumulation, no batching, no merging across updates
+ * - SensorInstance handles versioning, history, and change detection
+ * - Version counters only increment when values actually change
+ *
+ * WHY NO MERGING:
+ * - Battery XDR sends 4 separate messages (V/I/C/P) that should trigger 4 separate updates
+ * - Merging causes: "fields: Array(3)" instead of "fields: Array(1)"
+ * - Each metric should update independently to trigger fine-grained subscriptions
+ */
+function applySensorUpdates(
     updates: SensorUpdate[],
     messageFormat?: 'NMEA 0183' | 'NMEA 2000',
   ): UpdateResult {
@@ -436,8 +431,4 @@ export class PureStoreUpdater {
       updatedFields: updatedFields,
       reason: anyUpdated ? `Updated ${updatedFields.length} sensors` : 'No updates applied',
     };
-  }
 }
-
-// Export instance - stateless utility
-export const pureStoreUpdater = new PureStoreUpdater();

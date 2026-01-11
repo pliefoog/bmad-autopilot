@@ -4,6 +4,7 @@
  */
 
 import { AutopilotCommand, AutopilotState, NMEAError } from './types';
+import { log } from '../../utils/logging/logger';
 
 export interface AutopilotCommandService {
   sendHeadingCommand(heading: number, confirmation?: boolean): Promise<void>;
@@ -68,7 +69,9 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
       this.currentState.targetHeading = heading;
       this.currentState.lastUpdate = Date.now();
     } catch (error) {
-      console.error('Failed to send heading command:', error);
+      log.app('[AutopilotCommands] Failed to send heading command', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Heading command failed: ${error}`);
     }
   }
@@ -105,7 +108,9 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
       this.currentState.targetSpeed = speed;
       this.currentState.lastUpdate = Date.now();
     } catch (error) {
-      console.error('Failed to send speed command:', error);
+      log.app('[AutopilotCommands] Failed to send speed command', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Speed command failed: ${error}`);
     }
   }
@@ -153,7 +158,10 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
       this.currentState.mode = mode as any;
       this.currentState.lastUpdate = Date.now();
     } catch (error) {
-      console.error('Failed to set mode:', error);
+      log.app('Failed to set mode', () => ({
+        mode,
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Mode set failed: ${error}`);
     }
   }
@@ -161,7 +169,7 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
   async engageAutopilot(): Promise<void> {
     try {
       if (this.currentState.engaged) {
-        console.warn('Autopilot already engaged');
+        log.app('[AutopilotCommands] Autopilot already engaged');
         return;
       }
 
@@ -187,7 +195,9 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
       this.currentState.mode = 'auto';
       this.currentState.lastUpdate = Date.now();
     } catch (error) {
-      console.error('Failed to engage autopilot:', error);
+      log.app('Failed to engage autopilot', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Autopilot engagement failed: ${error}`);
     }
   }
@@ -195,7 +205,7 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
   async disengageAutopilot(): Promise<void> {
     try {
       if (!this.currentState.engaged) {
-        console.warn('Autopilot already disengaged');
+        log.app('[AutopilotCommands] Autopilot already disengaged');
         return;
       }
 
@@ -223,7 +233,9 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
       this.currentState.targetSpeed = undefined;
       this.currentState.lastUpdate = Date.now();
     } catch (error) {
-      console.error('Failed to disengage autopilot:', error);
+      log.app('Failed to disengage autopilot', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Autopilot disengagement failed: ${error}`);
     }
   }
@@ -253,7 +265,9 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
           return false;
       }
     } catch (error) {
-      console.error('Command validation error:', error);
+      log.app('Command validation error', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return false;
     }
   }
@@ -307,7 +321,10 @@ class AutopilotCommandServiceImpl implements AutopilotCommandService {
       try {
         listener(data);
       } catch (error) {
-        console.error(`Error in event listener for ${event}:`, error);
+        log.app('Error in event listener', () => ({
+          event,
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     });
   }

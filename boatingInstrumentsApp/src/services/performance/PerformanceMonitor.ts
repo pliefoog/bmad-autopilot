@@ -13,6 +13,7 @@
  */
 
 import { Platform, InteractionManager } from 'react-native';
+import { log } from '../../utils/logging/logger';
 
 // Performance metrics interfaces
 export interface PerformanceMetrics {
@@ -104,7 +105,7 @@ export class PerformanceMonitor {
    */
   public startMonitoring(): void {
     if (this.isMonitoring) {
-      console.warn('[PerformanceMonitor] Already monitoring');
+      log.app('Performance monitor already monitoring', () => ({}));
       return;
     }
 
@@ -245,11 +246,11 @@ export class PerformanceMonitor {
     // Check if memory grew more than threshold over 10 minutes
     if (durationMinutes >= 10 && growthMB > this.MEMORY_LEAK_THRESHOLD_MB) {
       this.recordViolation('memory_leak', growthMB, this.MEMORY_LEAK_THRESHOLD_MB, 'critical');
-      console.warn(
-        `[PerformanceMonitor] Potential memory leak detected: +${growthMB.toFixed(
-          1,
-        )}MB over ${durationMinutes.toFixed(1)} minutes`,
-      );
+      log.app('[PerformanceMonitor] Potential memory leak detected', () => ({
+        growthMB: growthMB.toFixed(1),
+        durationMinutes: durationMinutes.toFixed(1),
+        threshold: this.MEMORY_LEAK_THRESHOLD_MB,
+      }));
     }
   }
 
@@ -289,7 +290,9 @@ export class PerformanceMonitor {
   public markEnd(label: string): number {
     const startTime = this.performanceMarks.get(label);
     if (!startTime) {
-      console.warn(`[PerformanceMonitor] No start mark found for: ${label}`);
+      log.app(`No start mark found for timing`, () => ({
+        label,
+      }));
       return 0;
     }
 

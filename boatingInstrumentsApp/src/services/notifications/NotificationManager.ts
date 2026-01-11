@@ -2,6 +2,7 @@ import { Platform, PermissionsAndroid, Alert } from 'react-native';
 import { PlatformNotificationService } from './PlatformNotificationService';
 import { NotificationContentManager, VesselContextData } from './NotificationContentManager';
 import { SmartNotificationManager } from './SmartNotificationManager';
+import { log } from '../../utils/logging/logger';
 
 // Platform-specific imports (would be handled by native modules in production)
 interface NotificationPermission {
@@ -104,13 +105,15 @@ export class NotificationManager {
       this.permissionsGranted = capabilities.permissions.granted;
 
       if (!this.permissionsGranted) {
-        console.warn('[Notifications] Notification permissions not granted');
+        log.app('[Notifications] Notification permissions not granted');
         return;
       }
 
       this.isInitialized = true;
     } catch (error) {
-      console.error('[Notifications] Failed to initialize notification system:', error);
+      log.app('[Notifications] Failed to initialize notification system', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw error;
     }
   }
@@ -128,7 +131,9 @@ export class NotificationManager {
         return await this.requestDesktopPermissions();
       }
     } catch (error) {
-      console.error('[Notifications] Error requesting permissions:', error);
+      log.app('[Notifications] Error requesting permissions', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return { granted: false, canRequestAgain: false };
     }
   }
@@ -168,7 +173,9 @@ export class NotificationManager {
 
       return { granted: true, canRequestAgain: true };
     } catch (error) {
-      console.error('[Notifications] Android permission error:', error);
+      log.app('[Notifications] Android permission error', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return { granted: false, canRequestAgain: false };
     }
   }
@@ -271,7 +278,7 @@ export class NotificationManager {
     vesselContext?: VesselContextData,
   ): Promise<void> {
     if (!this.isInitialized || !this.permissionsGranted) {
-      console.warn('[Notifications] Cannot send notification - system not ready');
+      log.app('[Notifications] Cannot send notification - system not ready');
       return;
     }
 
@@ -290,7 +297,10 @@ export class NotificationManager {
       // For immediate and escalated notifications, send now
       await this.sendImmediateNotification(alarm, vesselContext, smartResult.urgencyLevel);
     } catch (error) {
-      console.error('[Notifications] Failed to send alarm notification:', error);
+      log.app('[Notifications] Failed to send alarm notification', () => ({
+        error: error instanceof Error ? error.message : String(error),
+        alarmId: alarm.id,
+      }));
       throw error;
     }
   }
@@ -540,7 +550,7 @@ export class NotificationManager {
    */
   private async sendDesktopNotification(notification: any): Promise<void> {
     if (typeof window === 'undefined' || !('Notification' in window)) {
-      console.warn('[Notifications] Desktop notifications not supported');
+      log.app('[Notifications] Desktop notifications not supported');
       return;
     }
 
@@ -561,7 +571,9 @@ export class NotificationManager {
         // TODO: Navigate to appropriate alarm screen
       };
     } catch (error) {
-      console.error('[Notifications] Desktop notification error:', error);
+      log.app('[Notifications] Desktop notification error', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -582,7 +594,10 @@ export class NotificationManager {
         await this.platformService.clearAlarmNotifications(notificationData.alarmId);
       }
     } catch (error) {
-      console.error(`[Notifications] Action handling error for ${actionId}:`, error);
+      log.app('[Notifications] Action handling error', () => ({
+        error: error instanceof Error ? error.message : String(error),
+        actionId,
+      }));
 
       // Fallback to simple action handling
       await this.handleSimpleAction(actionId, notificationData);

@@ -35,6 +35,7 @@
 
 import React, { useMemo } from 'react';
 import { Platform } from 'react-native';
+import { log } from '../utils/logging/logger';
 import { useWidgetStore } from '../store/widgetStore';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';
@@ -82,7 +83,9 @@ function renderCell(
 
     const Component = getWidgetComponent(cell.component);
     if (!Component) {
-      console.warn(`[CustomWidget] Component "${cell.component}" not found in registry`);
+      log.app('[CustomWidget] Component not found in registry', () => ({
+        component: cell.component,
+      }));
       return <EmptyCell key={`missing-${index}`} />;
     }
 
@@ -217,28 +220,31 @@ export const CustomWidget: React.FC<CustomWidgetProps> = React.memo(
 
     // Validation
     if (!definition?.grid) {
-      console.error(
-        `[CustomWidget] RENDER BLOCKED - No grid configuration found for widget: ${id}`,
-      );
+      log.app('[CustomWidget] RENDER BLOCKED - No grid configuration', () => ({
+        widgetId: id,
+      }));
       return null;
     }
 
     if (!primarySensorType) {
-      console.error(
-        `[CustomWidget] RENDER BLOCKED - No primary sensor type defined for widget: ${id}`,
-      );
+      log.app('[CustomWidget] RENDER BLOCKED - No primary sensor type', () => ({
+        widgetId: id,
+      }));
       return null;
     }
 
     if (!gridTemplate) {
-      console.error(
-        `[CustomWidget] RENDER BLOCKED - Invalid template "${definition.grid.template}" for widget: ${id}`,
-      );
+      log.app('[CustomWidget] RENDER BLOCKED - Invalid template', () => ({
+        template: definition.grid.template,
+        widgetId: id,
+      }));
       return null;
     }
 
     if (children.length === 0) {
-      console.error(`[CustomWidget] RENDER BLOCKED - No children generated for widget: ${id}`);
+      log.app('[CustomWidget] RENDER BLOCKED - No children generated', () => ({
+        widgetId: id,
+      }));
       return null;
     }
 

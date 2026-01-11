@@ -20,6 +20,8 @@
  * Command Interface
  * All reversible actions must implement this interface
  */
+import { log } from '../../utils/logging/logger';
+
 export interface Command {
   /** Unique identifier for the command */
   id: string;
@@ -91,7 +93,7 @@ export class UndoRedoManager {
    */
   public async executeCommand(command: Command): Promise<void> {
     if (this.isExecuting) {
-      console.warn('[UndoRedo] Cannot execute command while another is executing');
+      log.app('Cannot execute command while another is executing', () => ({}));
       return;
     }
 
@@ -117,7 +119,9 @@ export class UndoRedoManager {
       this.notifyStackChange();
       this.onCommandExecute?.(command);
     } catch (error) {
-      console.error('[UndoRedo] Failed to execute command:', error);
+      log.app('Failed to execute command', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw error;
     } finally {
       this.isExecuting = false;
@@ -129,7 +133,7 @@ export class UndoRedoManager {
    */
   public async executeCommandGroup(group: CommandGroup): Promise<void> {
     if (this.isExecuting) {
-      console.warn('[UndoRedo] Cannot execute command group while another is executing');
+      log.app('Cannot execute command group while another is executing', () => ({}));
       return;
     }
 
@@ -157,7 +161,9 @@ export class UndoRedoManager {
       this.saveHistory();
       this.notifyStackChange();
     } catch (error) {
-      console.error('[UndoRedo] Failed to execute command group:', error);
+      log.app('Failed to execute command group', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw error;
     } finally {
       this.isExecuting = false;
@@ -169,12 +175,12 @@ export class UndoRedoManager {
    */
   public async undo(): Promise<boolean> {
     if (!this.canUndo()) {
-      console.warn('[UndoRedo] Nothing to undo');
+      log.app('[UndoRedo] Nothing to undo');
       return false;
     }
 
     if (this.isExecuting) {
-      console.warn('[UndoRedo] Cannot undo while executing');
+      log.app('[UndoRedo] Cannot undo while executing');
       return false;
     }
 
@@ -204,7 +210,9 @@ export class UndoRedoManager {
 
       return true;
     } catch (error) {
-      console.error('[UndoRedo] Failed to undo:', error);
+      log.app('[UndoRedo] Failed to undo', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return false;
     } finally {
       this.isExecuting = false;
@@ -216,12 +224,12 @@ export class UndoRedoManager {
    */
   public async redo(): Promise<boolean> {
     if (!this.canRedo()) {
-      console.warn('[UndoRedo] Nothing to redo');
+      log.app('[UndoRedo] Nothing to redo');
       return false;
     }
 
     if (this.isExecuting) {
-      console.warn('[UndoRedo] Cannot redo while executing');
+      log.app('[UndoRedo] Cannot redo while executing');
       return false;
     }
 
@@ -258,7 +266,9 @@ export class UndoRedoManager {
 
       return true;
     } catch (error) {
-      console.error('[UndoRedo] Failed to redo:', error);
+      log.app('[UndoRedo] Failed to redo', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return false;
     } finally {
       this.isExecuting = false;
@@ -399,7 +409,9 @@ export class UndoRedoManager {
       // In a real implementation, save to AsyncStorage
       // For now, just log
     } catch (error) {
-      console.error('[UndoRedo] Failed to save history:', error);
+      log.app('Failed to save history', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -412,7 +424,9 @@ export class UndoRedoManager {
       // In a real implementation, load from AsyncStorage
       // For now, start with empty stacks
     } catch (error) {
-      console.error('[UndoRedo] Failed to load history:', error);
+      log.app('Failed to load history', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 }

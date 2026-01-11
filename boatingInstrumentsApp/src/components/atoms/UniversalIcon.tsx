@@ -13,6 +13,7 @@
 import React from 'react';
 import { Platform } from 'react-native';
 import { useTheme } from '../../store/themeStore';
+import { log } from '../../utils/logging/logger';
 
 // Platform-specific icon imports
 // Use @expo/vector-icons for better web compatibility
@@ -126,9 +127,10 @@ export const UniversalIcon: React.FC<UniversalIconProps> = ({
     ];
 
     if (!validIcons.includes(name)) {
-      console.warn(
-        `[UniversalIcon] Unknown icon: "${name}". Consider adding to Widget Metadata Registry.`,
-      );
+      log.app('UniversalIcon: Unknown icon', () => ({
+        name,
+        suggestion: 'Consider adding to Widget Metadata Registry',
+      }));
     }
   }
 

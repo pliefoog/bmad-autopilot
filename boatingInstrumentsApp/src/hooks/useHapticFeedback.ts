@@ -8,6 +8,7 @@
 
 import { useCallback } from 'react';
 import { Platform } from 'react-native';
+import { log } from '../utils/logging/logger';
 
 // Conditional import for expo-haptics (only available on mobile)
 let Haptics: any;
@@ -76,7 +77,9 @@ export const useHapticFeedback = (): UseHapticFeedbackReturn => {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (error) {
       // Silently fail if haptics not available on device
-      console.warn('Haptic feedback failed:', error);
+      log.app('Haptic feedback failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }, [isAvailable]);
 
@@ -90,7 +93,9 @@ export const useHapticFeedback = (): UseHapticFeedbackReturn => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (error) {
-      console.warn('Haptic feedback failed:', error);
+      log.app('Haptic feedback failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }, [isAvailable]);
 
@@ -104,7 +109,9 @@ export const useHapticFeedback = (): UseHapticFeedbackReturn => {
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      console.warn('Haptic feedback failed:', error);
+      log.app('Haptic feedback failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }, [isAvailable]);
 
@@ -118,7 +125,9 @@ export const useHapticFeedback = (): UseHapticFeedbackReturn => {
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } catch (error) {
-      console.warn('Haptic feedback failed:', error);
+      log.app('Haptic feedback failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }, [isAvailable]);
 

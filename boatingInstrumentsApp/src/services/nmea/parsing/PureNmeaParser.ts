@@ -27,34 +27,18 @@ export interface ParsingResult {
   errors?: string[];
 }
 
-export class PureNmeaParser {
-  private static instance: PureNmeaParser;
-
-  // Performance tracking
-  private parseCount = 0;
-  private errorCount = 0;
-
-  static getInstance(): PureNmeaParser {
-    if (!PureNmeaParser.instance) {
-      PureNmeaParser.instance = new PureNmeaParser();
-    }
-    return PureNmeaParser.instance;
-  }
-
-  /**
-   * Parse a single NMEA sentence
-   * @param sentence Raw NMEA sentence
-   * @returns Parsing result with data or errors
-   */
-  parseSentence(sentence: string): ParsingResult {
-    this.parseCount++;
+/**
+ * Parse a single NMEA sentence
+ * @param sentence Raw NMEA sentence
+ * @returns Parsing result with data or errors
+ */
+export function parseSentence(sentence: string): ParsingResult {
     const timestamp = Date.now();
 
     try {
       // Basic validation
-      const validationResult = this.validateSentence(sentence);
+      const validationResult = validateSentence(sentence);
       if (!validationResult.valid) {
-        this.errorCount++;
         return {
           success: false,
           errors: validationResult.errors,
@@ -62,9 +46,8 @@ export class PureNmeaParser {
       }
 
       // Extract header information
-      const headerInfo = this.extractHeader(sentence);
+      const headerInfo = extractHeader(sentence);
       if (!headerInfo) {
-        this.errorCount++;
         return {
           success: false,
           errors: ['Invalid NMEA header format'],
@@ -72,7 +55,7 @@ export class PureNmeaParser {
       }
 
       // Parse fields based on message type
-      const fields = this.parseMessageFields(headerInfo.messageType, sentence);
+      const fields = parseMessageFields(headerInfo.messageType, sentence);
 
       const parsedMessage: ParsedNmeaMessage = {
         messageType: headerInfo.messageType,
@@ -88,7 +71,6 @@ export class PureNmeaParser {
         data: parsedMessage,
       };
     } catch (error) {
-      this.errorCount++;
       return {
         success: false,
         errors: [`Parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`],
@@ -96,10 +78,10 @@ export class PureNmeaParser {
     }
   }
 
-  /**
-   * Validate NMEA sentence format
-   */
-  private validateSentence(sentence: string): { valid: boolean; errors?: string[] } {
+/**
+ * Validate NMEA sentence format
+ */
+function validateSentence(sentence: string): { valid: boolean; errors?: string[] } {
     const errors: string[] = [];
 
     // Check basic format
@@ -128,10 +110,10 @@ export class PureNmeaParser {
     };
   }
 
-  /**
-   * Extract header information (talker + message type)
-   */
-  private extractHeader(sentence: string): { talker: string; messageType: string } | null {
+/**
+ * Extract header information (talker + message type)
+ */
+function extractHeader(sentence: string): { talker: string; messageType: string } | null {
     try {
       const firstComma = sentence.indexOf(',');
       if (firstComma === -1) return null;
@@ -166,10 +148,10 @@ export class PureNmeaParser {
     }
   }
 
-  /**
-   * Parse message fields based on message type
-   */
-  private parseMessageFields(messageType: string, sentence: string): Record<string, any> {
+/**
+ * Parse message fields based on message type
+ */
+function parseMessageFields(messageType: string, sentence: string): Record<string, any> {
     const parts = sentence.split(',');
 
     // Remove checksum from last field if present
@@ -190,61 +172,61 @@ export class PureNmeaParser {
     // Add message-specific parsing
     switch (messageType) {
       case 'RSA':
-        return this.parseRSAFields(parts);
+        return parseRSAFields(parts);
       case 'APB':
-        return this.parseAPBFields(parts);
+        return parseAPBFields(parts);
       case 'APA':
-        return this.parseAPAFields(parts);
+        return parseAPAFields(parts);
       case 'GGA':
-        return this.parseGGAFields(parts);
+        return parseGGAFields(parts);
       case 'VTG':
-        return this.parseVTGFields(parts);
+        return parseVTGFields(parts);
       case 'DBT':
-        return this.parseDBTFields(parts);
+        return parseDBTFields(parts);
       case 'MWV':
-        return this.parseMWVFields(parts);
-      case 'DIN':
-        return this.parseDINFields(parts);
+        return parseMWVFields(parts);
+      case 'PCDIN':
+        return parseDINFields(parts);
       case 'RMC':
-        return this.parseRMCFields(parts);
+        return parseRMCFields(parts);
       case 'ZDA':
-        return this.parseZDAFields(parts);
+        return parseZDAFields(parts);
       case 'HDG':
-        return this.parseHDGFields(parts);
+        return parseHDGFields(parts);
       case 'RPM':
-        return this.parseRPMFields(parts);
+        return parseRPMFields(parts);
       case 'DPT':
-        return this.parseDPTFields(parts);
+        return parseDPTFields(parts);
       case 'DBK':
-        return this.parseDBKFields(parts);
+        return parseDBKFields(parts);
       case 'MTW':
-        return this.parseMTWFields(parts);
+        return parseMTWFields(parts);
       case 'MDA':
-        return this.parseMDAFields(parts);
+        return parseMDAFields(parts);
       case 'MMB':
-        return this.parseMMBFields(parts);
+        return parseMMBFields(parts);
       case 'VHW':
-        return this.parseVHWFields(parts);
+        return parseVHWFields(parts);
       case 'VWR':
-        return this.parseVWRFields(parts);
+        return parseVWRFields(parts);
       case 'VWT':
-        return this.parseVWTFields(parts);
+        return parseVWTFields(parts);
       case 'GLL':
-        return this.parseGLLFields(parts);
+        return parseGLLFields(parts);
       case 'HDM':
-        return this.parseHDMFields(parts);
+        return parseHDMFields(parts);
       case 'HDT':
-        return this.parseHDTFields(parts);
+        return parseHDTFields(parts);
       case 'BWC':
-        return this.parseBWCFields(parts);
+        return parseBWCFields(parts);
       case 'RMB':
-        return this.parseRMBFields(parts);
+        return parseRMBFields(parts);
       case 'XTE':
-        return this.parseXTEFields(parts);
+        return parseXTEFields(parts);
       case 'BOD':
-        return this.parseBODFields(parts);
+        return parseBODFields(parts);
       case 'WPL':
-        return this.parseWPLFields(parts);
+        return parseWPLFields(parts);
       default:
         // Return generic field mapping for unknown types
         return fields;
@@ -254,7 +236,7 @@ export class PureNmeaParser {
   /**
    * Parse GGA (GPS Fix Data) fields
    */
-  private parseGGAFields(parts: string[]): Record<string, any> {
+function parseGGAFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Time
       field_2: parts[2], // Latitude
@@ -286,7 +268,7 @@ export class PureNmeaParser {
   /**
    * Parse VTG (Track Made Good and Ground Speed) fields
    */
-  private parseVTGFields(parts: string[]): Record<string, any> {
+function parseVTGFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Track degrees true
       field_2: parts[2], // True indicator
@@ -309,7 +291,7 @@ export class PureNmeaParser {
   /**
    * Parse DBT (Depth Below Transducer) fields
    */
-  private parseDBTFields(parts: string[]): Record<string, any> {
+function parseDBTFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Depth feet
       field_2: parts[2], // Feet unit
@@ -327,7 +309,7 @@ export class PureNmeaParser {
   /**
    * Parse MWV (Wind Speed and Angle) fields
    */
-  private parseMWVFields(parts: string[]): Record<string, any> {
+function parseMWVFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Wind angle
       field_2: parts[2], // Reference (R=relative, T=true)
@@ -346,7 +328,7 @@ export class PureNmeaParser {
   /**
    * Parse DIN (NMEA 2000 PGN wrapper) fields
    */
-  private parseDINFields(parts: string[]): Record<string, any> {
+function parseDINFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // PGN in hex
       field_2: parts[2], // Data field 1
@@ -366,7 +348,7 @@ export class PureNmeaParser {
   /**
    * Parse RMC (Recommended Minimum) fields
    */
-  private parseRMCFields(parts: string[]): Record<string, any> {
+function parseRMCFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Time
       field_2: parts[2], // Status
@@ -397,7 +379,7 @@ export class PureNmeaParser {
    * Parse ZDA (Time & Date) fields
    * Format: $--ZDA,hhmmss.ss,dd,mm,yyyy,xx,yy*hh
    */
-  private parseZDAFields(parts: string[]): Record<string, any> {
+function parseZDAFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Time hhmmss.ss
       field_2: parts[2], // Day dd
@@ -418,7 +400,7 @@ export class PureNmeaParser {
   /**
    * Parse HDG (Heading) fields
    */
-  private parseHDGFields(parts: string[]): Record<string, any> {
+function parseHDGFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Magnetic heading
       field_2: parts[2], // Magnetic deviation
@@ -437,7 +419,7 @@ export class PureNmeaParser {
   /**
    * Parse DPT (Depth) fields
    */
-  private parseDPTFields(parts: string[]): Record<string, any> {
+function parseDPTFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Depth meters
       field_2: parts[2], // Offset
@@ -454,7 +436,7 @@ export class PureNmeaParser {
    * Format: $xxVHW,x.x,T,x.x,M,x.x,N,x.x,K*hh
    * Fields: 1=Heading True, 2=T, 3=Heading Magnetic, 4=M, 5=Speed Knots, 6=N, 7=Speed Km/h, 8=K
    */
-  private parseVHWFields(parts: string[]): Record<string, any> {
+function parseVHWFields(parts: string[]): Record<string, any> {
     // Debug: Log VHW parsing
     if (Math.random() < 0.02) {
     }
@@ -481,7 +463,7 @@ export class PureNmeaParser {
    * Format: $--VWR,x.x,a,x.x,N,x.x,M,x.x,K*hh
    * Example: $IIVWR,148.0,R,10.4,N,5.4,M,19.3,K*4A
    */
-  private parseVWRFields(parts: string[]): Record<string, any> {
+function parseVWRFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Wind angle (0-180)
       field_2: parts[2], // Direction (L/R)
@@ -505,7 +487,7 @@ export class PureNmeaParser {
    * Format: $--VWT,x.x,a,x.x,N,x.x,M,x.x,K*hh
    * Example: $IIVWT,120.0,L,15.2,N,7.8,M,28.1,K*5C
    */
-  private parseVWTFields(parts: string[]): Record<string, any> {
+function parseVWTFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Wind angle (0-180)
       field_2: parts[2], // Direction (L/R)
@@ -529,7 +511,7 @@ export class PureNmeaParser {
    * Format: $--GLL,llll.ll,a,yyyyy.yy,a,hhmmss.ss,A,a*hh
    * Example: $GPGLL,4916.45,N,12311.12,W,225444,A,A*5C
    */
-  private parseGLLFields(parts: string[]): Record<string, any> {
+function parseGLLFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Latitude
       field_2: parts[2], // Latitude direction (N/S)
@@ -553,7 +535,7 @@ export class PureNmeaParser {
    * Format: $--HDM,x.x,M*hh
    * Example: $IIHDM,235.5,M*2E
    */
-  private parseHDMFields(parts: string[]): Record<string, any> {
+function parseHDMFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Magnetic heading
       field_2: parts[2], // M indicator
@@ -567,7 +549,7 @@ export class PureNmeaParser {
    * Format: $--HDT,x.x,T*hh
    * Example: $IIHDT,274.5,T*1C
    */
-  private parseHDTFields(parts: string[]): Record<string, any> {
+function parseHDTFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // True heading
       field_2: parts[2], // T indicator
@@ -581,7 +563,7 @@ export class PureNmeaParser {
    * Format: $--BWC,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x.x,T,x.x,M,x.x,N,c--c*hh
    * Example: $GPBWC,220516,5130.02,N,00046.34,W,213.8,T,218.0,M,0004.6,N,EGLM*11
    */
-  private parseBWCFields(parts: string[]): Record<string, any> {
+function parseBWCFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // UTC time
       field_2: parts[2], // Waypoint latitude
@@ -613,7 +595,7 @@ export class PureNmeaParser {
    * Format: $--RMB,A,x.x,a,c--c,c--c,llll.ll,a,yyyyy.yy,a,x.x,x.x,x.x,A*hh
    * Example: $GPRMB,A,0.66,L,003,004,4917.24,N,12309.57,W,001.3,052.5,000.5,V*20
    */
-  private parseRMBFields(parts: string[]): Record<string, any> {
+function parseRMBFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Status (A=valid, V=warning)
       field_2: parts[2], // Cross track error
@@ -650,7 +632,7 @@ export class PureNmeaParser {
    * Format: $--XTE,A,A,x.x,a,N*hh
    * Example: $GPXTE,A,A,0.67,L,N*6F
    */
-  private parseXTEFields(parts: string[]): Record<string, any> {
+function parseXTEFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Status 1 (A=valid, V=warning)
       field_2: parts[2], // Status 2 (A=valid, V=warning)
@@ -670,7 +652,7 @@ export class PureNmeaParser {
    * Format: $--BOD,x.x,T,x.x,M,c--c,c--c*hh
    * Example: $GPBOD,099.3,T,105.6,M,POINTB,POINTA*48
    */
-  private parseBODFields(parts: string[]): Record<string, any> {
+function parseBODFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Bearing true
       field_2: parts[2], // T indicator
@@ -691,7 +673,7 @@ export class PureNmeaParser {
    * Format: $--WPL,llll.ll,a,yyyyy.yy,a,c--c*hh
    * Example: $GPWPL,4917.16,N,12310.64,W,003*65
    */
-  private parseWPLFields(parts: string[]): Record<string, any> {
+function parseWPLFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Latitude
       field_2: parts[2], // Latitude direction
@@ -708,24 +690,11 @@ export class PureNmeaParser {
   }
 
   /**
-   * Get parsing statistics
-   */
-  getStats(): { parseCount: number; errorCount: number; successRate: number } {
-    const successRate =
-      this.parseCount > 0 ? ((this.parseCount - this.errorCount) / this.parseCount) * 100 : 0;
-    return {
-      parseCount: this.parseCount,
-      errorCount: this.errorCount,
-      successRate: Math.round(successRate * 100) / 100,
-    };
-  }
-
-  /**
    * Parse DBK (Depth Below Keel) fields
    * Format: $xxDBK,<depth_feet>,f,<depth_meters>,M,<depth_fathoms>,F*hh
    * Fields: Same format as DBT but represents depth below keel
    */
-  private parseDBKFields(parts: string[]): Record<string, any> {
+function parseDBKFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Depth feet
       field_2: parts[2], // Feet unit
@@ -745,7 +714,7 @@ export class PureNmeaParser {
    * Format: $xxMTW,<temperature>,C*hh
    * Fields: 1=Temperature in Celsius, 2=Unit (C)
    */
-  private parseMTWFields(parts: string[]): Record<string, any> {
+function parseMTWFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Temperature
       field_2: parts[2], // Unit (C)
@@ -760,7 +729,7 @@ export class PureNmeaParser {
    * Format: $xxRPM,<source>,<instance>,<rpm>,<pitch>,<status>*hh
    * Fields: 1=Source (E=Engine, P=Propeller), 2=Instance, 3=RPM Value, 4=Pitch (%), 5=Status (A=Active, V=Void)
    */
-  private parseRPMFields(parts: string[]): Record<string, any> {
+function parseRPMFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1], // Source
       field_2: parts[2], // Instance
@@ -781,7 +750,7 @@ export class PureNmeaParser {
    * Format: $xxRSA,<starboard>,<status>,<port>,<status>*hh
    * Fields: 1=Starboard rudder angle, 2=Status (A=valid), 3=Port rudder angle, 4=Status
    */
-  private parseRSAFields(parts: string[]): Record<string, any> {
+function parseRSAFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1],
       field_2: parts[2],
@@ -798,7 +767,7 @@ export class PureNmeaParser {
    * Parse APB (Autopilot Sentence B) fields
    * Format: $xxAPB,<status1>,<status2>,<xte_mag>,<dir>,<xte_units>,<status3>,<status4>,<bearing_origin>,<dir>,<dest_id>,<bearing_dest>,<dir>,<heading>,<dir>,<status5>*hh
    */
-  private parseAPBFields(parts: string[]): Record<string, any> {
+function parseAPBFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1],
       field_2: parts[2],
@@ -837,7 +806,7 @@ export class PureNmeaParser {
    * Parse APA (Autopilot Sentence A) fields
    * Format: $xxAPA,<status1>,<status2>,<xte_mag>,<dir>,<xte_units>,<status3>,<status4>,<bearing>,<dir>,<dest_id>*hh
    */
-  private parseAPAFields(parts: string[]): Record<string, any> {
+function parseAPAFields(parts: string[]): Record<string, any> {
     return {
       field_1: parts[1],
       field_2: parts[2],
@@ -869,7 +838,7 @@ export class PureNmeaParser {
    * Extract: Field 3 (pressure_bars × 100000 → Pa), 5 (air_temp), 9 (humidity), 11 (dew_point)
    * Ignore: Field 7 (water_temp - handled by MTW), 13-20 (wind - handled by MWV/VWR/VWT)
    */
-  private parseMDAFields(parts: string[]): Record<string, any> {
+function parseMDAFields(parts: string[]): Record<string, any> {
     const field3 = parts[3] ? parseFloat(parts[3]) : null; // Pressure in bars
     const field5 = parts[5] ? parseFloat(parts[5]) : null; // Air temperature C
     const field9 = parts[9] ? parseFloat(parts[9]) : null; // Humidity %
@@ -895,7 +864,7 @@ export class PureNmeaParser {
    * Fields: 1=Pressure(bars), 2=B, 3=Pressure(inHg), 4=I
    * Extract: Field 1 (pressure_bars × 100000 → Pa)
    */
-  private parseMMBFields(parts: string[]): Record<string, any> {
+function parseMMBFields(parts: string[]): Record<string, any> {
     const field1 = parts[1] ? parseFloat(parts[1]) : null; // Pressure in bars
 
     return {
@@ -905,15 +874,3 @@ export class PureNmeaParser {
       pressure_pa: field1 !== null ? field1 * 100000 : null, // Convert bars to Pascals
     };
   }
-
-  /**
-   * Reset statistics
-   */
-  resetStats(): void {
-    this.parseCount = 0;
-    this.errorCount = 0;
-  }
-}
-
-// Export singleton instance
-export const pureNmeaParser = PureNmeaParser.getInstance();

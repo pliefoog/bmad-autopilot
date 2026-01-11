@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemeColors } from '../store/themeStore';
+import { log } from '../utils/logging/logger';
 
 export interface UnifiedWidgetGridProps {
   theme: ThemeColors;
@@ -109,7 +110,10 @@ export const UnifiedWidgetGrid: React.FC<UnifiedWidgetGridProps> = ({
   const footerStyle = useMemo(() => ({ height: headerFooterHeight / 3 }), [headerFooterHeight]);
 
   if (columnSpans && columnSpans.length !== childArray.length) {
-    console.warn('UnifiedWidgetGrid: columnSpans length must match children length');
+    log.app('UnifiedWidgetGrid: columnSpans length mismatch', () => ({
+      columnSpansLength: columnSpans.length,
+      childrenLength: childArray.length,
+    }));
   }
 
   // Group children into rows based on columns and spans

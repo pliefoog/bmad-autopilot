@@ -3,6 +3,7 @@ import { autopilotRetryManager } from './autopilotRetryManager';
 import { AutopilotErrorManager } from './autopilotErrorManager';
 import { autopilotMonitoringService } from './autopilotMonitoringService';
 import { useNmeaStore } from '../store/nmeaStore';
+import { log } from '../utils/logging/logger';
 
 /**
  * Connection state for tracking reconnection attempts
@@ -100,7 +101,10 @@ export class AutopilotReconnectionService {
         this.handleFailedHealthCheck();
       }
     } catch (error) {
-      console.error('[Reconnection] Health check error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log.app('[Reconnection] Health check error', () => ({
+        error: errorMessage,
+      }));
       this.handleFailedHealthCheck();
     }
   }
@@ -183,9 +187,10 @@ export class AutopilotReconnectionService {
     const attemptStartTime = Date.now();
 
     try {
-      console.info(
-        `[Reconnection] Attempt ${this.connectionHealth.totalReconnectionAttempts}/${this.strategy.maxAttempts}`,
-      );
+      log.app('[Reconnection] Attempt', () => ({
+        attempt: this.connectionHealth.totalReconnectionAttempts,
+        maxAttempts: this.strategy.maxAttempts,
+      }));
 
       const result = await autopilotRetryManager.executeWithTimeout(
         () => this.performReconnection(),
@@ -203,9 +208,10 @@ export class AutopilotReconnectionService {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.warn(
-        `[Reconnection] Attempt ${this.connectionHealth.totalReconnectionAttempts} failed: ${errorMessage}`,
-      );
+      log.app('[Reconnection] Attempt failed', () => ({
+        attempt: this.connectionHealth.totalReconnectionAttempts,
+        error: errorMessage,
+      }));
 
       // Schedule next attempt with backoff
       const delay = this.calculateReconnectionDelay();
@@ -246,9 +252,9 @@ export class AutopilotReconnectionService {
     this.connectionHealth.consecutiveSuccesses = 1;
     this.state = ReconnectionState.CONNECTED;
 
-    console.info(
-      `[Reconnection] Successfully reconnected after ${this.connectionHealth.totalReconnectionAttempts} attempts`,
-    );
+    log.app('[Reconnection] Successfully reconnected', () => ({
+      attempts: this.connectionHealth.totalReconnectionAttempts,
+    }));
 
     autopilotMonitoringService.logConnectionEvent('connected', {
       attemptsRequired: this.connectionHealth.totalReconnectionAttempts,
@@ -265,7 +271,9 @@ export class AutopilotReconnectionService {
   private handleReconnectionFailure(): void {
     this.state = ReconnectionState.FAILED;
 
-    console.error(`[Reconnection] Failed to reconnect after ${this.strategy.maxAttempts} attempts`);
+    log.app('[Reconnection] Failed to reconnect', () => ({
+      maxAttempts: this.strategy.maxAttempts,
+    }));
 
     const error = AutopilotErrorManager.createError('CONN_002', {
       maxAttempts: this.strategy.maxAttempts,
@@ -286,7 +294,7 @@ export class AutopilotReconnectionService {
     const extendedDelay = this.strategy.maxDelayMs * 2; // Double max delay
 
     this.reconnectionTimeout = setTimeout(() => {
-      console.info('[Reconnection] Retrying after extended delay...');
+      log.app('[Reconnection] Retrying after extended delay');
       this.connectionHealth.totalReconnectionAttempts = 0; // Reset attempt counter
       this.state = ReconnectionState.DISCONNECTED;
       this.startReconnectionProcess();
@@ -297,7 +305,7 @@ export class AutopilotReconnectionService {
    * Handle connection stabilization
    */
   private onConnectionStabilized(): void {
-    console.info('[Reconnection] Connection stabilized');
+    log.app('[Reconnection] Connection stabilized');
 
     // Clear any retry timeouts
     if (this.reconnectionTimeout) {

@@ -1,4 +1,5 @@
 import { useNmeaStore } from '../store/nmeaStore';
+import { log } from '../utils/logging/logger';
 
 /**
  * Safety event types for autopilot system monitoring
@@ -359,8 +360,12 @@ export class AutopilotSafetyManager {
       },
     ]);
 
-    // Log to console for debugging
-    console.warn(`[AutopilotSafety] ${event.type}: ${event.message}`, event.data);
+    // Log to conditional logger for debugging
+    log.app('[AutopilotSafety] Safety event', () => ({
+      type: event.type,
+      message: event.message,
+      data: event.data,
+    }));
   }
 
   /**

@@ -22,6 +22,7 @@ import { useEffect, useRef, useCallback } from 'react';
 
 // Import React for hooks
 import React from 'react';
+import { log } from './logging/logger';
 
 // ============================================================================
 // Configuration
@@ -135,7 +136,9 @@ export class CleanupTracker {
       try {
         cleanup();
       } catch (error) {
-        console.error('[Cleanup] Error during cleanup:', error);
+        log.app('[Cleanup] Error during cleanup', () => ({
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     }
     this.cleanupFunctions = [];
@@ -685,7 +688,9 @@ export class StorageMonitor {
       try {
         listener(info);
       } catch (error) {
-        console.error('[StorageMonitor] Error in listener:', error);
+        log.app('[StorageMonitor] Error in listener', () => ({
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     }
   }
@@ -731,9 +736,13 @@ export function scheduleStorageMonitoring(): NodeJS.Timeout {
     const info = await storageMonitor.checkStorage();
 
     if (info.isCritical) {
-      console.error(`[Storage] Critical storage usage: ${(info.usagePercent * 100).toFixed(1)}%`);
+      log.app('[Storage] Critical storage usage', () => ({
+        usagePercent: (info.usagePercent * 100).toFixed(1),
+      }));
     } else if (info.isWarning) {
-      console.warn(`[Storage] High storage usage: ${(info.usagePercent * 100).toFixed(1)}%`);
+      log.app('[Storage] High storage usage', () => ({
+        usagePercent: (info.usagePercent * 100).toFixed(1),
+      }));
     }
   };
 

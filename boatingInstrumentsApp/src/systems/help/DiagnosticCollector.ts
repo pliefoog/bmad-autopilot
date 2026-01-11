@@ -10,6 +10,7 @@
 
 import { Platform, Dimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { log } from '../../utils/logging/logger';
 import { SystemDiagnostics, ConnectionLog, SupportReport } from './types';
 
 const LOG_STORAGE_KEY = '@bmad:connection_logs';
@@ -82,10 +83,11 @@ class DiagnosticCollectorClass {
     // Save logs periodically (debounced)
     this.debouncedSave();
 
-    // Also log to console for debugging
-    const logFn =
-      type === 'error' ? console.error : type === 'warning' ? console.warn : console.log;
-    logFn(`[${source}] ${message}`, details || '');
+    // Also log using conditional logger
+    log.app(`[${source}] ${message}`, () => ({
+      logType: type,
+      details: details || undefined,
+    }));
   }
 
   /**
@@ -233,7 +235,9 @@ class DiagnosticCollectorClass {
         await this.cleanupOldLogs();
       }
     } catch (error) {
-      console.error('[DiagnosticCollector] Failed to load logs:', error);
+      log.app('[DiagnosticCollector] Failed to load logs', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -244,7 +248,9 @@ class DiagnosticCollectorClass {
     try {
       await AsyncStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(this.logs));
     } catch (error) {
-      console.error('[DiagnosticCollector] Failed to save logs:', error);
+      log.app('[DiagnosticCollector] Failed to save logs', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 

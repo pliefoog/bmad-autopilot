@@ -4,6 +4,7 @@
  */
 
 import { CriticalAlarmType } from './types';
+import { log } from '../../utils/logging/logger';
 
 interface MonitoringConfig {
   gpsTimeoutMs: number;
@@ -243,11 +244,15 @@ export class CriticalAlarmMonitors {
           },
         });
       } catch (error) {
-        console.error('CriticalAlarmMonitors: Failed to trigger GPS loss alarm', error);
+        log.app('CriticalAlarmMonitors: Failed to trigger GPS loss alarm', () => ({
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     }
 
-    console.warn('CriticalAlarmMonitors: GPS loss alarm triggered -', message);
+    log.app('CriticalAlarmMonitors: GPS loss alarm triggered', () => ({
+      message,
+    }));
   }
 
   /**
@@ -281,11 +286,15 @@ export class CriticalAlarmMonitors {
           },
         });
       } catch (error) {
-        console.error('CriticalAlarmMonitors: Failed to trigger autopilot failure alarm', error);
+        log.app('CriticalAlarmMonitors: Failed to trigger autopilot failure alarm', () => ({
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     }
 
-    console.warn('CriticalAlarmMonitors: Autopilot failure alarm triggered -', message);
+    log.app('CriticalAlarmMonitors: Autopilot failure alarm triggered', () => ({
+      message,
+    }));
   }
 
   /**

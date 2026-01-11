@@ -9,6 +9,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { log } from '../../utils/logging/logger';
 import { Tutorial, TutorialProgress, TutorialStep } from './types';
 
 const STORAGE_KEY = '@bmad:tutorial_progress';
@@ -80,7 +81,7 @@ export class TutorialManager {
   public async startTutorial(tutorialId: string): Promise<boolean> {
     const tutorial = this.tutorials.get(tutorialId);
     if (!tutorial) {
-      console.error(`[TutorialManager] Tutorial not found: ${tutorialId}`);
+      log.app('[TutorialManager] Tutorial not found', () => ({ tutorialId }));
       return false;
     }
 
@@ -90,7 +91,10 @@ export class TutorialManager {
         (prereqId) => !this.isTutorialCompleted(prereqId),
       );
       if (unmetPrereqs.length > 0) {
-        console.warn(`[TutorialManager] Prerequisites not met for ${tutorialId}:`, unmetPrereqs);
+        log.app('[TutorialManager] Prerequisites not met', () => ({
+          tutorialId,
+          unmetPrerequisites: unmetPrereqs,
+        }));
         return false;
       }
     }
@@ -121,13 +125,13 @@ export class TutorialManager {
   public async nextStep(tutorialId: string): Promise<boolean> {
     const progress = this.progress.get(tutorialId);
     if (!progress) {
-      console.error(`[TutorialManager] No progress found for: ${tutorialId}`);
+      log.app('[TutorialManager] No progress found', () => ({ tutorialId }));
       return false;
     }
 
     const tutorial = this.tutorials.get(tutorialId);
     if (!tutorial) {
-      console.error(`[TutorialManager] Tutorial not found: ${tutorialId}`);
+      log.app('[TutorialManager] Tutorial not found', () => ({ tutorialId }));
       return false;
     }
 
@@ -140,7 +144,10 @@ export class TutorialManager {
     // Validate current step if validation exists
     const currentStep = tutorial.steps[progress.currentStep];
     if (currentStep.validation && !currentStep.validation()) {
-      console.warn(`[TutorialManager] Step validation failed: ${currentStep.id}`);
+      log.app('[TutorialManager] Step validation failed', () => ({
+        tutorialId,
+        stepId: currentStep.id,
+      }));
       return false;
     }
 
@@ -178,7 +185,7 @@ export class TutorialManager {
   public async completeTutorial(tutorialId: string): Promise<boolean> {
     const progress = this.progress.get(tutorialId);
     if (!progress) {
-      console.error(`[TutorialManager] No progress found for: ${tutorialId}`);
+      log.app('[TutorialManager] No progress found', () => ({ tutorialId }));
       return false;
     }
 
@@ -338,7 +345,9 @@ export class TutorialManager {
         });
       }
     } catch (error) {
-      console.error('[TutorialManager] Failed to load progress:', error);
+      log.app('[TutorialManager] Failed to load progress', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -353,7 +362,9 @@ export class TutorialManager {
       });
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (error) {
-      console.error('[TutorialManager] Failed to save progress:', error);
+      log.app('[TutorialManager] Failed to save progress', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 

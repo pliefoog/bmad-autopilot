@@ -5,7 +5,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { View, Text } from 'react-native';
-import { useNmeaStore } from '../store/nmeaStore';
+import { log } from '../utils/logging/logger';
 import { sensorRegistry } from '../services/SensorDataRegistry';
 
 export const GPSUpdateDiagnostic: React.FC = () => {
@@ -23,15 +23,15 @@ export const GPSUpdateDiagnostic: React.FC = () => {
       const now = Date.now();
       const timeSinceLastRender = now - lastRenderTimeRef.current;
       const timeSinceLastUpdate = gpsTimestamp - lastTimestampRef.current;
-      
-      console.log(`🕐 GPS TIMESTAMP CHANGED:`, {
+
+      log.gps('GPS timestamp changed', () => ({
         timestamp: gpsTimestamp,
         timeSinceLastRender: `${timeSinceLastRender}ms`,
         timeSinceLastUpdate: `${timeSinceLastUpdate}ms`,
         renderCount: renderCountRef.current,
         utcTime: gpsData?.getMetric('utcTime')?.formattedValue,
-      });
-      
+      }));
+
       lastTimestampRef.current = gpsTimestamp;
       lastRenderTimeRef.current = now;
     }

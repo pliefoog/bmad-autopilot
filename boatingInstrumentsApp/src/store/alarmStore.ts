@@ -3,6 +3,7 @@ import { persist, devtools, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CriticalAlarmType } from '../services/alarms/types';
 import { AlarmLevel } from '../types/AlarmTypes';
+import { log } from '../utils/logging/logger';
 
 export interface Alarm {
   id: string;
@@ -330,10 +331,9 @@ export const useAlarmStore = create<AlarmStore>()(
                     message,
                   });
                 } catch (error) {
-                  console.error(
-                    'AlarmStore: Failed to trigger critical alarm, falling back to regular alarm',
-                    error,
-                  );
+                  log.app('AlarmStore: Failed to trigger critical alarm, falling back to regular alarm', () => ({
+                    error: error instanceof Error ? error.message : String(error),
+                  }));
                   // Fallback to regular alarm system
                   get().addAlarm({
                     message,
@@ -399,7 +399,9 @@ export const useAlarmStore = create<AlarmStore>()(
             // Start monitoring GPS and autopilot systems
             monitors.startMonitoring();
           } catch (error) {
-            console.error('AlarmStore: Failed to initialize critical alarm system', error);
+            log.app('AlarmStore: Failed to initialize critical alarm system', () => ({
+              error: error instanceof Error ? error.message : String(error),
+            }));
           }
         },
 
@@ -410,12 +412,12 @@ export const useAlarmStore = create<AlarmStore>()(
           const state = get();
 
           if (!state.criticalAlarmsEnabled) {
-            console.warn('AlarmStore: Critical alarms are disabled');
+            log.app('AlarmStore: Critical alarms are disabled');
             return;
           }
 
           if (!state.criticalAlarmManager) {
-            console.warn('AlarmStore: Critical alarm system not initialized, initializing now...');
+            log.app('AlarmStore: Critical alarm system not initialized, initializing now...');
             await get().initializeCriticalAlarmSystem();
           }
 
@@ -460,10 +462,10 @@ export const useAlarmStore = create<AlarmStore>()(
         // Migration: Clean slate on version mismatch (string → numeric levels)
         migrate: (persistedState: any, version: number) => {
           if (version !== STORAGE_VERSION) {
-            console.warn(
-              '[AlarmStore] Migration: Wiping alarm history due to version mismatch',
-              `(stored: v${version}, expected: v${STORAGE_VERSION})`,
-            );
+            log.app('[AlarmStore] Migration: Wiping alarm history due to version mismatch', () => ({
+              storedVersion: version,
+              expectedVersion: STORAGE_VERSION,
+            }));
             // Return default state, wipe old string-based alarms
             return {
               thresholds: defaultThresholds,

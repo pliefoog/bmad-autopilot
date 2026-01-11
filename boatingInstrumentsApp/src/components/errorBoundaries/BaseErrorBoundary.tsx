@@ -5,6 +5,7 @@ import React, { Component, ErrorInfo as ReactErrorInfo, ReactNode } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { ThemeColors } from '../../store/themeStore';
 import { themeStore } from '../../store/themeStore';
+import { log } from '../../utils/logging/logger';
 
 export interface CustomErrorInfo {
   message: string;
@@ -128,9 +129,11 @@ export class BaseErrorBoundary extends Component<ErrorBoundaryProps, ErrorBounda
 
     // In development, log to console
     if (__DEV__) {
-      console.group(`🚨 Error Boundary: ${errorInfo.category}`);
-      console.error('Error:', originalError);
-      console.groupEnd();
+      log.app(`Error Boundary: ${errorInfo.category}`, () => ({
+        error: originalError instanceof Error ? originalError.message : String(originalError),
+        stack: errorInfo.stack,
+        componentStack: errorInfo.componentStack,
+      }));
     }
 
     // In production, send to error reporting service

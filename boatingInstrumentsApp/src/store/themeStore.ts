@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Platform } from 'react-native';
 import * as Brightness from 'expo-brightness';
+import { log } from '../utils/logging/logger';
 // Theme compliance validation moved to development-only environment
 
 // Conditional AsyncStorage import with web fallback
@@ -300,7 +301,9 @@ const getAutoThemeMode = (): Exclude<ThemeMode, 'auto'> => {
       return getSolarBasedThemeMode(gpsPosition.latitude, gpsPosition.longitude);
     }
   } catch (error) {
-    console.warn('GPS-based theme calculation failed:', error);
+    log.app('GPS-based theme calculation failed', () => ({
+      error: error instanceof Error ? error.message : String(error),
+    }));
   }
 
   // Fallback to time-based mode if GPS unavailable
@@ -334,7 +337,9 @@ const applyNativeBrightness = async (brightness: number, mode: ThemeMode) => {
       await Brightness.setBrightnessAsync(adjustedBrightness);
     }
   } catch (error) {
-    console.warn('Native brightness control failed:', error);
+    log.app('Native brightness control failed', () => ({
+      error: error instanceof Error ? error.message : String(error),
+    }));
   }
 };
 

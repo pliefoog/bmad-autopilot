@@ -6,6 +6,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { BaseErrorBoundary, CustomErrorInfo, ErrorBoundaryProps } from './BaseErrorBoundary';
 import { ThemeColors } from '../../store/themeStore';
 import { themeStore } from '../../store/themeStore';
+import { log } from '../../utils/logging/logger';
 
 export interface DataErrorBoundaryProps extends Omit<ErrorBoundaryProps, 'category'> {
   dataType?: 'nmea0183' | 'nmea2000' | 'json' | 'binary';
@@ -234,9 +235,11 @@ export class DataErrorBoundary extends BaseErrorBoundary {
     };
 
     if (__DEV__) {
-      console.group(`📊 Data Error: ${dataError.dataType || 'Unknown'}`);
-      console.error('Original Error:', originalError);
-      console.groupEnd();
+      log.app(`Data Error: ${dataError.dataType || 'Unknown'}`, () => ({
+        error: originalError instanceof Error ? originalError.message : String(originalError),
+        parsingDetails: dataError.parsingDetails,
+        statistics: dataError.statistics,
+      }));
     }
   }
 

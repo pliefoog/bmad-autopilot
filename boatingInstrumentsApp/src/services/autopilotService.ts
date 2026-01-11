@@ -1,5 +1,6 @@
 import { ToPgn } from '@canboat/canboatjs';
 import { useNmeaStore } from '../store/nmeaStore';
+import { log } from '../utils/logging/logger';
 
 /**
  * Autopilot modes supported by Raymarine Evolution
@@ -171,7 +172,7 @@ export class AutopilotCommandManager {
 
       return true;
     } catch (error) {
-      console.error('Emergency disengage failed:', error);
+      log.app('Emergency disengage failed', () => ({ error }));
       return false;
     }
   }
@@ -229,7 +230,7 @@ export class AutopilotCommandManager {
           throw new Error(`Unsupported command: ${command}`);
       }
     } catch (error) {
-      console.error('Command execution failed:', error);
+      log.app('Command execution failed', () => ({ error }));
       return false;
     }
   }
@@ -342,7 +343,7 @@ export class AutopilotCommandManager {
     }
 
     if (!this.nmeaConnection) {
-      console.error('No NMEA connection available for PGN transmission');
+      log.app('No NMEA connection available for PGN transmission');
       return false;
     }
 
@@ -370,7 +371,7 @@ export class AutopilotCommandManager {
 
       return true;
     } catch (error: any) {
-      console.error('PGN transmission failed:', error);
+      log.app('PGN transmission failed', () => ({ error, message: error?.message }));
       this.updateCommandStatus('error', `Command failed: ${error?.message || 'Unknown error'}`);
       return false;
     }
@@ -430,7 +431,9 @@ export class AutopilotCommandManager {
   private setupCommandTimeout(commandId: number): void {
     // Defensive programming - validate commandId parameter
     if (commandId === undefined || commandId === null || typeof commandId !== 'number') {
-      console.warn('Invalid commandId passed to setupCommandTimeout:', commandId);
+      log.app('Invalid commandId passed to setupCommandTimeout', () => ({
+        commandId,
+      }));
       return;
     }
 

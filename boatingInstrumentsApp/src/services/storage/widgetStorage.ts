@@ -3,6 +3,7 @@
  * Handles persistence of widget layouts and configurations
  */
 
+import { log } from '../../utils/logging/logger';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Legacy storage service - no longer used
@@ -43,7 +44,9 @@ class WidgetStorageServiceImpl implements WidgetStorageService {
       const layoutData = JSON.stringify(widgets);
       await AsyncStorage.setItem(this.LAYOUT_KEY, layoutData);
     } catch (error) {
-      console.error('Failed to save widget layout:', error);
+      log.app('Failed to save widget layout', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Widget layout save failed: ${error}`);
     }
   }
@@ -58,7 +61,9 @@ class WidgetStorageServiceImpl implements WidgetStorageService {
       const widgets = JSON.parse(layoutData) as WidgetConfig[];
       return widgets;
     } catch (error) {
-      console.error('Failed to load widget layout:', error);
+      log.app('Failed to load widget layout', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Widget layout load failed: ${error}`);
     }
   }
@@ -67,7 +72,9 @@ class WidgetStorageServiceImpl implements WidgetStorageService {
     try {
       await AsyncStorage.removeItem(this.LAYOUT_KEY);
     } catch (error) {
-      console.error('Failed to clear widget layout:', error);
+      log.app('Failed to clear widget layout', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Widget layout clear failed: ${error}`);
     }
   }
@@ -77,7 +84,10 @@ class WidgetStorageServiceImpl implements WidgetStorageService {
       const key = this.WIDGET_SETTINGS_PREFIX + widgetId;
       await AsyncStorage.setItem(key, JSON.stringify(settings));
     } catch (error) {
-      console.error(`Failed to save settings for widget ${widgetId}:`, error);
+      log.app('Failed to save widget settings', () => ({
+        widgetId,
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Widget settings save failed: ${error}`);
     }
   }
@@ -94,7 +104,10 @@ class WidgetStorageServiceImpl implements WidgetStorageService {
       const settings = JSON.parse(settingsData);
       return settings;
     } catch (error) {
-      console.error(`Failed to load settings for widget ${widgetId}:`, error);
+      log.app('Failed to load widget settings', () => ({
+        widgetId,
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Widget settings load failed: ${error}`);
     }
   }

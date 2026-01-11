@@ -7,6 +7,7 @@ import { AlarmThreshold, AlarmSettings, AlarmLevel } from '../../store/alarmStor
 import { CriticalAlarmType, AlarmEscalationLevel, CriticalAlarmConfig } from '../alarms/types';
 import { AlarmManager } from '../alarms/AlarmManager';
 import { MarineAudioAlertManager } from '../alarms/MarineAudioAlertManager';
+import { log } from '../../utils/logging/logger';
 
 export interface AlarmConfigurationProfile {
   id: string;
@@ -694,7 +695,9 @@ export class AlarmConfigurationManager {
     // Find alarm in history to check if it's snooze-able
     const alarmEntry = this.alarmHistory.find((entry) => entry.alarmId === alarmId);
     if (!alarmEntry) {
-      console.warn(`AlarmConfigurationManager: Alarm ${alarmId} not found in history`);
+      log.app('AlarmConfigurationManager: Alarm not found in history', () => ({
+        alarmId,
+      }));
       return false;
     }
 
@@ -705,17 +708,19 @@ export class AlarmConfigurationManager {
     ) {
       const criticalType = alarmEntry.type as CriticalAlarmType;
       if (!this.allowSnooze(criticalType) && !allowCritical) {
-        console.warn(
-          `AlarmConfigurationManager: Cannot snooze critical alarm type ${criticalType}`,
-        );
+        log.app('AlarmConfigurationManager: Cannot snooze critical alarm type', () => ({
+          alarmType: criticalType,
+        }));
         return false;
       }
 
       const maxSnoozeTime = this.getMaxSnoozeTime(criticalType);
       if (maxSnoozeTime && duration > maxSnoozeTime) {
-        console.warn(
-          `AlarmConfigurationManager: Snooze duration ${duration}ms exceeds maximum ${maxSnoozeTime}ms for ${criticalType}`,
-        );
+        log.app('AlarmConfigurationManager: Snooze duration exceeds maximum', () => ({
+          duration,
+          maxSnoozeTime,
+          alarmType: criticalType,
+        }));
         return false;
       }
     }

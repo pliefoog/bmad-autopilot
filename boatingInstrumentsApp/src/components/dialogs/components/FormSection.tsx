@@ -24,6 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, ThemeColors } from '../../../store/themeStore';
 import { UniversalIcon } from '../../atoms/UniversalIcon';
 import { getPlatformTokens } from '../../../theme/settingsTokens';
+import { log } from '../../../utils/logging/logger';
 
 export interface FormSectionProps {
   /** Unique ID for this section (used for persistence) */
@@ -101,7 +102,10 @@ export const FormSection: React.FC<FormSectionProps> = React.memo(
           }
           setPersistenceLoaded(true);
         } catch (error) {
-          console.warn(`Failed to load collapsed state for ${persistenceKey}:`, error);
+          log.app('FormSection: Failed to load collapsed state', () => ({
+            persistenceKey,
+            error: error instanceof Error ? error.message : String(error),
+          }));
           setPersistenceLoaded(true);
         }
       };
@@ -119,7 +123,10 @@ export const FormSection: React.FC<FormSectionProps> = React.memo(
       try {
         await AsyncStorage.setItem(persistenceKey, String(newCollapsed));
       } catch (error) {
-        console.warn(`Failed to persist collapsed state for ${persistenceKey}:`, error);
+        log.app('FormSection: Failed to persist collapsed state', () => ({
+          persistenceKey,
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     }, [collapsed, persistenceKey]);
 

@@ -4,6 +4,7 @@ import { NotificationManager } from '../notifications/NotificationManager';
 import { BackgroundProcessingManager } from '../background/BackgroundProcessingManager';
 import { VesselContextData } from '../notifications/NotificationContentManager';
 import { useToastStore } from '../../store/toastStore';
+import { log } from '../../utils/logging/logger';
 
 /**
  * Integration service that connects the notification system with existing alarm infrastructure
@@ -58,7 +59,9 @@ export class NotificationIntegrationService {
 
       this.isInitialized = true;
     } catch (error) {
-      console.error('[Integration] Failed to initialize notification integration:', error);
+      log.app('[Integration] Failed to initialize notification integration', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw error;
     }
   }
@@ -146,7 +149,10 @@ export class NotificationIntegrationService {
       // Also display in-app toast for immediate user awareness
       this.showAlarmToast(alarm);
     } catch (error) {
-      console.error(`[Integration] Failed to handle alarm ${alarm.id}:`, error);
+      log.app('[Integration] Failed to handle alarm', () => ({
+        error: error instanceof Error ? error.message : String(error),
+        alarmId: alarm.id,
+      }));
     }
   }
 
@@ -296,7 +302,9 @@ export class NotificationIntegrationService {
       // TODO: Initialize background manager with NMEA connection
       // await this.backgroundManager.initialize(nmeaConnection);
     } catch (error) {
-      console.error('[Integration] Failed to setup background processing:', error);
+      log.app('[Integration] Failed to setup background processing', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -316,7 +324,10 @@ export class NotificationIntegrationService {
         this.notifiedAlarms.delete(alarmKey);
       }
     } catch (error) {
-      console.error(`[Integration] Failed to acknowledge alarm ${alarmId}:`, error);
+      log.app('[Integration] Failed to acknowledge alarm', () => ({
+        alarmId,
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -368,7 +379,9 @@ export class NotificationIntegrationService {
 
       return { success, results };
     } catch (error) {
-      console.error('[Integration] Integration test failed:', error);
+      log.app('[Integration] Integration test failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return { success: false, results };
     }
   }

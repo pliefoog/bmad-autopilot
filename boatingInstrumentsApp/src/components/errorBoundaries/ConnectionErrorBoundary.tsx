@@ -6,6 +6,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { BaseErrorBoundary, CustomErrorInfo, ErrorBoundaryProps } from './BaseErrorBoundary';
 import { ThemeColors } from '../../store/themeStore';
 import { themeStore } from '../../store/themeStore';
+import { log } from '../../utils/logging/logger';
 
 export interface ConnectionErrorBoundaryProps extends Omit<ErrorBoundaryProps, 'category'> {
   connectionId?: string;
@@ -136,9 +137,11 @@ export class ConnectionErrorBoundary extends React.Component<
     };
 
     if (__DEV__) {
-      console.group(`🌐 Connection Error: ${connectionError.connectionType || 'Unknown'}`);
-      console.error('Original Error:', originalError);
-      console.groupEnd();
+      log.app(`Connection Error: ${connectionError.connectionType || 'Unknown'}`, () => ({
+        error: originalError instanceof Error ? originalError.message : String(originalError),
+        networkDetails: connectionError.networkDetails,
+        diagnostics: connectionError.diagnostics,
+      }));
     }
   }
 

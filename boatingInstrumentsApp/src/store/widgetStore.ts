@@ -211,7 +211,9 @@ export const useWidgetStore = create<WidgetStore>()(
             const AsyncStorage = await import('@react-native-async-storage/async-storage');
             await AsyncStorage.default.clear();
           } catch (error) {
-            console.warn('Failed to clear AsyncStorage during factory reset:', error);
+            log.app('Failed to clear AsyncStorage during factory reset', () => ({
+              error: error instanceof Error ? error.message : String(error),
+            }));
           }
 
           // Step 3: Clear localStorage (fail silently if not available)
@@ -302,11 +304,11 @@ export const useWidgetStore = create<WidgetStore>()(
             },
           });
 
-          console.log('[DRAG] Widget reordered:', {
+          log.app('[DRAG] Widget reordered', () => ({
             widgetId: removed.id,
             fromIndex,
             toIndex,
-          });
+          }));
         },
 
         /**
@@ -388,7 +390,7 @@ export const useWidgetStore = create<WidgetStore>()(
             },
           });
 
-          console.log('[DRAG] Drag started:', { widgetId, sourceIndex });
+          log.app('[DRAG] Drag started', () => ({ widgetId, sourceIndex }));
           return widget;
         },
 
@@ -407,7 +409,7 @@ export const useWidgetStore = create<WidgetStore>()(
           );
           
           if (placeholderIdx === -1) {
-            console.log('[DRAG] ⚠️ No placeholder found during finish drag');
+            log.app('[DRAG] ⚠️ No placeholder found during finish drag');
             return;
           }
 
@@ -426,11 +428,11 @@ export const useWidgetStore = create<WidgetStore>()(
             },
           });
 
-          console.log('[DRAG] Drag finished:', {
+          log.app('[DRAG] Drag finished', () => ({
             widgetId: draggedWidget.id,
             placeholderWasAt: placeholderIdx,
             insertedAt: insertIndex,
-          });
+          }));
         },
 
         /**
@@ -457,36 +459,36 @@ export const useWidgetStore = create<WidgetStore>()(
         ) => {
           const currentDashboard = get().dashboard;
           if (!currentDashboard) {
-            console.log('[DRAG] No dashboard found');
+            log.app('[DRAG] No dashboard found');
             return;
           }
 
-          console.log('[DRAG] moveWidgetCrossPage called:', {
+          log.app('[DRAG] moveWidgetCrossPage called', () => ({
             widgetId: draggedWidget.id,
             fromPage: fromPageIndex,
             toPage: toPageIndex,
             toPosition,
             widgetsPerPage,
             totalWidgets: currentDashboard.widgets.length,
-          });
+          }));
 
           // CRITICAL: Remove placeholder first (it's in the array from drag start)
           const newWidgets = [...currentDashboard.widgets];
           const placeholderIdx = newWidgets.findIndex((w) => w.id === DRAG_CONFIG.PLACEHOLDER_ID);
           
           if (placeholderIdx === -1) {
-            console.warn('[DRAG] No placeholder found during cross-page move');
+            log.app('[DRAG] No placeholder found during cross-page move');
             return;
           }
           
-          console.log('[DRAG] Found placeholder at index:', placeholderIdx);
+          log.app('[DRAG] Found placeholder at index', () => ({ placeholderIdx }));
           newWidgets.splice(placeholderIdx, 1); // Remove placeholder
 
           // Prevent multiple empty pages - allow max one empty page beyond last populated
           // Use newWidgets.length since we removed placeholder
           const maxAllowedPage = Math.ceil(newWidgets.length / widgetsPerPage);
           if (toPageIndex > maxAllowedPage) {
-            console.warn('[DRAG] Cannot drop on empty page:', { toPageIndex, maxAllowedPage });
+            log.app('[DRAG] Cannot drop on empty page', () => ({ toPageIndex, maxAllowedPage }));
             return;
           }
 
@@ -504,14 +506,14 @@ export const useWidgetStore = create<WidgetStore>()(
             },
           });
 
-          console.log('[DRAG] Widget moved cross-page:', {
+          log.app('[DRAG] Widget moved cross-page', () => ({
             widgetId: draggedWidget.id,
             fromPage: fromPageIndex,
             toPage: toPageIndex,
             placeholderWasAt: placeholderIdx,
             insertedAt: toIndex,
             totalWidgets: newWidgets.length,
-          });
+          }));
         },
       }),
       {

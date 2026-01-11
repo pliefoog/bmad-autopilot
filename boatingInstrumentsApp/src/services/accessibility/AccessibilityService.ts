@@ -97,7 +97,9 @@ class AccessibilityServiceClass {
       // Setup change listeners
       this.setupListeners();
     } catch (error) {
-      console.error('[AccessibilityService] Initialization error:', error);
+      log.app('[AccessibilityService] Initialization error', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -217,7 +219,11 @@ class AccessibilityServiceClass {
         AccessibilityInfo.announceForAccessibility(message);
       }
     } catch (error) {
-      console.error('[AccessibilityService] Announcement error:', error);
+      log.app('[AccessibilityService] Announcement error', () => ({
+        error: error instanceof Error ? error.message : String(error),
+        message,
+        priority,
+      }));
     }
   }
 

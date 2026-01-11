@@ -3,6 +3,8 @@
  * Ensures marine-safe color schemes, especially for red-night vision preservation
  */
 
+import { log } from './logging/logger';
+
 export interface RGBColor {
   r: number;
   g: number;
@@ -130,14 +132,10 @@ export const validateThemeColorsInDev = (
       }
 
       if (violations.length > 0) {
-        console.warn(`🚨 Red-Night Theme Compliance Violations:`);
-        violations.forEach((violation) => console.warn(`  • ${violation}`));
-        console.warn(
-          '⚠️  Red-night theme violations can destroy night vision and pose marine safety risks!',
-        );
-        console.warn(
-          '📖 Marine Standard: Red-night mode must emit ZERO blue/green light (620-750nm only)',
-        );
+        log.app('🚨 Red-Night Theme Compliance Violations', () => ({
+          violations,
+          standard: 'Marine Standard: Red-night mode must emit ZERO blue/green light (620-750nm only)',
+        }));
       } else {
       }
     }

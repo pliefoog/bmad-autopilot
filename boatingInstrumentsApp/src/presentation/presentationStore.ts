@@ -10,6 +10,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { log } from '../utils/logging/logger';
 import { DataCategory } from './categories';
 import { Presentation, getDefaultPresentation, findPresentation } from './presentations';
 
@@ -195,13 +196,15 @@ export const usePresentationStore = create<PresentationSettings>()(
               // Migration: Convert old 'international' region to 'eu'
               if (parsed.state?.marineRegion === 'international') {
                 parsed.state.marineRegion = 'eu';
-                console.log('[PresentationStore] Migrated international region to eu');
+                log.app('[PresentationStore] Migrated international region to eu');
               }
               return parsed;
             }
             return null;
           } catch (error) {
-            console.warn('[PresentationStore] Failed to load settings:', error);
+            log.app('[PresentationStore] Failed to load settings', () => ({
+              error: error instanceof Error ? error.message : String(error),
+            }));
             return null;
           }
         },
@@ -209,14 +212,18 @@ export const usePresentationStore = create<PresentationSettings>()(
           try {
             await AsyncStorage.setItem(name, JSON.stringify(value));
           } catch (error) {
-            console.warn('[PresentationStore] Failed to save settings:', error);
+            log.app('[PresentationStore] Failed to save settings', () => ({
+              error: error instanceof Error ? error.message : String(error),
+            }));
           }
         },
         removeItem: async (name: string) => {
           try {
             await AsyncStorage.removeItem(name);
           } catch (error) {
-            console.warn('[PresentationStore] Failed to remove settings:', error);
+            log.app('[PresentationStore] Failed to remove settings', () => ({
+              error: error instanceof Error ? error.message : String(error),
+            }));
           }
         },
       },
@@ -374,8 +381,7 @@ export function validateAndLogConfiguration(): void {
   if (__DEV__) {
     const issues = validateRegionDefaults();
     if (issues.length > 0) {
-      console.warn('⚠️ PresentationStore Configuration Issues:');
-      issues.forEach((issue) => console.warn('  ' + issue));
+      log.app('⚠️ PresentationStore Configuration Issues:', () => ({ issues }));
     }
     // else {
     //   console.log('✅ PresentationStore: All regional presets validated successfully');

@@ -6,6 +6,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { BaseErrorBoundary, CustomErrorInfo, ErrorBoundaryProps } from './BaseErrorBoundary';
 import { ThemeColors } from '../../store/themeStore';
 import { themeStore } from '../../store/themeStore';
+import { log } from '../../utils/logging/logger';
 
 export interface WidgetErrorBoundaryProps extends Omit<ErrorBoundaryProps, 'category'> {
   widgetId: string;
@@ -130,9 +131,11 @@ export class WidgetErrorBoundary extends BaseErrorBoundary<WidgetErrorBoundaryPr
     };
 
     if (__DEV__) {
-      console.group(`🔧 Widget Error: ${widgetError.widgetType} (${widgetError.widgetId})`);
-      console.error('Original Error:', originalError);
-      console.groupEnd();
+      log.app(`Widget Error: ${widgetError.widgetType} (${widgetError.widgetId})`, () => ({
+        error: originalError instanceof Error ? originalError.message : String(originalError),
+        stack: widgetError.stack,
+        props: widgetError.widgetProps,
+      }));
     }
   }
 

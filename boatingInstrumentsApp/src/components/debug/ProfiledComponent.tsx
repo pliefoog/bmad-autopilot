@@ -26,6 +26,7 @@
  */
 
 import React, { Profiler, ReactNode, ProfilerOnRenderCallback } from 'react';
+import { log } from '../../utils/logging/logger';
 
 interface ProfiledComponentProps {
   /** Unique identifier for this profiled component (shows in warnings) */
@@ -69,17 +70,14 @@ export const ProfiledComponent: React.FC<ProfiledComponentProps> = ({
     if (actualDuration > warnThreshold) {
       const severity =
         actualDuration > 100 ? '🔴 CRITICAL' : actualDuration > 32 ? '🟠 WARNING' : '🟡 SLOW';
-      console.warn(
-        `${severity} [PERFORMANCE] ${id} render: ${actualDuration.toFixed(2)}ms (${phase})`,
-        {
-          actualDuration: `${actualDuration.toFixed(2)}ms`,
-          baseDuration: `${baseDuration.toFixed(2)}ms`,
-          threshold: `${warnThreshold}ms`,
-          phase,
-          startTime: `${startTime.toFixed(2)}ms`,
-          commitTime: `${commitTime.toFixed(2)}ms`,
-        },
-      );
+      log.performance(`${severity} [PERFORMANCE] ${id} render: ${actualDuration.toFixed(2)}ms (${phase})`, () => ({
+        actualDuration: `${actualDuration.toFixed(2)}ms`,
+        baseDuration: `${baseDuration.toFixed(2)}ms`,
+        threshold: `${warnThreshold}ms`,
+        phase,
+        startTime: `${startTime.toFixed(2)}ms`,
+        commitTime: `${commitTime.toFixed(2)}ms`,
+      }));
     }
 
     // Verbose logging for all renders (when enabled)
@@ -137,7 +135,7 @@ export function measurePerformance<T>(label: string, fn: () => T, warnThreshold:
 
   if (duration > warnThreshold) {
     const severity = duration > 100 ? '🔴 CRITICAL' : duration > 32 ? '🟠 WARNING' : '🟡 SLOW';
-    console.warn(`${severity} [PERFORMANCE] ${label}: ${duration.toFixed(2)}ms`);
+    log.performance(`${severity} [PERFORMANCE] ${label}: ${duration.toFixed(2)}ms`);
   }
 
   return result;
@@ -166,7 +164,7 @@ export async function measurePerformanceAsync<T>(
 
   if (duration > warnThreshold) {
     const severity = duration > 100 ? '🔴 CRITICAL' : duration > 32 ? '🟠 WARNING' : '🟡 SLOW';
-    console.warn(`${severity} [PERFORMANCE] ${label}: ${duration.toFixed(2)}ms (async)`);
+    log.performance(`${severity} [PERFORMANCE] ${label}: ${duration.toFixed(2)}ms (async)`);
   }
 
   return result;

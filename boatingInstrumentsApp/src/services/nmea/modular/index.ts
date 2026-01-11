@@ -21,10 +21,15 @@ export type {
   ConnectionEvents,
 } from '../connection/PureConnectionManager';
 
-export { PureNmeaParser, pureNmeaParser } from '../parsing/PureNmeaParser';
+export { parseSentence } from '../parsing/PureNmeaParser';
 export type { ParsedNmeaMessage, ParsingResult } from '../parsing/PureNmeaParser';
 
-export { PureStoreUpdater, pureStoreUpdater } from '../data/PureStoreUpdater';
+export {
+  processNmeaMessage,
+  processBinaryPgnFrame,
+  updateConnectionStatus,
+  updateError,
+} from '../data/PureStoreUpdater';
 export type { UpdateResult } from '../data/PureStoreUpdater';
 
 // Convenience factory function for easy setup

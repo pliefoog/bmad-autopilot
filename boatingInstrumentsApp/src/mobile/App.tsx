@@ -206,6 +206,7 @@ const App = () => {
         // Use original console before suppression
         const _console = (window as any).__originalConsole || console;
         if (_console && _console.log) {
+          log.app('[App] Initialization complete - available commands listed in logs');
         }
       };
 
@@ -219,6 +220,9 @@ const App = () => {
         if (stats) {
           const _console = (window as any).__originalConsole || console;
           if (_console && _console.log) {
+            log.app('[App] Profiler stopped', () => ({
+              stats: typeof stats === 'object' ? Object.keys(stats) : String(stats),
+            }));
           }
         }
       }
@@ -246,7 +250,9 @@ const App = () => {
           localStorage.clear();
           sessionStorage.clear();
         } catch (e) {
-          console.warn('Could not clear web storage:', e);
+          log.app('[App] Could not clear web storage', () => ({
+            error: e instanceof Error ? e.message : String(e),
+          }));
         }
 
         // Force immediate reload from server, not cache
@@ -260,7 +266,9 @@ const App = () => {
         log.app('[App] Factory reset complete - app should restart automatically');
       }
     } catch (error) {
-      console.error('[App] Error during factory reset:', error);
+      log.app('[App] Error during factory reset', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       // Even if there's an error, try to restart the app
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         window.location.reload();
@@ -338,7 +346,9 @@ const App = () => {
 
         // Status LED shows connection state - no toast needed
       } catch (error) {
-        console.error('[App] Failed to initialize services:', error);
+        log.app('[App] Failed to initialize services', () => ({
+          error: error instanceof Error ? error.message : String(error),
+        }));
         // Status LED shows connection state - no toast needed
       }
     };
@@ -361,7 +371,9 @@ const App = () => {
         const updateSensorThresholds = useNmeaStore.getState().updateSensorThresholds;
         syncConfigsToNmeaStore(updateSensorThresholds);
       } catch (error) {
-        console.error('[App] Failed to sync sensor configurations:', error);
+        log.app('[App] Failed to sync sensor configurations', () => ({
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     };
 
@@ -374,13 +386,13 @@ const App = () => {
     port: number;
     protocol: 'tcp' | 'udp' | 'websocket';
   }) => {
-    console.log('[App] handleConnectionConnect received config:', config);
+    log.app('[App] Connection config received', () => ({ ...config }));
     
     setIp(config.ip);
     setPort(config.port.toString());
     setProtocol(config.protocol as 'tcp' | 'udp');
 
-    console.log('[App] Calling connectNmea with protocol:', config.protocol);
+    log.app('[App] Connecting with protocol', () => ({ protocol: config.protocol }));
 
     try {
       const success = await connectNmea({
@@ -410,7 +422,9 @@ const App = () => {
       await disconnectNmea();
       // Status LED shows connection state - no toast needed
     } catch (error) {
-      console.error('Failed to disconnect:', error);
+      log.app('[App] Failed to disconnect', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       // Status LED shows connection state - no toast needed
     }
   };

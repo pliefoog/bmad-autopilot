@@ -9,10 +9,15 @@ export type { NmeaServiceConfig, NmeaServiceStatus } from './NmeaService';
 export { PureConnectionManager } from './connection/PureConnectionManager';
 export type { ConnectionConfig, ConnectionStatus } from './connection/PureConnectionManager';
 
-export { PureNmeaParser } from './parsing/PureNmeaParser';
+export { parseSentence } from './parsing/PureNmeaParser';
 export type { ParsedNmeaMessage } from './parsing/PureNmeaParser';
 
-export { PureStoreUpdater } from './data/PureStoreUpdater';
+export {
+  processNmeaMessage,
+  processBinaryPgnFrame,
+  updateConnectionStatus,
+  updateError,
+} from './data/PureStoreUpdater';
 export type { UpdateResult } from './data/PureStoreUpdater';
 
 // Legacy parsers (for compatibility)

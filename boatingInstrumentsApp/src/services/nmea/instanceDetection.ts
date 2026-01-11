@@ -2,6 +2,7 @@ import { useNmeaStore } from '../../store/nmeaStore';
 import { sensorRegistry } from '../SensorDataRegistry';
 import { WidgetFactory } from '../WidgetFactory';
 import { WidgetMetadataRegistry } from '../../registry/WidgetMetadataRegistry';
+import { log } from '../../utils/logging/logger';
 
 /**
  * NMEA Instance Detection Service
@@ -208,7 +209,9 @@ class InstanceDetectionService {
         this.scanForTemperatureInstances(nmeaData, currentTime);
         break;
       default:
-        console.warn(`[InstanceDetection] Unknown sensor type in event: ${event.sensorType}`);
+        log.app(`Unknown sensor type in event`, () => ({
+          sensorType: event.sensorType,
+        }));
         return;
     }
 
@@ -325,10 +328,15 @@ class InstanceDetectionService {
 
       const scanDuration = performance.now() - startTime;
       if (scanDuration > 100) {
-        console.warn(`[InstanceDetection] Scan took ${scanDuration.toFixed(1)}ms (target: <100ms)`);
+        log.app(`Instance scan performance warning`, () => ({
+          duration: scanDuration.toFixed(1),
+          threshold: '<100ms',
+        }));
       }
     } catch (error) {
-      console.error('[InstanceDetection] Error during scan:', error);
+      log.app('[InstanceDetection] Error during scan', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -392,17 +400,19 @@ class InstanceDetectionService {
                 } else {
                 }
               } catch (error) {
-                console.warn(
-                  `[InstanceDetection] Failed to create widget instance for ${instanceId}:`,
-                  error,
-                );
+                log.app('[InstanceDetection] Failed to create widget instance', () => ({
+                  instanceId,
+                  error: error instanceof Error ? error.message : String(error),
+                }));
               }
             }
           }
         });
       });
     } catch (error) {
-      console.error('❌ [scanForMarineInstruments] ERROR during forEach:', error);
+      log.app('[scanForMarineInstruments] ERROR during forEach', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -856,7 +866,9 @@ class InstanceDetectionService {
       try {
         callback(instances);
       } catch (error) {
-        console.error('[InstanceDetection] Error in instance callback:', error);
+        log.app('[InstanceDetection] Error in instance callback', () => ({
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     }
   }

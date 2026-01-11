@@ -8,6 +8,7 @@ import { secureStorageService } from './storage/secureStorage';
 import { autopilotCommandService } from './nmea/AutopilotCommands';
 import { nmeaPlaybackService } from './playback/NMEAPlayback';
 import { sampleDataService } from './playback/sampleData';
+import { log } from '../utils/logging/logger';
 
 export interface ServiceRegistry {
   // Storage Services
@@ -51,7 +52,9 @@ class ServiceRegistryImpl implements ServiceRegistry {
       // Services are already initialized as singletons
       // Additional initialization logic can be added here
     } catch (error) {
-      console.error('Failed to initialize service registry:', error);
+      log.app('Failed to initialize service registry', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Service registry initialization failed: ${error}`);
     }
   }
@@ -77,7 +80,9 @@ class ServiceRegistryImpl implements ServiceRegistry {
     try {
       // Individual services handle their own reset logic
     } catch (error) {
-      console.error('Failed to reset service registry:', error);
+      log.app('Failed to reset service registry', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Service registry reset failed: ${error}`);
     }
   }

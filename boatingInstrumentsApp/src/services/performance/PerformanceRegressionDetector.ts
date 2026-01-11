@@ -13,6 +13,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { performanceMonitor, PerformanceReport } from './PerformanceMonitor';
 import { getPlatformBenchmarks } from './PlatformBenchmarks';
+import { log } from '../../utils/logging/logger';
 
 export interface PerformanceBaseline {
   timestamp: Date;
@@ -120,7 +121,9 @@ export class PerformanceRegressionDetector {
 
       return baseline;
     } catch (error) {
-      console.error('[RegressionDetector] Failed to load baseline:', error);
+      log.app('[RegressionDetector] Failed to load baseline', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return null;
     }
   }
@@ -329,7 +332,10 @@ export class PerformanceRegressionDetector {
 
       await AsyncStorage.setItem(this.HISTORY_KEY, JSON.stringify(history));
     } catch (error) {
-      console.error('[RegressionDetector] Failed to save history:', error);
+      log.app('[RegressionDetector] Failed to save history', () => ({
+        error: error instanceof Error ? error.message : String(error),
+        entryCount: history.length,
+      }));
     }
   }
 
@@ -352,7 +358,9 @@ export class PerformanceRegressionDetector {
         },
       }));
     } catch (error) {
-      console.error('[RegressionDetector] Failed to load history:', error);
+      log.app('[RegressionDetector] Failed to load history', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return [];
     }
   }

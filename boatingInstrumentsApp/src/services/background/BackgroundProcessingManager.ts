@@ -3,6 +3,7 @@ import { useNmeaStore } from '../../store/nmeaStore';
 import { useAlarmStore } from '../../store/alarmStore';
 import { NmeaService } from '../nmea/NmeaService';
 import { NotificationManager } from '../notifications/NotificationManager';
+import { log } from '../../utils/logging/logger';
 
 export interface BackgroundServiceConfig {
   enabled: boolean;
@@ -107,7 +108,9 @@ export class BackgroundProcessingManager {
         // TODO: Implement native Android battery optimization request
       }
     } catch (error) {
-      console.error('[Background] Failed to request background permissions:', error);
+      log.app('[Background] Failed to request background permissions', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -221,7 +224,9 @@ export class BackgroundProcessingManager {
 
       this.state.lastProcessingTime = Date.now();
     } catch (error) {
-      console.error('[Background] Error processing background data:', error);
+      log.app('[Background] Error processing background data', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -233,7 +238,10 @@ export class BackgroundProcessingManager {
       try {
         await this.notificationManager.sendCriticalAlarmNotification(alarm);
       } catch (error) {
-        console.error(`[Background] Failed to send notification for alarm ${alarm.id}:`, error);
+        log.app('[Background] Failed to send notification for alarm', () => ({
+          alarmId: alarm.id,
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     }
   }
@@ -255,7 +263,10 @@ export class BackgroundProcessingManager {
     // Monitor processing delay
     const processingDelay = now - this.state.lastProcessingTime;
     if (processingDelay > this.config.processingSamplingRate * 2) {
-      console.warn(`[Background] Processing delay detected: ${processingDelay}ms`);
+      log.app('[Background] Processing delay detected', () => ({
+        delayMs: processingDelay,
+        configuredRateMs: this.config.processingSamplingRate,
+      }));
     }
 
     // Battery level monitoring (if available)

@@ -2,6 +2,7 @@ import { autopilotSafetyManager, SystemHealthMetrics } from './autopilotSafetyMa
 import { AutopilotErrorManager } from './autopilotErrorManager';
 import { autopilotCommandQueue } from './autopilotCommandQueue';
 import { useNmeaStore } from '../store/nmeaStore';
+import { log } from '../utils/logging/logger';
 
 /**
  * System degradation levels
@@ -217,7 +218,10 @@ export class AutopilotGracefulDegradationService {
    * Handle degradation level changes
    */
   private handleDegradationChange(fromLevel: DegradationLevel, toLevel: DegradationLevel): void {
-    console.warn(`[GracefulDegradation] Level changed from ${fromLevel} to ${toLevel}`);
+    log.app('[GracefulDegradation] Level changed', () => ({
+      fromLevel,
+      toLevel,
+    }));
 
     const response = this.degradationResponses[toLevel];
 
@@ -278,7 +282,9 @@ export class AutopilotGracefulDegradationService {
         break;
 
       default:
-        console.warn(`[GracefulDegradation] Unknown automatic action: ${action}`);
+        log.app('[GracefulDegradation] Unknown automatic action', () => ({
+          action,
+        }));
     }
   }
 
@@ -368,9 +374,7 @@ export class AutopilotGracefulDegradationService {
    */
   private sendEmergencyAlerts(): void {
     // This would integrate with notification systems
-    console.error(
-      '[EMERGENCY] Critical autopilot system failure - Switch to manual steering immediately',
-    );
+    log.app('[EMERGENCY] Critical autopilot system failure - Switch to manual steering immediately');
   }
 
   /**
@@ -380,7 +384,7 @@ export class AutopilotGracefulDegradationService {
     const healthMetrics = autopilotSafetyManager.getHealthMetrics();
     const safetyEvents = autopilotSafetyManager.getSafetyEvents(false);
 
-    console.error('[INCIDENT LOG]', {
+    log.app('[INCIDENT LOG]', () => ({
       timestamp: Date.now(),
       degradationLevel: this.currentDegradationLevel,
       componentHealth: this.componentHealth,

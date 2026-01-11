@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { IOSNotificationsModule, AndroidNotificationsModule } from './NativeModules';
 import { AlarmNotificationData, NotificationAction } from './NotificationManager';
+import { log } from '../../utils/logging/logger';
 
 export interface PlatformNotificationCapabilities {
   criticalAlerts: boolean;
@@ -74,7 +75,10 @@ export class PlatformNotificationService {
 
       this.isInitialized = true;
     } catch (error) {
-      console.error('[Platform Notifications] Initialization failed:', error);
+      log.app('[Platform Notifications] Initialization failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+        platform: Platform.OS,
+      }));
       throw error;
     }
   }
@@ -172,7 +176,9 @@ export class PlatformNotificationService {
 
       return this.permissionState;
     } catch (error) {
-      console.error('[Platform Notifications] Permission request failed:', error);
+      log.app('[Platform Notifications] Permission request failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw error;
     }
   }
@@ -301,7 +307,11 @@ export class PlatformNotificationService {
         await this.sendDesktopCriticalNotification(alarm);
       }
     } catch (error) {
-      console.error('[Platform Notifications] Failed to send critical alarm:', error);
+      log.app('[Platform Notifications] Failed to send critical alarm', () => ({
+        error: error instanceof Error ? error.message : String(error),
+        alarmId: alarm.id,
+        level: alarm.level,
+      }));
       throw error;
     }
   }
@@ -417,7 +427,9 @@ export class PlatformNotificationService {
 
       this.foregroundServiceActive = true;
     } catch (error) {
-      console.error('[Android] Failed to start background service:', error);
+      log.app('[Android] Failed to start background service', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw error;
     }
   }
@@ -434,7 +446,9 @@ export class PlatformNotificationService {
       await AndroidNotificationsModule.stopForegroundService();
       this.foregroundServiceActive = false;
     } catch (error) {
-      console.error('[Android] Failed to stop background service:', error);
+      log.app('[Android] Failed to stop background service', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -451,10 +465,10 @@ export class PlatformNotificationService {
         await AndroidNotificationsModule.cancelNotification(notificationId);
       }
     } catch (error) {
-      console.error(
-        `[Platform Notifications] Failed to clear notifications for alarm ${alarmId}:`,
-        error,
-      );
+      log.app('[Platform Notifications] Failed to clear notifications', () => ({
+        error: error instanceof Error ? error.message : String(error),
+        alarmId,
+      }));
     }
   }
 
@@ -470,7 +484,9 @@ export class PlatformNotificationService {
         await AndroidNotificationsModule.cancelAllNotifications();
       }
     } catch (error) {
-      console.error('[Platform Notifications] Failed to clear all notifications:', error);
+      log.app('[Platform Notifications] Failed to clear all notifications', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -524,7 +540,9 @@ export class PlatformNotificationService {
 
       this.isInitialized = false;
     } catch (error) {
-      console.error('[Platform Notifications] Cleanup error:', error);
+      log.app('[Platform Notifications] Cleanup error', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 }

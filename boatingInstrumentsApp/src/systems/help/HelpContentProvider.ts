@@ -10,6 +10,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { log } from '../../utils/logging/logger';
 import { HelpContent, HelpSearchResult, HelpContentType } from './types';
 
 // Simple network check helper (can be replaced with @react-native-community/netinfo)
@@ -73,7 +74,9 @@ export class HelpContentProvider {
 
     // Try to update from remote in background
     this.updateHelpContent().catch((err) => {
-      console.warn('[HelpContentProvider] Background update failed:', err);
+      log.app('[HelpContentProvider] Background update failed', () => ({
+        error: err instanceof Error ? err.message : String(err),
+      }));
     });
 
     this.isInitialized = true;
@@ -99,7 +102,7 @@ export class HelpContentProvider {
     }
 
     if (!content) {
-      console.warn(`[HelpContentProvider] Content not found: ${contentId}`);
+      log.app('[HelpContentProvider] Content not found', () => ({ contentId }));
       return null;
     }
 
@@ -216,7 +219,9 @@ export class HelpContentProvider {
       });
 
       if (!response.ok) {
-        console.warn(`[HelpContentProvider] Remote fetch failed: ${response.status}`);
+        log.app('[HelpContentProvider] Remote fetch failed', () => ({
+          status: response.status,
+        }));
         return false;
       }
 
@@ -244,7 +249,9 @@ export class HelpContentProvider {
 
       return true;
     } catch (error) {
-      console.error('[HelpContentProvider] Update failed:', error);
+      log.app('[HelpContentProvider] Update failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return false;
     }
   }
@@ -261,7 +268,9 @@ export class HelpContentProvider {
 
       await AsyncStorage.setItem(CONTENT_CACHE_KEY, JSON.stringify(cacheData));
     } catch (error) {
-      console.error('[HelpContentProvider] Cache save failed:', error);
+      log.app('[HelpContentProvider] Cache save failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -285,7 +294,9 @@ export class HelpContentProvider {
         }
       }
     } catch (error) {
-      console.error('[HelpContentProvider] Cache load failed:', error);
+      log.app('[HelpContentProvider] Cache load failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 

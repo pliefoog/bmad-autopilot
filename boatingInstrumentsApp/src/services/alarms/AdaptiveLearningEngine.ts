@@ -7,6 +7,7 @@ import { Alarm, AlarmLevel, AlarmThreshold } from '../../store/alarmStore';
 import { VesselContext } from './PriorityQueueManager';
 import { NmeaDataSnapshot } from './VesselContextDetector';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { log } from '../../utils/logging/logger';
 
 /**
  * Alarm interaction pattern for learning
@@ -1008,7 +1009,9 @@ export class AdaptiveLearningEngine {
         this.adjustments = data.adjustments || [];
       }
     } catch (error) {
-      console.error('AdaptiveLearningEngine: Failed to load from storage', error);
+      log.app('AdaptiveLearningEngine: Failed to load from storage', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -1023,7 +1026,9 @@ export class AdaptiveLearningEngine {
 
       await AsyncStorage.setItem(this.storageKey, JSON.stringify(data));
     } catch (error) {
-      console.error('AdaptiveLearningEngine: Failed to save to storage', error);
+      log.app('AdaptiveLearningEngine: Failed to save to storage', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 

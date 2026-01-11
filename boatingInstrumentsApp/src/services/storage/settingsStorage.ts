@@ -4,6 +4,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { log } from '../../utils/logging/logger';
 
 export type DisplayMode = 'light' | 'dark' | 'auto';
 
@@ -88,7 +89,9 @@ class SettingsStorageServiceImpl implements SettingsStorageService {
       const settingsData = JSON.stringify(settings);
       await AsyncStorage.setItem(this.SETTINGS_KEY, settingsData);
     } catch (error) {
-      console.error('Failed to save app settings:', error);
+      log.app('Failed to save app settings', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Settings save failed: ${error}`);
     }
   }
@@ -108,7 +111,9 @@ class SettingsStorageServiceImpl implements SettingsStorageService {
       const mergedSettings = this.mergeWithDefaults(settings);
       return mergedSettings;
     } catch (error) {
-      console.error('Failed to load app settings:', error);
+      log.app('Failed to load app settings', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return DEFAULT_SETTINGS;
     }
   }
@@ -117,7 +122,9 @@ class SettingsStorageServiceImpl implements SettingsStorageService {
     try {
       await AsyncStorage.setItem(this.THEME_KEY, theme);
     } catch (error) {
-      console.error('Failed to save theme preference:', error);
+      log.app('Failed to save theme preference', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Theme save failed: ${error}`);
     }
   }
@@ -127,7 +134,9 @@ class SettingsStorageServiceImpl implements SettingsStorageService {
       const theme = await AsyncStorage.getItem(this.THEME_KEY);
       return (theme as DisplayMode) || DEFAULT_SETTINGS.theme;
     } catch (error) {
-      console.error('Failed to load theme preference:', error);
+      log.app('Failed to load theme preference', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return DEFAULT_SETTINGS.theme;
     }
   }
@@ -138,7 +147,9 @@ class SettingsStorageServiceImpl implements SettingsStorageService {
       await AsyncStorage.removeItem(this.THEME_KEY);
       await this.saveSettings(DEFAULT_SETTINGS);
     } catch (error) {
-      console.error('Failed to reset settings:', error);
+      log.app('Failed to reset settings', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Settings reset failed: ${error}`);
     }
   }

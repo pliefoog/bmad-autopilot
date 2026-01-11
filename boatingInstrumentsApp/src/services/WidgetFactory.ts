@@ -142,7 +142,7 @@ export class WidgetFactory {
     const metadata = WidgetMetadataRegistry.getMetadata(baseType);
 
     if (!metadata) {
-      console.warn(`[WidgetFactory] No metadata found for widget: ${widgetId}`);
+      log.app(`No metadata found for widget: ${widgetId}`, () => ({}));
       return widgetId.toUpperCase();
     }
 
@@ -165,7 +165,7 @@ export class WidgetFactory {
     const metadata = WidgetMetadataRegistry.getMetadata(baseType);
 
     if (!metadata) {
-      console.warn(`[WidgetFactory] No metadata found for widget: ${widgetId}`);
+      log.app(`No metadata found for widget: ${widgetId}`, () => ({}));
       return 'help-outline';
     }
 

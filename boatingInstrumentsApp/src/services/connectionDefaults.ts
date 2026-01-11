@@ -94,7 +94,9 @@ export const loadConnectionSettings = async (): Promise<ConnectionConfig> => {
       };
     }
   } catch (error) {
-    console.warn('[Connection] Failed to load saved settings:', error);
+    log.app('[Connection] Failed to load saved settings', () => ({
+      error: error instanceof Error ? error.message : String(error),
+    }));
   }
 
   return getConnectionDefaults();
@@ -113,7 +115,9 @@ export const saveConnectionSettings = async (config: ConnectionConfig): Promise<
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(settingsData));
   } catch (error) {
-    console.error('[Connection] Failed to save settings:', error);
+    log.app('[Connection] Failed to save settings', () => ({
+      error: error instanceof Error ? error.message : String(error),
+    }));
   }
 };
 
@@ -128,7 +132,9 @@ export const connectNmea = async (
   try {
     await AsyncStorage.removeItem(MANUAL_DISCONNECT_KEY);
   } catch (error) {
-    console.error('Failed to clear manual disconnect flag:', error);
+    log.app('[Connection] Failed to clear manual disconnect flag', () => ({
+      error: error instanceof Error ? error.message : String(error),
+    }));
   }
 
   // Save settings if requested
@@ -157,7 +163,9 @@ export const disconnectNmea = async (): Promise<void> => {
   try {
     await AsyncStorage.setItem(MANUAL_DISCONNECT_KEY, 'true');
   } catch (error) {
-    console.error('Failed to set manual disconnect flag:', error);
+    log.app('[Connection] Failed to set manual disconnect flag', () => ({
+      error: error instanceof Error ? error.message : String(error),
+    }));
   }
 
   NmeaService.getInstance().stop();

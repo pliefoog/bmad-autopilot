@@ -6,6 +6,7 @@
 
 import { Platform } from 'react-native';
 import { CriticalAlarmType, AlarmEscalationLevel, MarineAudioConfig } from './types';
+import { log } from '../../utils/logging/logger';
 
 export interface SoundPatternMetadata {
   value: string;
@@ -63,7 +64,9 @@ if (Platform.OS === 'ios' || Platform.OS === 'android') {
     setAudioModeAsync = expoAudio.setAudioModeAsync;
     useAudioPlayer = expoAudio.useAudioPlayer;
   } catch (error) {
-    console.warn('MarineAudioAlertManager: expo-audio not available on this platform');
+    log.app('MarineAudioAlertManager: expo-audio not available on this platform', () => ({
+      error: error instanceof Error ? error.message : String(error),
+    }));
   }
 }
 
@@ -170,7 +173,9 @@ export class MarineAudioAlertManager {
         await this.initializeWebAudio();
       }
     } catch (error) {
-      console.error('MarineAudioAlertManager: Failed to initialize platform audio', error);
+      log.app('MarineAudioAlertManager: Failed to initialize platform audio', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -180,7 +185,7 @@ export class MarineAudioAlertManager {
   private async initializeIOSAudio(): Promise<void> {
     try {
       if (!setAudioModeAsync) {
-        console.warn('MarineAudioAlertManager: expo-audio Audio not available');
+        log.app('MarineAudioAlertManager: expo-audio Audio not available');
         return;
       }
 
@@ -193,7 +198,9 @@ export class MarineAudioAlertManager {
         playThroughEarpieceAndroid: false,
       });
     } catch (error) {
-      console.error('MarineAudioAlertManager: iOS audio initialization failed', error);
+      log.app('MarineAudioAlertManager: iOS audio initialization failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -203,7 +210,7 @@ export class MarineAudioAlertManager {
   private async initializeAndroidAudio(): Promise<void> {
     try {
       if (!setAudioModeAsync) {
-        console.warn('MarineAudioAlertManager: expo-audio Audio not available');
+        log.app('MarineAudioAlertManager: expo-audio Audio not available');
         return;
       }
 
@@ -216,7 +223,9 @@ export class MarineAudioAlertManager {
         playThroughEarpieceAndroid: false, // Use speaker for alarms
       });
     } catch (error) {
-      console.error('MarineAudioAlertManager: Android audio initialization failed', error);
+      log.app('MarineAudioAlertManager: Android audio initialization failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -235,7 +244,9 @@ export class MarineAudioAlertManager {
         }
       }
     } catch (error) {
-      console.error('MarineAudioAlertManager: Web Audio initialization failed', error);
+      log.app('MarineAudioAlertManager: Web Audio initialization failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -265,11 +276,11 @@ export class MarineAudioAlertManager {
         return await this.generateAlarmSound(alarmType, soundConfig, escalationLevel);
       }
     } catch (error) {
-      console.error('MarineAudioAlertManager: Failed to play alarm sound', {
+      log.app('MarineAudioAlertManager: Failed to play alarm sound', () => ({
         alarmType,
         escalationLevel,
-        error: error instanceof Error ? error.message : error,
-      });
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return false;
     }
   }
@@ -307,7 +318,9 @@ export class MarineAudioAlertManager {
           } catch (error: any) {
             // Sound may already be unloaded if it finished playing
             if (!error.message?.includes('not loaded')) {
-              console.error('MarineAudioAlertManager: Error stopping mobile sound', error);
+              log.app('MarineAudioAlertManager: Error stopping mobile sound', () => ({
+                error: error instanceof Error ? error.message : String(error),
+              }));
             }
           }
         } else {
@@ -323,7 +336,9 @@ export class MarineAudioAlertManager {
         this.activeSounds.delete(alarmType);
       }
     } catch (error) {
-      console.error('MarineAudioAlertManager: Failed to stop alarm sound', error);
+      log.app('MarineAudioAlertManager: Failed to stop alarm sound', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -393,7 +408,9 @@ export class MarineAudioAlertManager {
 
       return result;
     } catch (error) {
-      console.error('MarineAudioAlertManager: Failed to test alarm sound', error);
+      log.app('MarineAudioAlertManager: Failed to test alarm sound', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return false;
     }
   }
@@ -409,7 +426,9 @@ export class MarineAudioAlertManager {
 
       await Promise.all(stopPromises);
     } catch (error) {
-      console.error('MarineAudioAlertManager: Failed to stop all alarm sounds', error);
+      log.app('MarineAudioAlertManager: Failed to stop all alarm sounds', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -448,7 +467,9 @@ export class MarineAudioAlertManager {
 
       return allTestsPassed;
     } catch (error) {
-      console.error('MarineAudioAlertManager: Audio system test failed', error);
+      log.app('MarineAudioAlertManager: Audio system test failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return false;
     }
   }
@@ -610,7 +631,9 @@ export class MarineAudioAlertManager {
         return false;
       }
     } catch (error) {
-      console.error('MarineAudioAlertManager: Custom sound file playback failed', error);
+      log.app('MarineAudioAlertManager: Custom sound file playback failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return false;
     }
   }
@@ -677,7 +700,9 @@ export class MarineAudioAlertManager {
 
       return true;
     } catch (error) {
-      console.error('MarineAudioAlertManager: Web Audio alarm generation failed', error);
+      log.app('MarineAudioAlertManager: Web Audio alarm generation failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return false;
     }
   }
@@ -692,9 +717,7 @@ export class MarineAudioAlertManager {
   ): Promise<boolean> {
     try {
       if (!useAudioPlayer) {
-        console.error(
-          'MarineAudioAlertManager: expo-audio Audio not available for mobile alarm generation',
-        );
+        log.app('MarineAudioAlertManager: expo-audio Audio not available for mobile alarm generation');
         return false;
       }
 
@@ -726,7 +749,9 @@ export class MarineAudioAlertManager {
 
       return true;
     } catch (error) {
-      console.error('MarineAudioAlertManager: Mobile audio alarm generation failed', error);
+      log.app('MarineAudioAlertManager: Mobile audio alarm generation failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return false;
     }
   }
@@ -1265,7 +1290,9 @@ export class MarineAudioAlertManager {
 
       return this.capabilities.nativeAudioSupported;
     } catch (error) {
-      console.error('MarineAudioAlertManager: Sound generation test failed', error);
+      log.app('MarineAudioAlertManager: Sound generation test failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return false;
     }
   }

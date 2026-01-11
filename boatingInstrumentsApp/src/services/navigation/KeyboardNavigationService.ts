@@ -139,7 +139,7 @@ class KeyboardNavigationService {
   public focusElement(elementId: string): boolean {
     const element = this.elements.get(elementId);
     if (!element) {
-      console.warn(`[KeyboardNav] Element not found: ${elementId}`);
+      log.app(`Element not found in navigation: ${elementId}`, () => ({}));
       return false;
     }
 

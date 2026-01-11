@@ -4,6 +4,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { log } from '../../utils/logging/logger';
 import {
   CriticalAlarmEvent,
   AlarmHistoryEntry,
@@ -67,7 +68,9 @@ export class AlarmHistoryLogger {
       // Update performance metrics
       this.updatePerformanceMetrics(historyEntry);
     } catch (error) {
-      console.error('AlarmHistoryLogger: Failed to log critical alarm', error);
+      log.app('AlarmHistoryLogger: Failed to log critical alarm', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -82,10 +85,9 @@ export class AlarmHistoryLogger {
     try {
       const historyEntry = this.historyCache.find((entry) => entry.alarmEvent.id === alarmEvent.id);
       if (!historyEntry) {
-        console.warn(
-          'AlarmHistoryLogger: No history entry found for alarm acknowledgment',
-          alarmEvent.id,
-        );
+        log.app('AlarmHistoryLogger: No history entry found for alarm acknowledgment', () => ({
+          alarmId: alarmEvent.id,
+        }));
         return;
       }
 
@@ -104,7 +106,9 @@ export class AlarmHistoryLogger {
       // Update performance metrics
       this.updateResponseTimeMetrics(historyEntry.responseTime);
     } catch (error) {
-      console.error('AlarmHistoryLogger: Failed to log alarm acknowledgment', error);
+      log.app('AlarmHistoryLogger: Failed to log alarm acknowledgment', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -136,7 +140,9 @@ export class AlarmHistoryLogger {
         await this.saveHistoryToStorage();
       }
     } catch (error) {
-      console.error('AlarmHistoryLogger: Failed to log alarm escalation', error);
+      log.app('AlarmHistoryLogger: Failed to log alarm escalation', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -179,7 +185,9 @@ export class AlarmHistoryLogger {
       this.historyCache.push(testEntry);
       await this.saveHistoryToStorage();
     } catch (error) {
-      console.error('AlarmHistoryLogger: Failed to log system test', error);
+      log.app('AlarmHistoryLogger: Failed to log system test', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -200,7 +208,9 @@ export class AlarmHistoryLogger {
         this.updateFalsePositiveRate();
       }
     } catch (error) {
-      console.error('AlarmHistoryLogger: Failed to mark false positive', error);
+      log.app('AlarmHistoryLogger: Failed to mark false positive', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -221,7 +231,9 @@ export class AlarmHistoryLogger {
         this.updateFalseNegativeRate();
       }
     } catch (error) {
-      console.error('AlarmHistoryLogger: Failed to mark false negative', error);
+      log.app('AlarmHistoryLogger: Failed to mark false negative', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -331,7 +343,9 @@ export class AlarmHistoryLogger {
 
       const removedCount = initialCount - this.historyCache.length;
     } catch (error) {
-      console.error('AlarmHistoryLogger: Failed to clear old history', error);
+      log.app('AlarmHistoryLogger: Failed to clear old history', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -369,7 +383,9 @@ export class AlarmHistoryLogger {
         this.historyCache = JSON.parse(storedHistory);
       }
     } catch (error) {
-      console.error('AlarmHistoryLogger: Failed to load history from storage', error);
+      log.app('AlarmHistoryLogger: Failed to load history from storage', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 
@@ -382,7 +398,9 @@ export class AlarmHistoryLogger {
 
       await AsyncStorage.setItem(this.config.storageKey, JSON.stringify(this.historyCache));
     } catch (error) {
-      console.error('AlarmHistoryLogger: Failed to save history to storage', error);
+      log.app('AlarmHistoryLogger: Failed to save history to storage', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }
 

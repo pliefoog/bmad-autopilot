@@ -35,7 +35,7 @@ export function cleanupWidgetSystem(): void {
  */
 export function initializeWidgetSystem(): void {
   if (isInitialized) {
-    console.warn('[WidgetSystem] ⚠️ Widget system already initialized');
+    log.app('Widget system already initialized', () => ({}));
     return;
   }
 

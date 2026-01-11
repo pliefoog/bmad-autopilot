@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { BridgeProfile, ConversionRule, ConversionRuleSet, PGNData } from './NMEAProtocolConverter';
 import { DepthConverter } from './converters/DepthConverter';
+import { log } from '../../../utils/logging/logger';
 
 // YAML parsing - will need to be imported when available
 // import * as yaml from 'js-yaml';
@@ -44,7 +45,10 @@ export class BridgeProfileLoader {
       this.profileCache.set(profileName, profile);
       return profile;
     } catch (error) {
-      console.warn(`Failed to load profile ${profileName}:`, error);
+      log.app('Failed to load profile', () => ({
+        profileName,
+        error: error instanceof Error ? error.message : String(error),
+      }));
       throw new Error(`Bridge profile '${profileName}' not found or invalid`);
     }
   }
@@ -59,7 +63,10 @@ export class BridgeProfileLoader {
         .filter((file) => file.endsWith('.yaml') || file.endsWith('.yml'))
         .map((file) => path.basename(file, path.extname(file)));
     } catch (error) {
-      console.warn('Could not read bridge profiles directory:', error);
+      log.app('Could not read bridge profiles directory', () => ({
+        error: error instanceof Error ? error.message : String(error),
+        configDir: this.configDir,
+      }));
       return ['actisense-ngw1']; // Default fallback
     }
   }

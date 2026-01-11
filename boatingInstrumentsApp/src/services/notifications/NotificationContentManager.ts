@@ -1,4 +1,5 @@
 import { AlarmNotificationData } from './NotificationManager';
+import { log } from '../../utils/logging/logger';
 
 export interface NotificationTemplate {
   id: string;
@@ -540,7 +541,9 @@ export class NotificationContentManager {
       const handler = this.actionHandlers.get(actionType);
 
       if (!handler) {
-        console.warn(`[Notification Content] No handler for action: ${actionId}`);
+        log.app('[Notification Content] No handler for action', () => ({
+          actionId,
+        }));
         return;
       }
 

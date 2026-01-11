@@ -8,6 +8,7 @@ import type { SensorType, SensorMetricProps } from '../types/SensorData';
 import { getSensorField } from '../registry/SensorConfigRegistry';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
 import { useMetricValue, useSensorInstance } from '../contexts/MetricContext';
+import { log } from '../utils/logging/logger';
 
 /**
  * SecondaryMetricCell Props (Explicit Props Pattern - Dec 2024 Refactor)
@@ -91,10 +92,11 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = React.mem
     try {
       return getSensorField(sensorType, baseMetricKey);
     } catch (error) {
-      console.error(
-        `SecondaryMetricCell: Invalid metricKey "${baseMetricKey}" for sensor "${sensorType}"`,
-        error,
-      );
+      log.app('SecondaryMetricCell: Invalid metricKey', () => ({
+        metricKey: baseMetricKey,
+        sensorType,
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return null;
     }
   }, [sensorType, baseMetricKey]);

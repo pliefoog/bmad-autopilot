@@ -22,6 +22,7 @@ import { MarineAudioAlertManager } from './MarineAudioAlertManager';
 import { AlarmHistoryLogger } from './AlarmHistoryLogger';
 import { AccessibilityService } from '../accessibility/AccessibilityService';
 import { vibratePattern } from '../haptics/Haptics';
+import { log } from '../../utils/logging/logger';
 
 export interface AlarmStore {
   addAlarm: (alarm: Omit<Alarm, 'id' | 'timestamp'>) => void;
@@ -111,9 +112,10 @@ export class AlarmManager extends EventEmitter {
 
       // Alert if response time exceeds marine safety requirement
       if (responseTime > this.config.responseTimeThresholdMs) {
-        console.warn(
-          `AlarmManager: Response time ${responseTime}ms exceeds marine safety requirement of ${this.config.responseTimeThresholdMs}ms`,
-        );
+        log.app('AlarmManager: Response time exceeds marine safety requirement', () => ({
+          responseTime,
+          threshold: this.config.responseTimeThresholdMs,
+        }));
       }
     });
 
@@ -191,11 +193,11 @@ export class AlarmManager extends EventEmitter {
       const responseTime = Date.now() - startTime;
       this.emit('responseTimeRecorded', { alarmId, responseTime });
     } catch (error) {
-      console.error('AlarmManager: Failed to trigger critical alarm', {
+      log.app('AlarmManager: Failed to trigger critical alarm', () => ({
         type,
         alarmId,
-        error: error instanceof Error ? error.message : error,
-      });
+        error: error instanceof Error ? error.message : String(error),
+      }));
 
       // Fail-safe: Still add to alarm store even if enhanced features fail
       this.alarmStore.addAlarm({
@@ -252,7 +254,9 @@ export class AlarmManager extends EventEmitter {
           'polite',
         );
       } catch (error) {
-        console.warn('AlarmManager: Failed to announce acknowledgment', error);
+        log.app('AlarmManager: Failed to announce acknowledgment', () => ({
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
 
       // Update alarm store
@@ -269,10 +273,10 @@ export class AlarmManager extends EventEmitter {
 
       return true;
     } catch (error) {
-      console.error('AlarmManager: Failed to acknowledge critical alarm', {
+      log.app('AlarmManager: Failed to acknowledge critical alarm', () => ({
         alarmId,
-        error: error instanceof Error ? error.message : error,
-      });
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return false;
     }
   }
@@ -383,7 +387,9 @@ export class AlarmManager extends EventEmitter {
 
       return results;
     } catch (error) {
-      console.error('AlarmManager: System test failed', error);
+      log.app('AlarmManager: System test failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return results;
     }
   }
@@ -518,7 +524,9 @@ export class AlarmManager extends EventEmitter {
 
       vibratePattern(hapticPattern);
     } catch (error) {
-      console.warn('AlarmManager: Failed to trigger haptic feedback', error);
+      log.app('AlarmManager: Failed to trigger haptic feedback', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       // Don't fail alarm trigger if haptic feedback fails
     }
 
@@ -536,7 +544,9 @@ export class AlarmManager extends EventEmitter {
         alarmEvent.message,
       );
     } catch (error) {
-      console.warn('AlarmManager: Failed to announce alarm via accessibility service', error);
+      log.app('AlarmManager: Failed to announce alarm via accessibility service', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       // Don't fail alarm trigger if accessibility announcement fails
     }
 
@@ -619,7 +629,9 @@ export class AlarmManager extends EventEmitter {
     const compliance = this.getMarineSafetyComplianceStatus();
 
     if (!compliance.compliant) {
-      console.warn('AlarmManager: Marine safety compliance issues detected', compliance.issues);
+      log.app('AlarmManager: Marine safety compliance issues detected', () => ({
+        issues: compliance.issues,
+      }));
       this.emit('complianceIssue', compliance);
     }
   }
@@ -635,7 +647,9 @@ export class AlarmManager extends EventEmitter {
       });
       return testAlarmId;
     } catch (error) {
-      console.error('AlarmManager: Test alarm failed', error);
+      log.app('AlarmManager: Test alarm failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return null;
     }
   }

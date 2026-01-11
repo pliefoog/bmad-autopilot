@@ -1,5 +1,6 @@
 import { AutopilotCommand } from './autopilotService';
 import { autopilotRetryManager } from './autopilotRetryManager';
+import { log } from '../utils/logging/logger';
 
 /**
  * Command priority levels
@@ -119,7 +120,7 @@ export class AutopilotCommandQueue {
       this.insertCommandByPriority(queuedCommand);
     }
 
-    console.info(`[CommandQueue] Enqueued ${command} with priority ${priority}, ID: ${commandId}`);
+    log.app('Command enqueued', () => ({ command, priority, commandId }));
 
     return commandId;
   }
@@ -136,7 +137,7 @@ export class AutopilotCommandQueue {
       if (command.status === CommandStatus.QUEUED) {
         command.status = CommandStatus.CANCELLED;
         this.queue.splice(commandIndex, 1);
-        console.info(`[CommandQueue] Cancelled command ${commandId}`);
+        log.app('Command cancelled', () => ({ commandId }));
         return true;
       }
     }
@@ -156,7 +157,7 @@ export class AutopilotCommandQueue {
     this.queue = emergencyCommands;
 
     if (cancelledCount > 0) {
-      console.warn(`[CommandQueue] Cleared ${cancelledCount} non-emergency commands for emergency`);
+      log.app('Cleared non-emergency commands for emergency', () => ({ cancelledCount }));
     }
   }
 
@@ -255,7 +256,7 @@ export class AutopilotCommandQueue {
     nextCommand.executedAt = Date.now();
 
     try {
-      console.info(`[CommandQueue] Executing ${nextCommand.command} (${nextCommand.id})`);
+      log.app('Executing command', () => ({ command: nextCommand.command, id: nextCommand.id }));
 
       // Execute command with retry logic
       const result = await autopilotRetryManager.executeWithRetry(
@@ -266,7 +267,7 @@ export class AutopilotCommandQueue {
       if (result.success) {
         nextCommand.status = CommandStatus.COMPLETED;
         nextCommand.completedAt = Date.now();
-        console.info(`[CommandQueue] Command ${nextCommand.id} completed successfully`);
+        log.app('Command completed successfully', () => ({ id: nextCommand.id }));
       } else {
         this.handleCommandFailure(nextCommand, result.error || 'Unknown error');
       }
@@ -298,14 +299,17 @@ export class AutopilotCommandQueue {
     if (command.retryCount < command.maxRetries && Date.now() < command.expiresAt) {
       // Retry command
       command.status = CommandStatus.QUEUED;
-      console.warn(
-        `[CommandQueue] Command ${command.id} failed, retry ${command.retryCount}/${command.maxRetries}: ${error}`,
-      );
+      log.app('Command failed, retrying', () => ({
+        id: command.id,
+        retryCount: command.retryCount,
+        maxRetries: command.maxRetries,
+        error,
+      }));
     } else {
       // Max retries reached or expired
       command.status = CommandStatus.FAILED;
       command.completedAt = Date.now();
-      console.error(`[CommandQueue] Command ${command.id} failed permanently: ${error}`);
+      log.app('Command failed permanently', () => ({ id: command.id, error }));
     }
   }
 
@@ -385,7 +389,7 @@ export class AutopilotCommandQueue {
 
     expiredCommands.forEach((cmd) => {
       cmd.status = CommandStatus.EXPIRED;
-      console.warn(`[CommandQueue] Command ${cmd.id} expired`);
+      log.app('Command expired', () => ({ id: cmd.id }));
     });
 
     this.queue = this.queue.filter((cmd) => cmd.status !== CommandStatus.EXPIRED);

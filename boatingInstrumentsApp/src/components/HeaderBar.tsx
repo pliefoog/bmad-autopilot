@@ -160,7 +160,6 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   };
 
   const handleHamburgerPress = () => {
-    console.log('[1] Button pressed, setting visible=true');
     // Mark interaction time when opening menu
     showHeader();
     setShowHamburgerMenu(true);

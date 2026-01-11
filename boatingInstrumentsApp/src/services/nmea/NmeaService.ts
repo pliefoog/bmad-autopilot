@@ -9,21 +9,26 @@
  * 5. Removed getPerformanceMetrics() and clearMetrics()
  */
 
+import { log } from '../../utils/logging/logger';
+
 import {
   PureConnectionManager,
   type ConnectionConfig,
   type ConnectionStatus,
   type BinaryPgnFrame,
 } from './connection/PureConnectionManager';
-import { PureNmeaParser, type ParsedNmeaMessage } from './parsing/PureNmeaParser';
-import { PureStoreUpdater, type UpdateResult } from './data/PureStoreUpdater';
+import { parseSentence, type ParsedNmeaMessage } from './parsing/PureNmeaParser';
+import {
+  processNmeaMessage,
+  processBinaryPgnFrame,
+  updateConnectionStatus,
+  updateError,
+  type UpdateResult,
+} from './data/PureStoreUpdater';
 
 export interface NmeaServiceConfig {
   connection: ConnectionConfig;
-  parsing?: {
-    enableFallback?: boolean;
-    strictValidation?: boolean;
-  };
+  // Parsing options removed - never read or used
 }
 
 export interface NmeaServiceStatus {
@@ -44,8 +49,6 @@ export class NmeaService {
 
   // Component instances
   private connectionManager: PureConnectionManager;
-  private parser: PureNmeaParser;
-  private storeUpdater: PureStoreUpdater;
 
   // Service state
   private isRunning = false;
@@ -64,8 +67,6 @@ export class NmeaService {
 
   constructor() {
     this.connectionManager = new PureConnectionManager();
-    this.parser = PureNmeaParser.getInstance();
-    this.storeUpdater = new PureStoreUpdater();
 
     this.setupConnectionEvents();
   }
@@ -92,7 +93,7 @@ export class NmeaService {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       log.app('Service start error', () => ({ error: errorMsg }));
-      this.storeUpdater.updateError(`Start failed: ${errorMsg}`);
+      updateError(`Start failed: ${errorMsg}`);
       return false;
     }
   }
@@ -114,24 +115,21 @@ export class NmeaService {
   }
 
   /**
-   * Get current service status - SIMPLIFIED
+   * Get current service status - ESSENTIAL INFO ONLY
    */
   getStatus(): NmeaServiceStatus {
     const connectionStatus = this.connectionManager.getStatus();
-    const parsingStats = this.parser.getStats();
-
     const elapsedSeconds = this.startTime ? (Date.now() - this.startTime) / 1000 : 0;
     const messagesPerSecond = elapsedSeconds > 0 ? this.messageCount / elapsedSeconds : 0;
 
     return {
       connection: connectionStatus,
       parsing: {
-        totalMessages: parsingStats.parseCount,
-        successfulParses: parsingStats.parseCount - parsingStats.errorCount,
-        failedParses: parsingStats.errorCount,
-        successRate: parsingStats.successRate,
+        totalMessages: this.messageCount,
+        successfulParses: this.messageCount, // Parse failures are silent (no stats overhead)
+        failedParses: 0,
+        successRate: 100,
       },
-      // Store update stats removed - PureStoreUpdater doesn't track statistics
       performance: {
         messagesPerSecond: Math.round(messagesPerSecond * 100) / 100,
       },
@@ -157,10 +155,10 @@ export class NmeaService {
   private setupConnectionEvents(): void {
     this.connectionManager.setEventHandlers({
       onStateChange: (status) => {
-        this.storeUpdater.updateConnectionStatus({ state: status.state });
+        updateConnectionStatus({ state: status.state });
 
         if (status.lastError) {
-          this.storeUpdater.updateError(status.lastError);
+          updateError(status.lastError);
         }
       },
 
@@ -188,7 +186,7 @@ export class NmeaService {
 
     try {
       // Parse the message
-      const parseResult = this.parser.parseSentence(rawMessage);
+      const parseResult = parseSentence(rawMessage);
       if (!parseResult.success || !parseResult.data) {
         return; // Silent failure for parse errors
       }
@@ -196,11 +194,11 @@ export class NmeaService {
       const parsedMessage = parseResult.data;
 
       // SIMPLIFIED: Only use NmeaSensorProcessor path (no legacy transformer)
-      this.storeUpdater.processNmeaMessage(parsedMessage);
+      processNmeaMessage(parsedMessage);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       log.app('Message processing error', () => ({ error: errorMsg }));
-      this.storeUpdater.updateError(`Processing error: ${errorMsg}`);
+      updateError(`Processing error: ${errorMsg}`);
     }
   }
 
@@ -212,11 +210,11 @@ export class NmeaService {
 
     try {
       // Process the binary frame directly through the store updater
-      this.storeUpdater.processBinaryPgnFrame(frame);
+      processBinaryPgnFrame(frame);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       log.app('Binary frame error', () => ({ error: errorMsg, pgn: frame.pgn }));
-      this.storeUpdater.updateError(`Binary frame error: ${errorMsg}`);
+      updateError(`Binary frame error: ${errorMsg}`);
     }
   }
 }

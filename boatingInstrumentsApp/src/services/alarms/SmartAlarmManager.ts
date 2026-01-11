@@ -15,6 +15,7 @@ import { VesselContextDetector, NmeaDataSnapshot } from './VesselContextDetector
 import { AdaptiveLearningEngine, AlarmInteraction, LearnedPattern } from './AdaptiveLearningEngine';
 import { MaintenanceScheduler, MaintenanceAlarm, MaintenanceItem } from './MaintenanceScheduler';
 import { CriticalAlarmType } from './types';
+import { log } from '../../utils/logging/logger';
 
 /**
  * Smart alarm system configuration
@@ -268,10 +269,10 @@ export class SmartAlarmManager {
 
       return processed;
     } catch (error) {
-      console.error('SmartAlarmManager: Error processing alarm', {
+      log.app('SmartAlarmManager: Error processing alarm', () => ({
         alarmId: alarm.id,
-        error: error instanceof Error ? error.message : error,
-      });
+        error: error instanceof Error ? error.message : String(error),
+      }));
 
       // Return fallback processed alarm
       return this.createFallbackProcessedAlarm(alarm, startTime);
@@ -667,11 +668,11 @@ export class SmartAlarmManager {
     const processingTime = performance.now() - startTime;
 
     if (processed.level === 'critical' && processingTime > this.config.maxResponseTime) {
-      console.warn('SmartAlarmManager: Critical alarm processing exceeded max response time', {
+      log.app('SmartAlarmManager: Critical alarm processing exceeded max response time', () => ({
         alarmId: processed.id,
         processingTime,
         maxResponseTime: this.config.maxResponseTime,
-      });
+      }));
 
       if (this.onCriticalAlarmDelayed) {
         this.onCriticalAlarmDelayed(processed.originalAlarm, processingTime);
@@ -948,10 +949,10 @@ export class SmartAlarmManager {
       for (const alarm of state.activeAlarms) {
         if (!this.processedAlarms.has(alarm.id)) {
           this.processAlarm(alarm).catch((error) => {
-            console.error('SmartAlarmManager: Failed to process alarm from store', {
+            log.app('SmartAlarmManager: Failed to process alarm from store', () => ({
               alarmId: alarm.id,
-              error: error instanceof Error ? error.message : error,
-            });
+              error: error instanceof Error ? error.message : String(error),
+            }));
           });
         }
       }

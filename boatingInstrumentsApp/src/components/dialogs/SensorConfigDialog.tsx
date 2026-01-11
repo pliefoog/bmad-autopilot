@@ -53,6 +53,7 @@ import {
   shouldShowField,
 } from '../../registry/SensorConfigRegistry';
 import { ThresholdPresentationService } from '../../services/ThresholdPresentationService';
+import { log } from '../../utils/logging/logger';
 
 /* Extracted Components */
 import { AlarmThresholdSlider } from './sensor-config/AlarmThresholdSlider';
@@ -226,11 +227,11 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     );
 
     if (!enriched) {
-      console.warn(
-        `[SensorConfigDialog] Failed to get initial enriched thresholds for ${selectedSensorType} instance ${selectedInstance}${
-          initialMetric ? ` metric ${initialMetric}` : ''
-        }`,
-      );
+      log.app('SensorConfigDialog: Failed to get initial enriched thresholds', () => ({
+        sensorType: selectedSensorType,
+        instance: selectedInstance,
+        metric: initialMetric,
+      }));
     }
 
     return enriched;
@@ -342,11 +343,11 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     );
 
     if (!enriched) {
-      console.warn(
-        `[SensorConfigDialog] Failed to get enriched thresholds for ${selectedSensorType} instance ${selectedInstance}${
-          currentMetricForEnrichment ? ` metric ${currentMetricForEnrichment}` : ''
-        }`,
-      );
+      log.app('SensorConfigDialog: Failed to get enriched thresholds', () => ({
+        sensorType: selectedSensorType,
+        instance: selectedInstance,
+        metric: currentMetricForEnrichment,
+      }));
     }
 
     return enriched;
@@ -364,7 +365,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   const formatMetricValue = useCallback(
     (siValue: number): string => {
       if (!enrichedThresholds) {
-        console.warn(`[SensorConfigDialog] Cannot format value - enriched thresholds unavailable`);
+        log.app('SensorConfigDialog: Cannot format value - enriched thresholds unavailable');
         return siValue.toFixed(1);
       }
 
@@ -397,7 +398,9 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     if (!enrichedThresholds) {
       const errorMsg =
         'Cannot save thresholds - unit conversion unavailable. This would corrupt data.';
-      console.error(`[SensorConfigDialog] ${errorMsg}`);
+      log.app('SensorConfigDialog: Cannot save - enrichment unavailable', () => ({
+        message: errorMsg,
+      }));
       if (Platform.OS === 'web') {
         alert(errorMsg);
       } else {
@@ -453,7 +456,11 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       updateSensorThresholds(selectedSensorType, selectedInstance, updates);
       await setConfig(selectedSensorType, selectedInstance, updates);
     } catch (error) {
-      console.error('Error saving sensor config:', error);
+      log.app('SensorConfigDialog: Error saving sensor config', () => ({
+        error: error instanceof Error ? error.message : String(error),
+        sensorType: selectedSensorType,
+        instance: selectedInstance,
+      }));
       if (Platform.OS === 'web') {
         alert('Failed to save configuration. Please try again.');
       } else {
@@ -504,7 +511,11 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       );
 
       if (!enriched) {
-        console.warn(`[SensorConfigDialog] Cannot load thresholds for metric ${newMetric}`);
+        log.app('SensorConfigDialog: Cannot load thresholds for metric', () => ({
+          metric: newMetric,
+          sensorType: selectedSensorType,
+          instance: selectedInstance,
+        }));
       }
 
       const criticalValue = enriched?.display.critical?.value;
@@ -575,7 +586,9 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         soundPattern,
       );
     } catch (error) {
-      console.error('Error playing test sound:', error);
+      log.app('SensorConfigDialog: Error playing test sound', () => ({
+        error: error instanceof Error ? error.message : String(error),
+      }));
     }
   }, []);
 
@@ -822,9 +835,11 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                         typeof opt === 'string' ? opt === value : opt.value === value,
                       );
                       if (!isValid) {
-                        console.error(
-                          `[SensorConfigDialog] Invalid enum value '${value}' for ${field.key}`,
-                        );
+                        log.app('SensorConfigDialog: Invalid enum value', () => ({
+                          value,
+                          fieldKey: field.key,
+                          allowedOptions: field.options,
+                        }));
                         return;
                       }
                     }
@@ -858,9 +873,10 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                     onValueChange={(value) => {
                       // Strict boolean validation
                       if (typeof value !== 'boolean') {
-                        console.error(
-                          `[SensorConfigDialog] Invalid boolean value for ${field.key}`,
-                        );
+                        log.app('SensorConfigDialog: Invalid boolean value', () => ({
+                          fieldKey: field.key,
+                          valueType: typeof value,
+                        }));
                         return;
                       }
                       updateField(field.key as keyof SensorFormData, value);
@@ -881,7 +897,10 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
             return null;
 
           default:
-            console.warn(`[SensorConfigDialog] Unknown uiType: ${field.uiType} for ${field.key}`);
+            log.app('SensorConfigDialog: Unknown uiType', () => ({
+              uiType: field.uiType,
+              fieldKey: field.key,
+            }));
             return null;
         }
       });

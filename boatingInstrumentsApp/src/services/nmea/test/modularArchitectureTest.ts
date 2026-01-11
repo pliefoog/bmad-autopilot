@@ -13,10 +13,7 @@ const testConfig: NmeaServiceConfig = {
     port: 8080,
     protocol: 'websocket',
   },
-  parsing: {
-    enableFallback: true,
-    strictValidation: false,
-  },
+  // Parsing options removed - were never read or used
 };
 
 export async function testModularArchitecture(): Promise<void> {

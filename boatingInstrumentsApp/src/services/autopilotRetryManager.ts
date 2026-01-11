@@ -1,4 +1,5 @@
 import { autopilotSafetyManager } from './autopilotSafetyManager';
+import { log } from '../utils/logging/logger';
 
 /**
  * Retry policy configuration for different failure types
@@ -129,9 +130,12 @@ export class AutopilotRetryManager {
         // Calculate delay with exponential backoff and jitter
         const delay = this.calculateDelay(attempt, policy);
 
-        console.warn(
-          `[RetryManager] Attempt ${attempt}/${policy.maxAttempts} failed: ${lastError}. Retrying in ${delay}ms`,
-        );
+        log.app('[RetryManager] Attempt failed, retrying', () => ({
+          attempt,
+          maxAttempts: policy.maxAttempts,
+          error: lastError,
+          delayMs: delay,
+        }));
 
         // Wait before retry
         await this.sleep(delay);
@@ -215,7 +219,7 @@ export class AutopilotRetryManager {
       this.circuitBreakerState === CircuitBreakerState.CLOSED
     ) {
       this.circuitBreakerState = CircuitBreakerState.OPEN;
-      console.error(`[RetryManager] Circuit breaker opened after ${this.failureCount} failures`);
+      log.app('Circuit breaker opened', () => ({ failureCount: this.failureCount }));
     }
   }
 
