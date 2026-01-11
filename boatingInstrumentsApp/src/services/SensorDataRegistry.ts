@@ -271,6 +271,8 @@ export class SensorDataRegistry {
 
     try {
       const alarms = this.alarmEvaluator.evaluate();
+      // Dynamic import to avoid circular dependency
+      const { useNmeaStore } = require('../store/nmeaStore') as typeof import('../store/nmeaStore');
       useNmeaStore.getState().updateAlarms(alarms);
       this.lastAlarmEvaluationTime = Date.now();
     } catch (error) {
