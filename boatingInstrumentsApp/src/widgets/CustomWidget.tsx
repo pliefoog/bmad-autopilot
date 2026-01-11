@@ -35,7 +35,6 @@
 
 import React, { useMemo } from 'react';
 import { Platform } from 'react-native';
-import { useNmeaStore } from '../store/nmeaStore';
 import { useWidgetStore } from '../store/widgetStore';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 import SecondaryMetricCell from '../components/SecondaryMetricCell';

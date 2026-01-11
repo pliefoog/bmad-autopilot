@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Vibration, Alert } from 'react-native';
 import { UniversalIcon } from '../components/atoms/UniversalIcon';
 import Sound from 'react-native-sound';
-import { useNmeaStore } from '../store/nmeaStore';
+import { useSensorInstance, useMetricValue } from '../contexts/MetricContext';
 import { AutopilotCommandManager } from '../services/autopilotService';
 import Svg, { Circle, Line, Text as SvgText, Path } from 'react-native-svg';
 import { HelpButton } from '../components/atoms/HelpButton';
@@ -32,15 +32,14 @@ export const AutopilotControlScreen: React.FC<AutopilotControlScreenProps> = ({
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  // Clean sensor data access - NMEA Store v2.0 with SensorInstance
-  const autopilotInstance = useNmeaStore((state) => state.nmeaData.sensors.autopilot?.[0]);
-  const compassInstance = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]);
+  // Get sensor instances using MetricContext (replaces nmeaStore access)
+  const autopilotInstance = useSensorInstance('autopilot', 0);
+  const compassInstance = useSensorInstance('compass', 0);
 
-  // Subscribe to timestamps to trigger re-renders (SensorInstance is mutable)
-  const _autopilotTimestamp = useNmeaStore(
-    (state) => state.nmeaData.sensors.autopilot?.[0]?.timestamp,
-  );
-  const _compassTimestamp = useNmeaStore((state) => state.nmeaData.sensors.compass?.[0]?.timestamp);
+  // Subscribe to specific metrics to trigger re-renders when data changes
+  // Using any metric from each sensor will trigger updates when sensor receives new data
+  const autopilotTimestamp = useMetricValue('autopilot', 0, 'mode')?.timestamp;
+  const compassTimestamp = useMetricValue('compass', 0, 'heading')?.timestamp;
 
   // Autopilot service instance
   const commandManager = useRef<AutopilotCommandManager | null>(null);

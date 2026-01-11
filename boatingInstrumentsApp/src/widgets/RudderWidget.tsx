@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Circle, Line, Polygon, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../store/themeStore';
-import { useNmeaStore } from '../store/nmeaStore';
+import { useMetricValue } from '../contexts/MetricContext';
 import TemplatedWidget from '../components/TemplatedWidget';
 import PrimaryMetricCell from '../components/PrimaryMetricCell';
 
@@ -47,13 +47,12 @@ interface RudderVisualizationProps {
 
 const RudderVisualization: React.FC<RudderVisualizationProps> = ({ sensorType, instance }) => {
   const theme = useTheme();
-  const sensorInstance = useNmeaStore(
-    (state) => state.getSensorInstance(sensorType, instance),
-    (a, b) => a === b
-  );
+  
+  // Subscribe to rudder angle metric using MetricContext
+  const rudderMetric = useMetricValue(sensorType, instance, 'rudderAngle');
   
   // Get rudder angle for visualization
-  const rudderAngle = (sensorInstance?.getMetric('rudderAngle')?.si_value as number) ?? 0;
+  const rudderAngle = (typeof rudderMetric?.si_value === 'number' ? rudderMetric.si_value : 0);
 
   return (
     <View style={{ alignItems: 'center', marginTop: 16, paddingBottom: 8 }}>
