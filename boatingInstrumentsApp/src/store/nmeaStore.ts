@@ -77,6 +77,10 @@ interface NmeaStore {
     messageFormat?: 'NMEA 0183' | 'NMEA 2000',
   ) => void;
 
+  // Threshold management (delegates to SensorInstance)
+  getSensorThresholds: (sensorType: SensorType, instance: number) => any | undefined;
+  updateSensorThresholds: (sensorType: SensorType, instance: number, thresholds: any) => void;
+
   // Alarm management
   updateAlarms: (alarms: Alarm[]) => void;
 
@@ -178,6 +182,45 @@ export const useNmeaStore = create<NmeaStore>()(
       // Alarm management - called by SensorDataRegistry
       updateAlarms: (alarms: Alarm[]) =>
         set({ alarms }, false, 'updateAlarms'),
+
+      // Threshold management - bridges to SensorInstance
+      getSensorThresholds: (sensorType: SensorType, instance: number) => {
+        const sensorInstance = sensorRegistry.get(sensorType, instance);
+        if (!sensorInstance) return undefined;
+
+        // Get first metric key for this sensor (thresholds stored per-metric)
+        const metricKeys = sensorInstance.getMetricKeys();
+        if (metricKeys.length === 0) return undefined;
+
+        // For now, return thresholds for first metric (legacy compatibility)
+        // TODO: Support multi-metric threshold access
+        const firstMetric = metricKeys[0];
+        return (sensorInstance as any)._thresholds.get(firstMetric);
+      },
+
+      updateSensorThresholds: (sensorType: SensorType, instance: number, thresholds: any) => {
+        const sensorInstance = sensorRegistry.get(sensorType, instance);
+        if (!sensorInstance) {
+          log.app('Cannot update thresholds - sensor instance not found', () => ({
+            sensorType,
+            instance,
+          }));
+          return;
+        }
+
+        // Get first metric key (legacy compatibility)
+        const metricKeys = sensorInstance.getMetricKeys();
+        if (metricKeys.length === 0) {
+          log.app('Cannot update thresholds - no metrics found', () => ({
+            sensorType,
+            instance,
+          }));
+          return;
+        }
+
+        const firstMetric = metricKeys[0];
+        sensorInstance.updateThresholds(firstMetric, thresholds);
+      },
 
       /**
        * Factory reset - Clear all data
