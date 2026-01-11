@@ -660,7 +660,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
     // For numeric values, create MetricValue to get display values
     const metric = unitType
-      ? new MetricValue(latest.value, latest.timestamp, unitType)
+      ? new MetricValue(latest.value, latest.timestamp, unitType, this._getForceTimezone(fieldName))
       : new MetricValue(latest.value, latest.timestamp);
 
     return {
@@ -757,7 +757,16 @@ export class SensorInstance<T extends SensorData = SensorData> {
     return Array.from(this._history.keys());
   }
 
-
+  /**
+   * Get forceTimezone for a field if it has one (for datetime fields)
+   * @param fieldName - Field to check
+   * @returns 'utc' or undefined
+   */
+  private _getForceTimezone(fieldName: string): 'utc' | undefined {
+    const fields = getDataFields(this.sensorType);
+    const field = fields.find((f) => f.key === fieldName);
+    return field && 'forceTimezone' in field ? field.forceTimezone : undefined;
+  }
 
   /**
    * Add metric to history (internal)
