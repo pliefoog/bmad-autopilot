@@ -125,6 +125,25 @@ export const useNmeaStore = create<NmeaStore>()(
       setDebugMode: (enabled: boolean) => set({ debugMode: enabled }, false, 'setDebugMode'),
 
       /**
+       * Update message metadata - called by PureStoreUpdater
+       * Updates message count and format for UI display
+       */
+      updateMessageMetadata: (messageFormat?: 'NMEA 0183' | 'NMEA 2000') => {
+        set(
+          (state) => ({
+            nmeaData: {
+              ...state.nmeaData,
+              timestamp: Date.now(),
+              messageCount: state.nmeaData.messageCount + 1,
+              messageFormat: messageFormat || state.nmeaData.messageFormat,
+            },
+          }),
+          false,
+          'updateMessageMetadata',
+        );
+      },
+
+      /**
        * Update sensor data - DELEGATED to SensorDataRegistry
        *
        * Key simplification from v3:
