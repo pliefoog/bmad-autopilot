@@ -38,6 +38,16 @@
  * - ✅ No manual convert/convertBack logic in dialog
  * - ✅ Single responsibility: service handles all threshold presentation
  * - ✅ Consistent with SensorPresentationCache pattern
+  * 
+  * Critical Implementation Details:
+  * - Reads per-metric thresholds from SensorInstance via nmeaStore
+  * - Derives numeric critical/warning values from MetricThresholds using direction
+  * - Uses registry defaults for min/max ranges and alarm direction
+  * 
+  * Dependencies:
+  * - nmeaStore.getSensorThresholds(sensorType, instance, metric?)
+  * - SENSOR_CONFIG_REGISTRY.getAlarmDefaults(context)
+  * - Presentation store for unit conversion/formatting
  */
 
 import { SensorType } from '../types/SensorData';
@@ -134,9 +144,9 @@ class ThresholdPresentationServiceClass {
       return null;
     }
 
-    // Get raw thresholds from store
+    // Get raw thresholds from store (per-metric when provided)
     const nmeaStore = useNmeaStore.getState();
-    const thresholds = nmeaStore.getSensorThresholds(sensorType, instance);
+    const thresholds = nmeaStore.getSensorThresholds(sensorType, instance, metric);
 
     // Get defaults from registry for min/max
     const sensorInstance = sensorRegistry.get(sensorType, instance);
@@ -153,17 +163,29 @@ class ThresholdPresentationServiceClass {
     let minSI: number = fallback.min;
     let maxSI: number = fallback.max;
 
-    if (metric && thresholds?.metrics?.[metric]) {
-      // Multi-metric sensor
-      const metricConfig = thresholds.metrics[metric];
-      critical = metricConfig.critical;
-      warning = metricConfig.warning;
-      direction = metricConfig.direction;
+    if (metric) {
+      // Multi-metric sensor: thresholds are per-metric from SensorInstance
+      // Determine alarm direction from registry defaults
+      const defaultsMetric = defaults?.metrics?.[metric];
+      direction = defaultsMetric?.direction;
 
-      // Get min/max from defaults
-      if (defaults?.metrics?.[metric]) {
-        minSI = defaults.metrics[metric].min;
-        maxSI = defaults.metrics[metric].max;
+      // Derive numeric thresholds from MetricThresholds structure
+      // For 'below' alarms, use .min; for 'above' alarms, use .max
+      const t = thresholds as any;
+      if (t) {
+        if (direction === 'below') {
+          critical = t.critical?.min;
+          warning = t.warning?.min;
+        } else if (direction === 'above') {
+          critical = t.critical?.max;
+          warning = t.warning?.max;
+        }
+      }
+
+      // Get min/max display range from defaults
+      if (defaultsMetric) {
+        minSI = defaultsMetric.min;
+        maxSI = defaultsMetric.max;
       } else {
         // Fallback to reasonable defaults based on category
         log.app('[ThresholdPresentationService] No defaults found for metric, using fallback', () => ({
@@ -171,15 +193,26 @@ class ThresholdPresentationServiceClass {
           metric,
           category,
         }));
-        const fallback = this.getFallbackRange(category);
-        minSI = fallback.min;
-        maxSI = fallback.max;
+        const fb = this.getFallbackRange(category);
+        minSI = fb.min;
+        maxSI = fb.max;
       }
     } else {
-      // Single-metric sensor
-      critical = thresholds?.critical;
-      warning = thresholds?.warning;
-      direction = thresholds?.direction;
+      // Single-metric sensor: thresholds reflect overall sensor configuration
+      // Determine alarm direction from defaults
+      direction = defaults?.direction;
+
+      // Derive numeric thresholds from MetricThresholds structure
+      const t = thresholds as any;
+      if (t) {
+        if (direction === 'below') {
+          critical = t.critical?.min;
+          warning = t.warning?.min;
+        } else if (direction === 'above') {
+          critical = t.critical?.max;
+          warning = t.warning?.max;
+        }
+      }
 
       // Get min/max from defaults
       if (defaults?.min !== undefined && defaults?.max !== undefined) {
@@ -191,9 +224,9 @@ class ThresholdPresentationServiceClass {
           sensorType,
           category,
         }));
-        const fallback = this.getFallbackRange(category);
-        minSI = fallback.min;
-        maxSI = fallback.max;
+        const fb = this.getFallbackRange(category);
+        minSI = fb.min;
+        maxSI = fb.max;
       }
     }
 

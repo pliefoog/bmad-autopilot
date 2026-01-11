@@ -1180,6 +1180,49 @@ Each level adds **new information** without repeating previous context.
 - Make breaking changes without discussing impact
 - Output code blocks when tools can edit directly
 
+## Git Commit Guidelines
+
+**✅ CORRECT: Use MCP create_file tool + temp file**
+```typescript
+// 1. Create temp file using MCP create_file tool (NOT in git staging)
+create_file({
+  filePath: '/path/to/repo/.git_commit_message.txt',
+  content: `fix: brief summary line
+
+Detailed explanation of changes:
+- Point 1
+- Point 2
+
+Files: file1.ts, file2.ts`
+});
+
+// 2. Commit staged files using temp file, then delete temp file
+run_in_terminal({
+  command: 'cd /path/to/repo && git commit -F .git_commit_message.txt && rm .git_commit_message.txt',
+  explanation: 'Commit changes with message from temp file and cleanup',
+  isBackground: false
+});
+
+// IMPORTANT: Temp file must NOT be staged/committed
+// It's created AFTER git add, used only for commit message, then deleted
+```
+
+**❌ WRONG: Shell heredoc/cat/pipe patterns**
+```bash
+# These ALL fail in zsh/bash with multi-line messages:
+cat > file.txt << 'EOF' ...           # Heredoc corruption
+git commit -m "$(cat << 'EOF' ...)"   # Shell escaping issues  
+cat file.txt | git commit -F -        # Pipe corruption
+```
+
+**Why MCP create_file + temp file:**
+- IDE/MCP tools handle file creation reliably
+- No shell escaping or heredoc issues
+- Works consistently across all terminals
+- Easy to verify message before commit
+- Clean, atomic operation
+- Follows project's MCP-first philosophy
+
 ## Testing
 
 ```bash

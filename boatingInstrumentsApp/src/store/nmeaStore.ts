@@ -1,28 +1,27 @@
 /**
- * NMEA Store v4.0 - Registry Architecture
- *
- * Minimal UI state store:
- * - Alarms (UI display)
- * - Connection status (UI indicators)
- * - Message metadata (count, format)
- *
- * **Architecture Changes (Registry Refactor):**
- * ✅ SensorDataRegistry stores all sensor instances (outside Zustand)
- * ✅ MetricContext provides React hooks for fine-grained subscriptions
- * ✅ Raw SI values stored immutably (no re-enrichment coordinator needed)
- * ✅ Alarm evaluation handled by AlarmEvaluator service
- * ✅ Zustand DevTools enabled (no class instance serialization issues)
- * ✅ Clean separation of concerns (UI state vs data storage)
- *
- * This enables:
- * - ✅ Zustand DevTools (no class instances in state)
- * - ✅ Targeted subscriptions (registry notifies changed metrics)
- * - ✅ Clean separation (UI state vs data storage)
- *
- * Key changes from v3:
- * - sensors removed from state (use sensorRegistry.get() instead)
- * - PureStoreUpdater calls sensorRegistry.update() directly
- * - DevTools re-enabled (no serialization issues)
+ * nmeaStore.ts - Minimal UI State for NMEA System (v4.0)
+ * 
+ * Purpose:
+ * - Provide UI-facing state: connection status, alarms, message metadata
+ * - Bridge threshold reads/writes to SensorInstance per-metric storage
+ * 
+ * Key Features:
+ * - Registry-based architecture keeps SensorInstance out of Zustand
+ * - DevTools enabled (no class serialization)
+ * - Per-metric threshold APIs with backward compatibility
+ * 
+ * Critical Implementation Details:
+ * - Thresholds accessed via sensorRegistry (Map<string, MetricThresholds>)
+ * - Alarm evaluation triggered by SensorDataRegistry (debounced)
+ * - Message metadata updated once per processed message batch
+ * 
+ * Dependencies:
+ * - SensorDataRegistry: sensor access and threshold storage
+ * - AlarmEvaluator: compile active alarms into store
+ * - PureStoreUpdater: updates metadata and routes sensor updates
+ * 
+ * Related Files:
+ * - SensorDataRegistry.ts, AlarmEvaluator.ts, PureStoreUpdater.ts
  */
 
 import { create } from 'zustand';
@@ -73,8 +72,35 @@ interface NmeaStore {
   updateMessageMetadata: (messageFormat?: 'NMEA 0183' | 'NMEA 2000') => void;
 
   // Threshold management (delegates to SensorInstance)
-  getSensorThresholds: (sensorType: SensorType, instance: number) => any | undefined;
-  updateSensorThresholds: (sensorType: SensorType, instance: number, thresholds: any) => void;
+  /**
+   * Get thresholds for a sensor metric
+   * 
+   * Implementation Notes:
+   * - Bridges directly to SensorInstance per-metric thresholds Map
+   * - Supports multi-metric sensors via optional metricKey
+   * - Backward compatible: defaults to first metric when metricKey omitted
+   * 
+   * @param sensorType - Sensor type identifier
+   * @param instance - Sensor instance number
+   * @param metricKey - Optional metric field name (e.g., 'voltage')
+   * @returns Threshold object for the metric or undefined
+   */
+  getSensorThresholds: (sensorType: SensorType, instance: number, metricKey?: string) => any | undefined;
+
+  /**
+   * Update thresholds for a sensor metric
+   * 
+   * Implementation Notes:
+   * - Validates metricKey exists on SensorInstance
+   * - Logs informative errors for missing sensors/metrics
+   * - Backward compatible: defaults to first metric when metricKey omitted
+   * 
+   * @param sensorType - Sensor type identifier
+   * @param instance - Sensor instance number
+   * @param thresholds - Threshold configuration object
+   * @param metricKey - Optional metric field name (e.g., 'current')
+   */
+  updateSensorThresholds: (sensorType: SensorType, instance: number, thresholds: any, metricKey?: string) => void;
 
   // Alarm management
   updateAlarms: (alarms: Alarm[]) => void;
@@ -148,31 +174,32 @@ export const useNmeaStore = create<NmeaStore>()(
         set({ alarms }, false, 'updateAlarms'),
 
       // Threshold management - bridges to SensorInstance
-      getSensorThresholds: (sensorType: SensorType, instance: number) => {
+      getSensorThresholds: (sensorType: SensorType, instance: number, metricKey?: string) => {
         const sensorInstance = sensorRegistry.get(sensorType, instance);
         if (!sensorInstance) return undefined;
 
-        // Get first metric key for this sensor (thresholds stored per-metric)
+        // Get metric keys for this sensor (thresholds stored per-metric)
         const metricKeys = sensorInstance.getMetricKeys();
         if (metricKeys.length === 0) return undefined;
 
-        // For now, return thresholds for first metric (legacy compatibility)
-        // TODO: Support multi-metric threshold access
-        const firstMetric = metricKeys[0];
-        return (sensorInstance as any)._thresholds.get(firstMetric);
+        // Support multi-metric threshold access
+        // If metricKey provided, use it; otherwise default to first metric
+        const targetMetricKey = metricKey || metricKeys[0];
+        return (sensorInstance as any)._thresholds.get(targetMetricKey);
       },
 
-      updateSensorThresholds: (sensorType: SensorType, instance: number, thresholds: any) => {
+      updateSensorThresholds: (sensorType: SensorType, instance: number, thresholds: any, metricKey?: string) => {
         const sensorInstance = sensorRegistry.get(sensorType, instance);
         if (!sensorInstance) {
           log.app('Cannot update thresholds - sensor instance not found', () => ({
             sensorType,
             instance,
+            metricKey,
           }));
           return;
         }
 
-        // Get first metric key (legacy compatibility)
+        // Get metric key to update
         const metricKeys = sensorInstance.getMetricKeys();
         if (metricKeys.length === 0) {
           log.app('Cannot update thresholds - no metrics found', () => ({
@@ -182,8 +209,21 @@ export const useNmeaStore = create<NmeaStore>()(
           return;
         }
 
-        const firstMetric = metricKeys[0];
-        sensorInstance.updateThresholds(firstMetric, thresholds);
+        // Use provided metricKey or default to first metric (backward compatibility)
+        const targetMetricKey = metricKey || metricKeys[0];
+        
+        // Validate metric key exists
+        if (!metricKeys.includes(targetMetricKey)) {
+          log.app('Cannot update thresholds - metric key not found', () => ({
+            sensorType,
+            instance,
+            requestedMetricKey: targetMetricKey,
+            availableMetrics: metricKeys,
+          }));
+          return;
+        }
+        
+        sensorInstance.updateThresholds(targetMetricKey, thresholds);
       },
 
       /**

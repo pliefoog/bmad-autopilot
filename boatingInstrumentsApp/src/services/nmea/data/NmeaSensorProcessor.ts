@@ -1,16 +1,30 @@
 /**
- * NMEA Sensor Processor v2.0
- *
- * Direct NMEA → Sensor mapping for clean architecture.
- * Eliminates intermediate TransformedNmeaData layer.
- * Preserves presentation system and unit conversion.
- *
- * Key Principles:
- * - Direct mapping from parsed NMEA to typed sensor data
- * - Store data in consistent base units (meters, knots, Celsius, etc.)
- * - No intermediate transformation formats
- * - Perfect type safety with SensorData interfaces
- * - Instance support built-in for multi-device scenarios
+ * NmeaSensorProcessor.ts - Direct NMEA → Sensor Mapping Engine
+ * 
+ * Purpose:
+ * - Parse NMEA 0183/2000 sentences and produce typed sensor updates
+ * - Maintain strict base units and prioritize sources per metric
+ * 
+ * Key Features:
+ * - Message routing with per-sentence handlers (RPM, DBT, DPT, etc.)
+ * - Instance extraction via talker IDs for multi-device scenarios
+ * - Priority logic for overlapping sources (e.g., DPT > DBT > DBK)
+ * - Conditional logging with lazy evaluation for diagnostics
+ * 
+ * Critical Implementation Details:
+ * - No intermediate formats; updates applied directly to SensorDataRegistry
+ * - Default-case logging for unsupported sentence types (operational visibility)
+ * - Validation guards to avoid propagating invalid values (NaN, ranges)
+ * 
+ * Dependencies:
+ * - SensorDataRegistry: update() receives SensorUpdate[]
+ * - PureNmeaParser: supplies ParsedNmeaMessage inputs
+ * - pgnParser: N2K PGN decoding for binary/PCDIN frames
+ * 
+ * Related Files:
+ * - PureStoreUpdater.ts: orchestrates processing and store metadata
+ * - SensorDataRegistry.ts: storage, subscriptions, alarm scheduling
+ * - SensorInstance.ts: metric history, thresholds, alarm evaluation
  */
 
 import { log } from '../../../utils/logging/logger';
@@ -221,9 +235,17 @@ export class NmeaSensorProcessor {
           result = this.processBinaryPgnMessage(parsedMessage, timestamp);
           break;
         default:
+          // Log unsupported message types for operational visibility
+          // Users can enable logs with: enableLog('nmea.unsupported')
+          log.nmea('⚠️ Unsupported NMEA message type (handler not implemented)', () => ({
+            messageType: parsedMessage.messageType,
+            fieldsCount: Object.keys(parsedMessage.fields || {}).length,
+            talker: parsedMessage.fields?.talker,
+          }));
+          
           result = {
             success: false,
-            errors: [`Unsupported message type: ${parsedMessage.messageType}`],
+            errors: [`Handler not implemented for message type: ${parsedMessage.messageType}`],
             messageType: parsedMessage.messageType,
           };
       }
