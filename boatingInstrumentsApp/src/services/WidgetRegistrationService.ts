@@ -31,6 +31,7 @@ import type { WidgetConfig } from '../types/widget.types';
 import { log } from '../utils/logging/logger';
 import { WidgetDetector } from './WidgetDetector';
 import { WidgetExpirationManager } from './WidgetExpirationManager';
+import { sensorRegistry } from './SensorDataRegistry';
 
 /**
  * Sensor dependency declaration
@@ -184,7 +185,7 @@ export class WidgetRegistrationService {
 
 
   /**
-   * Initialize the service by subscribing to nmeaStore events
+   * Initialize the service by subscribing to sensorRegistry events
    * Call this once during app startup after registering all widget types
    */
   public initialize(): void {
@@ -198,42 +199,60 @@ export class WidgetRegistrationService {
 
     // console.log('[WidgetRegistrationService] 🚀 Initializing...');
 
-    // Import dynamically to avoid circular dependency
-    import('../store/nmeaStore').then(({ useNmeaStore }) => {
-      const store = useNmeaStore.getState();
+    // Subscribe to sensor creation events from SensorDataRegistry
+    this.sensorCreatedHandler = (event: SensorCreatedEvent) => {
+      const sensorInstance = sensorRegistry.get(event.sensorType as SensorType, event.instance);
+      if (!sensorInstance) return;
 
-      // Subscribe to sensor creation events
-      this.sensorCreatedHandler = (event: SensorCreatedEvent) => {
-        const currentState = useNmeaStore.getState();
-        const allSensors = currentState.nmeaData.sensors;
-        const sensorData = allSensors[event.sensorType as SensorType]?.[event.instance];
+      // Build sensor map from registry for widget detection
+      const allSensors = this.buildSensorMapFromRegistry();
 
-        if (!sensorData) return;
+      this.handleSensorCreated(event.sensorType as SensorType, event.instance, sensorInstance, allSensors);
+    };
 
-        this.handleSensorCreated(event.sensorType as SensorType, event.instance, sensorData, allSensors);
-      };
+    sensorRegistry.on('sensorCreated', this.sensorCreatedHandler);
 
-      store.sensorEventEmitter.on('sensorCreated', this.sensorCreatedHandler);
+    // Perform initial scan of existing sensor data
+    const allSensors = this.buildSensorMapFromRegistry();
+    this.performInitialScan(allSensors);
 
-      // Perform initial scan of existing sensor data
-      this.performInitialScan(useNmeaStore.getState().nmeaData.sensors);
+    this.isInitialized = true;
+    // console.log('[WidgetRegistrationService] ✅ Initialized successfully');
 
-      this.isInitialized = true;
-      // console.log('[WidgetRegistrationService] ✅ Initialized successfully');
+    // Import widgetStore to sync staleness threshold setting
+    import('../store/widgetStore').then(({ useWidgetStore }) => {
+      const widgetStoreState = useWidgetStore.getState();
+      this.expirationManager.setStalenessThreshold(widgetStoreState.widgetExpirationTimeout);
 
-      // Import widgetStore to sync staleness threshold setting
-      import('../store/widgetStore').then(({ useWidgetStore }) => {
-        const widgetStoreState = useWidgetStore.getState();
-        this.expirationManager.setStalenessThreshold(widgetStoreState.widgetExpirationTimeout);
+      // Start expiration check timer
+      this.expirationManager.startTimer(() => this.checkExpiredWidgets());
 
-        // Start expiration check timer
-        this.expirationManager.startTimer(() => this.checkExpiredWidgets());
-
-        log.widgetRegistration('Expiration monitoring started', () => ({
-          stalenessThresholdMs: this.expirationManager.getStalenessThreshold(),
-        }));
-      });
+      log.widgetRegistration('Expiration monitoring started', () => ({
+        stalenessThresholdMs: this.expirationManager.getStalenessThreshold(),
+      }));
     });
+  }
+
+  /**
+   * Build SensorsData map from SensorDataRegistry
+   * Converts registry structure to the old SensorsData format for widget detection
+   */
+  private buildSensorMapFromRegistry(): SensorsData {
+    const allSensors = sensorRegistry.getAllSensors();
+    const sensorsData: SensorsData = {} as SensorsData;
+
+    for (const sensorInstance of allSensors) {
+      const sensorType = sensorInstance.sensorType;
+      const instance = sensorInstance.instance;
+
+      if (!sensorsData[sensorType]) {
+        sensorsData[sensorType] = {};
+      }
+
+      sensorsData[sensorType][instance] = sensorInstance;
+    }
+
+    return sensorsData;
   }
 
   /**
@@ -275,10 +294,8 @@ export class WidgetRegistrationService {
     // Save handler reference before clearing it
     const handler = this.sensorCreatedHandler;
 
-    import('../store/nmeaStore').then(({ useNmeaStore }) => {
-      const store = useNmeaStore.getState();
-      store.sensorEventEmitter.removeListener('sensorCreated', handler);
-    });
+    // Unsubscribe from sensorRegistry events
+    sensorRegistry.off('sensorCreated', handler);
 
     this.sensorCreatedHandler = null;
     this.isInitialized = false;
@@ -447,12 +464,9 @@ export class WidgetRegistrationService {
   private checkExpiredWidgets(): void {
     if (this.detectedInstances.size === 0) return; // No widgets to check
 
-    // Import stores to access sensor data and user preferences
-    Promise.all([
-      import('../store/nmeaStore'),
-      import('../store/widgetStore')
-    ])
-      .then(([{ useNmeaStore }, { useWidgetStore }]) => {
+    // Import widgetStore to check user preferences
+    import('../store/widgetStore')
+      .then(({ useWidgetStore }) => {
         // Check if auto-removal is enabled
         const enableWidgetAutoRemoval = useWidgetStore.getState().enableWidgetAutoRemoval;
         if (!enableWidgetAutoRemoval) {
@@ -460,7 +474,8 @@ export class WidgetRegistrationService {
           return; // User disabled auto-removal
         }
 
-        const allSensors = useNmeaStore.getState().nmeaData.sensors;
+        // Build current sensor map from registry
+        const allSensors = this.buildSensorMapFromRegistry();
         const expiredKeys: string[] = [];
 
         this.detectedInstances.forEach((detectedInstance, instanceKey) => {
