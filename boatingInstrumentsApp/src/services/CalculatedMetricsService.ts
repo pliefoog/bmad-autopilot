@@ -117,8 +117,12 @@ export class RateOfTurnCalculator implements MetricCalculator {
   calculate(sensor: SensorInstance): Map<string, MetricValue> {
     const results = new Map<string, MetricValue>();
 
-    // Get heading history using public API
-    const headingBuffer = sensor.getHistoryBuffer('heading');
+    // Get heading history - try magneticHeading first, then trueHeading
+    // Note: Compass sensor has 'magneticHeading' and 'trueHeading' fields, NOT 'heading'
+    const headingBuffer = 
+      sensor.getHistoryBuffer('magneticHeading') ?? 
+      sensor.getHistoryBuffer('trueHeading');
+    
     if (!headingBuffer) return results;
 
     const allPoints = headingBuffer.getAll();

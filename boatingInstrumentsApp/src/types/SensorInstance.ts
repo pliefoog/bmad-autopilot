@@ -248,61 +248,10 @@ export class SensorInstance<T extends SensorData = SensorData> {
     // Update timestamp
     this.timestamp = now;
 
-    // Note: Calculated metrics (dewPoint, trueWind) are now handled
+    // Note: Calculated metrics (dewPoint, ROT, trueWind) are now handled
     // by CalculatedMetricsService in SensorDataRegistry
 
     return { changed: hasChanges, changedMetrics };
-  }
-
-  /**
-   * Calculate Rate of Turn (ROT) from heading differential
-   * Only for compass sensors with heading history
-   * Formula: ROT (°/min) = (Δheading / Δt_seconds) × 60
-   * Handles 359°→0° wrap-around
-   *
-   * @returns Calculated ROT in degrees per minute, or null if insufficient data
-   */
-  private _calculateROT(): number | null {
-    if (this.sensorType !== 'compass') return null;
-
-    // Try magneticHeading first, then trueHeading
-    let headingField: string | null = null;
-    if (this._history.has('magneticHeading')) {
-      headingField = 'magneticHeading';
-    } else if (this._history.has('trueHeading')) {
-      headingField = 'trueHeading';
-    }
-
-    if (!headingField) return null;
-
-    const buffer = this._history.get(headingField);
-    if (!buffer) return null;
-
-    // Need at least 2 points for differential
-    const latest = buffer.getLatest();
-    const history = buffer.getAll();
-    if (history.length < 2 || !latest) return null;
-
-    // Get previous point (second most recent)
-    const previous = history[history.length - 2];
-    if (!previous || typeof latest.value !== 'number' || typeof previous.value !== 'number') return null;
-
-    const currentHeading = latest.value;
-    const previousHeading = previous.value;
-    const deltaTime = (latest.timestamp - previous.timestamp) / 1000; // Convert to seconds
-
-    // Need reasonable time delta (at least 100ms, max 5s for accuracy)
-    if (deltaTime < 0.1 || deltaTime > 5) return null;
-
-    // Calculate delta heading with wrap-around handling
-    let deltaHeading = currentHeading - previousHeading;
-    if (deltaHeading > 180) deltaHeading -= 360;
-    if (deltaHeading < -180) deltaHeading += 360;
-
-    // Convert to degrees per minute
-    const rot = (deltaHeading / deltaTime) * 60;
-
-    return rot;
   }
 
   /**
@@ -310,9 +259,6 @@ export class SensorInstance<T extends SensorData = SensorData> {
    *
    * Returns the latest history point with cached display values.
    * Widgets should access formattedValue, unit, etc. as properties.
-   *
-   * Special handling:
-   * - rateOfTurn: Returns hardware value if fresh (<1s), otherwise calculates from heading
    *
    * @param fieldName - Field name (e.g., 'depth', 'voltage')
    * @returns Enriched history point or undefined
@@ -369,40 +315,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
       };
     }
 
-    // Special handling for Rate of Turn (ROT)
-    // Note: Calculated ROT is now added to history by CalculatedMetricsService
-    // This block only handles fallback to hardware value if recent
-    if (fieldName === 'rateOfTurn' && this.sensorType === 'compass') {
-      const buffer = this._history.get('rateOfTurn');
-      const now = Date.now();
-
-      // Check if we have fresh calculated/hardware ROT (less than 1 second old)
-      if (buffer) {
-        const latest = buffer.getLatest();
-        if (latest && typeof latest.value === 'number' && now - latest.timestamp < 1000) {
-          // Reconstruct EnrichedMetricData from DataPoint
-          const unitType = this._metricUnitTypes.get('rateOfTurn');
-          const metric = unitType
-            ? new MetricValue(latest.value, latest.timestamp, unitType)
-            : new MetricValue(latest.value, latest.timestamp);
-
-          return {
-            si_value: latest.value,
-            value: metric.getDisplayValue(),
-            formattedValue: metric.getFormattedValue(),
-            formattedValueWithUnit: metric.getFormattedValueWithUnit(),
-            unit: metric.getUnit(),
-            timestamp: latest.timestamp,
-            alarmState: this.getAlarmState('rateOfTurn'),
-          };
-        }
-      }
-
-      // No recent ROT data
-      return undefined;
-    }
-
-    // Standard metric retrieval for all other fields
+    // Standard metric retrieval for all fields
     const buffer = this._history.get(fieldName);
     if (!buffer) {
       // Special case: 'name' field may not be in history (defaults to `sensorType-instance`)

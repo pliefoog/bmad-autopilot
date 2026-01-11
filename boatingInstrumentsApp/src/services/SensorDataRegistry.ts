@@ -106,6 +106,18 @@ export class SensorDataRegistry {
   }
 
   /**
+   * Get all sensor instances of a specific type
+   *
+   * @param sensorType - Sensor type to filter by
+   * @returns Array of matching sensor instances
+   */
+  getAllOfType(sensorType: SensorType): SensorInstance[] {
+    return Array.from(this.sensors.values()).filter(
+      (sensor) => sensor.sensorType === sensorType
+    );
+  }
+
+  /**
    * Update sensor data
    * Creates sensor if doesn't exist, updates metrics, evaluates alarms,
    * calculates cross-sensor data, and notifies subscribers.
