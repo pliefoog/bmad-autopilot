@@ -6,6 +6,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { NmeaService, NmeaServiceConfig } from './nmea/NmeaService';
+import { log } from '../utils/logging/logger';
 
 const STORAGE_KEY = 'nmea-connection-config';
 const MANUAL_DISCONNECT_KEY = 'nmea-manual-disconnect';
@@ -201,11 +202,11 @@ export const initializeConnection = async (): Promise<void> => {
   try {
     const manuallyDisconnected = await AsyncStorage.getItem(MANUAL_DISCONNECT_KEY);
     if (manuallyDisconnected === 'true') {
-      console.log('[ConnectionDefaults] Skipping auto-connect - user manually disconnected');
+      log.connection('Skipping auto-connect - user manually disconnected');
       return;
     }
   } catch (error) {
-    console.error('Failed to check manual disconnect flag:', error);
+    log.connection('Failed to check manual disconnect flag', () => ({ error }));
   }
 
   const config = await loadConnectionSettings();
