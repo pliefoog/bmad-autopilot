@@ -59,7 +59,10 @@ export class SensorDataRegistry {
   private alarmEvaluator: AlarmEvaluator;
   private calculatedMetricsService: CalculatedMetricsService;
   private alarmEvaluationDebounceTimer: NodeJS.Timeout | null = null;
+  private lastAlarmEvaluationTime = 0;
   private readonly ALARM_DEBOUNCE_MS = 1000; // Evaluate alarms max once per second
+  private readonly ALARM_MAX_DELAY_MS = 5000; // Force evaluation after 5 seconds max
+  private destroyed = false;
 
   constructor() {
     this.alarmEvaluator = new AlarmEvaluator(this);
@@ -113,6 +116,12 @@ export class SensorDataRegistry {
    * @param data - Partial sensor data to update
    */
   update(sensorType: SensorType, instance: number, data: Partial<SensorData>): void {
+    // Prevent use-after-free: Don't process updates after destroy
+    if (this.destroyed) {
+      log.app('⚠️ Ignoring update after registry destroyed', () => ({ sensorType, instance }));
+      return;
+    }
+
     const key = this.getKey(sensorType, instance);
     const isNew = !this.sensors.has(key);
 
@@ -139,17 +148,36 @@ export class SensorDataRegistry {
 
     // Calculate derived metrics (dewPoint, ROT, true wind)
     // Service returns Map<fieldName, MetricValue> of calculated metrics
-    const calculatedMetrics = this.calculatedMetricsService.compute(sensor, changedMetrics);
+    let calculatedMetrics: Map<string, any>;
+    try {
+      calculatedMetrics = this.calculatedMetricsService.compute(sensor, changedMetrics);
+    } catch (error) {
+      log.app('❌ Error computing calculated metrics', () => ({
+        sensorType,
+        instance,
+        error: error instanceof Error ? error.message : String(error),
+      }));
+      calculatedMetrics = new Map(); // Continue with empty map
+    }
     
     // Store calculated metrics in sensor history
     for (const [fieldName, metric] of calculatedMetrics.entries()) {
-      sensor.addCalculatedMetric(fieldName, metric);
-      
-      // Notify subscribers of calculated metrics
-      const metricSubKey = this.getMetricKey(sensorType, instance, fieldName);
-      const subscribers = this.subscriptions.get(metricSubKey);
-      if (subscribers && subscribers.size > 0) {
-        subscribers.forEach((callback) => callback());
+      try {
+        sensor.addCalculatedMetric(fieldName, metric);
+        
+        // Notify subscribers of calculated metrics (with error isolation)
+        const metricSubKey = this.getMetricKey(sensorType, instance, fieldName);
+        const subscribers = this.subscriptions.get(metricSubKey);
+        if (subscribers && subscribers.size > 0) {
+          this.notifySubscribers(subscribers, sensorType, instance, fieldName);
+        }
+      } catch (error) {
+        log.app('❌ Error storing calculated metric', () => ({
+          sensorType,
+          instance,
+          fieldName,
+          error: error instanceof Error ? error.message : String(error),
+        }));
       }
     }
 
@@ -163,7 +191,7 @@ export class SensorDataRegistry {
       const metricSubKey = this.getMetricKey(sensorType, instance, metricKey);
       const subscribers = this.subscriptions.get(metricSubKey);
       if (subscribers && subscribers.size > 0) {
-        subscribers.forEach((callback) => callback());
+        this.notifySubscribers(subscribers, sensorType, instance, metricKey);
       }
       
       // ALSO notify virtual stat metric subscribers (e.g., depth.min, depth.max, depth.avg)
@@ -174,7 +202,7 @@ export class SensorDataRegistry {
         const virtualSubKey = this.getMetricKey(sensorType, instance, virtualMetricKey);
         const virtualSubscribers = this.subscriptions.get(virtualSubKey);
         if (virtualSubscribers && virtualSubscribers.size > 0) {
-          virtualSubscribers.forEach((callback) => callback());
+          this.notifySubscribers(virtualSubscribers, sensorType, instance, virtualMetricKey);
         }
       }
     }
@@ -192,9 +220,21 @@ export class SensorDataRegistry {
   /**
    * Schedule debounced alarm evaluation
    * Coalesces multiple rapid sensor updates into single alarm check
+   * Enforces max delay to prevent infinite rescheduling
    * @private
    */
   private scheduleAlarmEvaluation(): void {
+    if (this.destroyed) return;
+
+    const now = Date.now();
+    const timeSinceLastEval = now - this.lastAlarmEvaluationTime;
+    
+    // Force evaluation if max delay exceeded (prevents infinite reschedule)
+    if (timeSinceLastEval >= this.ALARM_MAX_DELAY_MS) {
+      this.executeAlarmEvaluation();
+      return;
+    }
+
     // Clear existing timer
     if (this.alarmEvaluationDebounceTimer) {
       clearTimeout(this.alarmEvaluationDebounceTimer);
@@ -202,10 +242,55 @@ export class SensorDataRegistry {
 
     // Schedule new evaluation
     this.alarmEvaluationDebounceTimer = setTimeout(() => {
+      this.executeAlarmEvaluation();
+    }, this.ALARM_DEBOUNCE_MS);
+  }
+
+  /**
+   * Execute alarm evaluation with error handling
+   * @private
+   */
+  private executeAlarmEvaluation(): void {
+    if (this.destroyed) return;
+
+    try {
       const alarms = this.alarmEvaluator.evaluate();
       useNmeaStore.getState().updateAlarms(alarms);
+      this.lastAlarmEvaluationTime = Date.now();
+    } catch (error) {
+      log.app('❌ Alarm evaluation failed', () => ({
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      }));
+    } finally {
       this.alarmEvaluationDebounceTimer = null;
-    }, this.ALARM_DEBOUNCE_MS);
+    }
+  }
+
+  /**
+   * Notify subscribers with error isolation
+   * If one callback throws, others still execute
+   * @private
+   */
+  private notifySubscribers(
+    subscribers: Set<SubscriptionCallback>,
+    sensorType: SensorType,
+    instance: number,
+    metricKey: string,
+  ): void {
+    subscribers.forEach((callback) => {
+      try {
+        callback();
+      } catch (error) {
+        log.app('❌ Subscriber callback error', () => ({
+          sensorType,
+          instance,
+          metricKey,
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        }));
+      }
+    });
   }
 
   /**
@@ -224,6 +309,20 @@ export class SensorDataRegistry {
     metricName: string,
     callback: SubscriptionCallback,
   ): () => void {
+    // Input validation
+    if (typeof callback !== 'function') {
+      throw new Error('Subscription callback must be a function');
+    }
+    if (typeof sensorType !== 'string' || sensorType.length === 0) {
+      throw new Error('Sensor type must be a non-empty string');
+    }
+    if (!Number.isInteger(instance) || instance < 0) {
+      throw new Error('Instance must be a non-negative integer');
+    }
+    if (typeof metricName !== 'string' || metricName.length === 0) {
+      throw new Error('Metric name must be a non-empty string');
+    }
+
     const metricKey = this.getMetricKey(sensorType, instance, metricName);
 
     if (!this.subscriptions.has(metricKey)) {
@@ -272,6 +371,13 @@ export class SensorDataRegistry {
    * Called on factory reset
    */
   destroy(): void {
+    // Prevent double-destroy
+    if (this.destroyed) {
+      log.app('⚠️ Registry already destroyed, ignoring');
+      return;
+    }
+    this.destroyed = true;
+
     // Cancel pending alarm evaluation
     if (this.alarmEvaluationDebounceTimer) {
       clearTimeout(this.alarmEvaluationDebounceTimer);
