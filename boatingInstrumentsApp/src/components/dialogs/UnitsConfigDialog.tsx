@@ -1,366 +1,70 @@
 /**
- * Units Configuration Dialog (Refactored)
- * CONFIG-DIALOG-REFACTOR-SPECIFICATION.md - Phase 5
+ * Units Configuration Dialog - RHF Refactored
  *
- * Refactoring improvements:
- * - Zod schema for preset + 23 category validation
- * - useFormState with debouncing (300ms auto-save)
- * - Compact mobile-optimized layout (progressive disclosure)
- * - Preset preview with formatted example values
- * - Grid layout for unit selection (responsive wrapping)
+ * Purpose: Configure unit presentations for 23 data categories via presets or custom selection
+ * Pattern: React Hook Form with preset selector triggering atomic category updates
+ * Features:
+ * - 4 presets: Nautical (EU/UK/US) + Custom
+ * - 23 unit categories (6 essential + 17 advanced with progressive disclosure)
+ * - Live preview with formatted example values per preset
+ * - Atomic preset updates (all 23 categories change together)
+ * - GPS settings (coordinate format, timezone)
+ * - Progressive disclosure for cleaner mobile UX
  *
- * **Architecture:**
- * - Uses BaseConfigDialog for consistent Modal/header/footer structure
- * - BaseConfigDialog provides: pageSheet Modal, close button, title (no action button for this dialog)
- * - Eliminates duplicate Modal boilerplate (~80 lines removed vs manual implementation)
- * - Current: ~680 lines (includes form state, validation, auto-save, 23 categories, 4 presets)
+ * Architecture:
+ * - Single form hook abstracts all presentation store interactions
+ * - Component is pure rendering (no business logic)
+ * - Preset preview shows formatted examples for quick comparison
+ * - Custom mode enables individual unit selection
+ * - Preset mode provides quick region/standard switching
  */
 
-import React, { useMemo, useCallback, useEffect, useState } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { UniversalIcon } from '../atoms/UniversalIcon';
-import { z } from 'zod';
 import { useTheme, ThemeColors } from '../../store/themeStore';
-import {
-  usePresentationStore,
-  REGION_DEFAULTS,
-  getRegionMetadata,
-  MarineRegion,
-} from '../../presentation/presentationStore';
-import { DataCategory } from '../../presentation/categories';
 import { PRESENTATIONS, getPresentationConfigLabel } from '../../presentation/presentations';
+import { DataCategory } from '../../presentation/categories';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
-import { useFormState } from '../../hooks/useFormState';
-import { useSettingsStore } from '../../store/settingsStore';
+import { useUnitsConfigForm, type UnitsFormData } from '../../hooks/useUnitsConfigForm';
 import { getPlatformTokens } from '../../theme/settingsTokens';
-import { formatTime, formatDate } from '../../utils/datetimeFormatters';
 
 /**
  * Units Configuration Dialog Props
  *
  * @property visible - Controls modal visibility
- * @property onClose - Callback when dialog closes (auto-saves before closing)
- *
- * **Component Behavior:**
- * - 4 presets: Nautical (EU/UK/US) + Custom
- * - 23 unit categories (6 essential + 17 advanced with progressive disclosure)
- * - Auto-saves unit selection with 300ms debounce
- * - Shows preset preview with example formatted values
- * - Custom mode enables individual unit selection
- * - Preset mode locks unit selection (switch to Custom to modify)
- *
- * **Limitations:**
- * - Presets are static (not user-definable)
- * - Example values in preview are hardcoded samples
- * - No search/filter for unit categories
- * - Category order is fixed (not customizable)
+ * @property onClose - Callback when dialog closes
  */
 interface UnitsConfigDialogProps {
   visible: boolean;
   onClose: () => void;
 }
 
-/**
- * Category Configuration
- * Defines display properties for each unit category
- * isAdvanced: true = collapsed by default for cleaner mobile UX
- */
-interface CategoryConfig {
-  key: DataCategory;
-  name: string;
-  isAdvanced?: boolean; // Hide in collapsed view (progressive disclosure)
-}
-
-// === PRESET DEFINITIONS (LOADED FROM STORE) ===
-
-/**
- * Presentation Preset Structure
- *
- * Defines a complete set of unit preferences for a region/standard.
- * Examples array provides sample formatted values for preview display.
- *
- * **SINGLE SOURCE OF TRUTH:** Loaded from presentationStore.REGION_DEFAULTS
- */
-interface PresentationPreset {
-  id: string;
-  name: string;
-  description: string;
-  presentations: Partial<Record<DataCategory, string>>;
-  examples: { category: string; value: string }[]; // Preview examples
-}
-
-/**
- * Build presets from store's REGION_DEFAULTS (single source of truth)
- */
-function buildPresetsFromStore(): PresentationPreset[] {
-  const regionMetadata = getRegionMetadata();
-
-  // Get current timestamp for live preview
-  const now = Date.now();
-
-  // Generate dynamic examples per region based on actual preset definitions
-  const buildExamples = (regionId: MarineRegion): { category: string; value: string }[] => {
-    const regionPresets = REGION_DEFAULTS[regionId];
-    
-    return [
-      { category: 'Depth', value: regionId === 'eu' ? '5.2 m' : regionId === 'uk' ? '3.0 fth' : '17.1 ft' },
-      { category: 'Temperature', value: regionId === 'us' ? '65.3°F' : '18.5°C' },
-      { category: 'Pressure', value: regionId === 'us' ? '29.92 inHg' : '1013 hPa' },
-      { category: 'Volume', value: regionId === 'eu' ? '83 L' : '22 gal' },
-      { category: 'Time', value: formatTime(now, regionPresets.time!).formatted },
-      { category: 'Date', value: formatDate(now, regionPresets.date!).formatted },
-    ];
-  };
-
-  const presets: PresentationPreset[] = regionMetadata.map((region) => ({
-    id: region.id,
-    name: region.name,
-    description: region.description,
-    presentations: REGION_DEFAULTS[region.id],
-    examples: buildExamples(region.id as MarineRegion),
-  }));
-
-  // Add custom preset
-  presets.push({
-    id: 'custom',
-    name: 'Custom',
-    description: 'User-defined selections',
-    presentations: {},
-    examples: [],
-  });
-
-  return presets;
-}
-
-// Build presets once at module level
-const PRESETS = buildPresetsFromStore();
-
-// === CATEGORY DEFINITIONS ===
-
-const CATEGORIES: CategoryConfig[] = [
-  // Essential marine categories (always visible)
-  { key: 'depth', name: 'Depth' },
-  { key: 'speed', name: 'Speed' },
-  { key: 'wind', name: 'Wind' },
-  { key: 'temperature', name: 'Temperature' },
-  { key: 'coordinates', name: 'GPS Position' },
-  { key: 'volume', name: 'Volume (Tanks)' },
-  
-  // Advanced categories (collapsed by default for cleaner mobile UX)
-  { key: 'atmospheric_pressure', name: 'Atmospheric Pressure', isAdvanced: true },
-  { key: 'mechanical_pressure', name: 'Mechanical Pressure', isAdvanced: true },
-  { key: 'angle', name: 'Angle', isAdvanced: true },
-  { key: 'voltage', name: 'Voltage', isAdvanced: true },
-  { key: 'current', name: 'Current', isAdvanced: true },
-  { key: 'time', name: 'Time', isAdvanced: true },
-  { key: 'date', name: 'Date', isAdvanced: true },
-  { key: 'duration', name: 'Duration', isAdvanced: true },
-  { key: 'distance', name: 'Distance', isAdvanced: true },
-  { key: 'capacity', name: 'Battery Capacity', isAdvanced: true },
-  { key: 'flowRate', name: 'Flow Rate', isAdvanced: true },
-  { key: 'frequency', name: 'Frequency (AC)', isAdvanced: true },
-  { key: 'power', name: 'Power', isAdvanced: true },
-  { key: 'rpm', name: 'RPM', isAdvanced: true },
-  { key: 'angularVelocity', name: 'Angular Velocity', isAdvanced: true },
-  { key: 'percentage', name: 'Percentage', isAdvanced: true },
-];
-
-// === ZOD SCHEMA ===
-
-const unitsFormSchema = z.object({
-  preset: z.enum(['eu', 'us', 'uk', 'custom']),
-  // Category presentation IDs (strings matching formatSpec IDs)
-  depth: z.string().optional(),
-  speed: z.string().optional(),
-  wind: z.string().optional(),
-  temperature: z.string().optional(),
-  atmospheric_pressure: z.string().optional(),
-  mechanical_pressure: z.string().optional(),
-  angle: z.string().optional(),
-  coordinates: z.string().optional(),
-  voltage: z.string().optional(),
-  current: z.string().optional(),
-  volume: z.string().optional(),
-  time: z.string().optional(),
-  date: z.string().optional(),
-  duration: z.string().optional(),
-  distance: z.string().optional(),
-  capacity: z.string().optional(),
-  flowRate: z.string().optional(),
-  frequency: z.string().optional(),
-  power: z.string().optional(),
-  rpm: z.string().optional(),
-  angularVelocity: z.string().optional(),
-  percentage: z.string().optional(),
-  // GPS-specific settings (managed via settingsStore, not presentationStore)
-  coordinateFormat: z
-    .enum(['decimal_degrees', 'degrees_minutes', 'degrees_minutes_seconds', 'utm'])
-    .optional(),
-  timezone: z.string().optional(),
-});
-
-type UnitsFormData = z.infer<typeof unitsFormSchema>;
-
-// === MAIN COMPONENT ===
-
 export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, onClose }) => {
   const theme = useTheme();
   const platformTokens = getPlatformTokens();
   const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
 
-  // Progressive disclosure: collapse advanced categories by default for cleaner mobile UX
+  // Progressive disclosure: collapse advanced categories by default
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const presentationStore = usePresentationStore();
-  const { setPresentationForCategory, setMarineRegion, selectedPresentations, marineRegion } = presentationStore;
+  // Create form hook with RHF integration
+  const { form, handlers, computed } = useUnitsConfigForm((data) => {
+    // onSave callback - applied to stores immediately
+  });
 
-  const { gps, setGpsSetting } = useSettingsStore();
+  // Watch form values for rendering
+  const preset = form.watch('preset');
+  const selectedPreset = computed.selectedPreset;
 
-  // === INITIAL STATE ===
+  // Get all form values
+  const formValues = form.getValues();
 
-  const initialFormData = useMemo((): UnitsFormData => {
-    // Use marineRegion from store (already persisted)
-    // Only fallback to detection if user has customized individual units
-    let detectedPreset: string = marineRegion;
-    
-    // Check if current selections match the stored region preset
-    const regionPreset = PRESETS.find((p) => p.id === marineRegion);
-    if (regionPreset) {
-      const matches = Object.entries(regionPreset.presentations).every(
-        ([cat, presId]) => selectedPresentations[cat as DataCategory] === presId,
-      );
-      // If selections don't match region preset, user has customized
-      if (!matches) {
-        detectedPreset = 'custom';
-      }
-    }
-
-    return {
-      preset: detectedPreset as any,
-      depth: selectedPresentations.depth,
-      speed: selectedPresentations.speed,
-      wind: selectedPresentations.wind,
-      temperature: selectedPresentations.temperature,
-      atmospheric_pressure: selectedPresentations.atmospheric_pressure,
-      mechanical_pressure: selectedPresentations.mechanical_pressure,
-      angle: selectedPresentations.angle,
-      coordinates: selectedPresentations.coordinates,
-      voltage: selectedPresentations.voltage,
-      current: selectedPresentations.current,
-      volume: selectedPresentations.volume,
-      time: selectedPresentations.time,
-      date: selectedPresentations.date,
-      duration: selectedPresentations.duration,
-      distance: selectedPresentations.distance,
-      capacity: selectedPresentations.capacity,
-      flowRate: selectedPresentations.flowRate,
-      frequency: selectedPresentations.frequency,
-      power: selectedPresentations.power,
-      rpm: selectedPresentations.rpm,
-      angularVelocity: selectedPresentations.angularVelocity,
-      percentage: selectedPresentations.percentage,
-      // GPS settings from settingsStore
-      coordinateFormat: gps.coordinateFormat,
-      timezone: gps.timezone,
-    };
-  }, [selectedPresentations, marineRegion, gps.coordinateFormat, gps.timezone]);
-
-  // === FORM STATE ===
-
-  const { formData, updateField, updateFields, reset, isDirty, saveNow } =
-    useFormState<UnitsFormData>(initialFormData, {
-      onSave: (data) => {
-        // Save the marine region if a preset is selected (not custom)
-        if (data.preset && data.preset !== 'custom') {
-          setMarineRegion(data.preset as MarineRegion);
-        }
-
-        // Apply all category selections to presentation store
-        CATEGORIES.forEach(({ key }) => {
-          if (data[key]) {
-            setPresentationForCategory(key, data[key]!);
-          }
-        });
-
-        // Save GPS settings to settingsStore
-        if (data.coordinateFormat) {
-          setGpsSetting('coordinateFormat', data.coordinateFormat);
-        }
-        if (data.timezone !== undefined) {
-          setGpsSetting('timezone', data.timezone);
-        }
-      },
-      debounceMs: 300,
-      validationSchema: unitsFormSchema,
-    });
-
-  // Reset form when dialog opens
-  useEffect(() => {
-    if (visible) {
-      reset();
-    }
-  }, [visible, reset]);
-
-  // === PRESET HANDLING ===
-
-  /**
-   * Handle preset selection
-   * Applies preset unit configuration to all 23 categories, or switches to Custom mode.
-   */
-  const handlePresetSelect = useCallback(
-    (presetId: string) => {
-      if (presetId === 'custom') {
-        updateField('preset', presetId);
-        return;
-      }
-
-      const preset = PRESETS.find((p) => p.id === presetId);
-      if (!preset) return;
-
-      // Apply preset to form (triggers debounced save)
-      const updates: Partial<UnitsFormData> = { preset: presetId as any };
-      Object.entries(preset.presentations).forEach(([cat, presId]) => {
-        updates[cat as keyof UnitsFormData] = presId as any;
-      });
-      updateFields(updates);
-    },
-    [updateField, updateFields],
-  );
-
-  // === UNIT SELECTION ===
-
-  /**
-   * Handle individual unit selection
-   * Automatically switches to Custom preset when user modifies any category.
-   */
-  const handleUnitSelect = useCallback(
-    (category: DataCategory, presentationId: string) => {
-      updateFields({
-        preset: 'custom',
-        [category]: presentationId,
-      });
-    },
-    [updateFields],
-  );
-
-  // === CLOSE HANDLER ===
-
-  /**
-   * Handle dialog close
-   * Saves immediately if form is dirty (bypasses debounce).
-   */
-  const handleClose = useCallback(async () => {
-    if (isDirty) {
-      await saveNow(); // Await save completion before closing
-    }
+  // Dialog close handler
+  const handleClose = useCallback(() => {
+    handlers.handleSave();
     onClose();
-  }, [isDirty, saveNow, onClose]);
-
-  // === PRESET PREVIEW ===
-
-  const currentPreset = PRESETS.find((p) => p.id === formData.preset);
-
-  // === RENDER ===
+  }, [handlers, onClose]);
 
   return (
     <BaseConfigDialog
@@ -369,53 +73,51 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
       onClose={handleClose}
       testID="units-config-dialog"
     >
-      {/* Compact Card: Preset Selection */}
+      {/* Preset Selection Card */}
       <View style={styles.card}>
         <View style={styles.settingRow}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.sectionTitle}>Preset</Text>
-          </View>
+          <Text style={styles.sectionTitle}>Preset</Text>
         </View>
 
         <View style={styles.presetRow}>
-          {PRESETS.map((preset) => (
+          {computed.presets.map((presetObj) => (
             <TouchableOpacity
-              key={preset.id}
+              key={presetObj.id}
               style={[
                 styles.presetChip,
                 { backgroundColor: theme.surface, borderColor: theme.border },
-                formData.preset === preset.id && {
+                preset === presetObj.id && {
                   borderColor: theme.interactive,
                   backgroundColor: `${theme.interactive}15`,
                 },
               ]}
-              onPress={() => handlePresetSelect(preset.id)}
+              onPress={() => handlers.handlePresetChange(presetObj.id as any)}
               accessibilityRole="radio"
-              accessibilityState={{ checked: formData.preset === preset.id }}
-              accessibilityLabel={`${preset.name}: ${preset.description}`}
+              accessibilityState={{ checked: preset === presetObj.id }}
+              accessibilityLabel={`${presetObj.name}: ${presetObj.description}`}
             >
               <Text
                 style={[
                   styles.presetText,
                   { color: theme.textSecondary },
-                  formData.preset === preset.id && {
+                  preset === presetObj.id && {
                     color: theme.text,
                     fontWeight: '600',
                   },
                 ]}
               >
-                {preset.name}
+                {presetObj.name}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Inline Preview - only for non-custom presets */}
-        {currentPreset?.examples.length > 0 && formData.preset !== 'custom' && (
+        {selectedPreset && selectedPreset.examples && selectedPreset.examples.length > 0 && preset !== 'custom' && (
           <View style={styles.previewInline}>
             <Text style={[styles.previewLabel, { color: theme.textSecondary }]}>Preview:</Text>
             <View style={styles.previewRow}>
-              {currentPreset.examples.map((ex, idx) => (
+              {selectedPreset.examples.map((ex, idx) => (
                 <Text key={idx} style={[styles.previewText, { color: theme.text }]}>
                   {ex.category}: <Text style={{ fontWeight: '600' }}>{ex.value}</Text>
                 </Text>
@@ -426,58 +128,63 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
       </View>
 
       {/* Progressive Disclosure: Only show unit selections in Custom mode */}
-      {formData.preset === 'custom' && (
+      {preset === 'custom' && (
         <>
+          {/* Essential Units Card */}
           <View style={styles.card}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Essential Units</Text>
-          
-          {/* Essential categories - always visible */}
-          {CATEGORIES.filter((cat) => !cat.isAdvanced).map((category) => {
-            const presentations = PRESENTATIONS[category.key]?.presentations || [];
-            const selectedPresId = formData[category.key];
 
-            return (
-              <View key={category.key} style={styles.categorySection}>
-                <Text style={[styles.categoryTitle, { color: theme.text }]}>{category.name}</Text>
+            {computed.categories
+              .filter((cat) => !cat.isAdvanced)
+              .map((category) => {
+                const catKey = category.key as keyof UnitsFormData;
+                const presentations = (PRESENTATIONS as Record<string, any>)[category.key]?.presentations || [];
+                const selectedPresId = formValues[catKey];
 
-                <View style={styles.unitsGrid}>
-                  {presentations.map((pres) => (
-                    <TouchableOpacity
-                      key={pres.id}
-                      style={[
-                        styles.unitButton,
-                        { backgroundColor: theme.surface, borderColor: theme.border },
-                        selectedPresId === pres.id && {
-                          borderColor: theme.interactive,
-                          backgroundColor: `${theme.interactive}15`,
-                        },
-                      ]}
-                      onPress={() => handleUnitSelect(category.key, pres.id)}
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: selectedPresId === pres.id }}
-                      accessibilityLabel={getPresentationConfigLabel(pres)}
-                    >
-                      <Text
-                        style={[
-                          styles.unitText,
-                          { color: theme.textSecondary },
-                          selectedPresId === pres.id && {
-                            color: theme.text,
-                            fontWeight: '600',
-                          },
-                        ]}
-                      >
-                        {getPresentationConfigLabel(pres)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            );
-          })}
+                return (
+                  <View key={category.key} style={styles.categorySection}>
+                    <Text style={[styles.categoryTitle, { color: theme.text }]}>{category.name}</Text>
+
+                    <View style={styles.unitsGrid}>
+                      {(presentations as any[]).map((pres: any) => (
+                        <TouchableOpacity
+                          key={pres.id}
+                          style={[
+                            styles.unitButton,
+                            { backgroundColor: theme.surface, borderColor: theme.border },
+                            selectedPresId === pres.id && {
+                              borderColor: theme.interactive,
+                              backgroundColor: `${theme.interactive}15`,
+                            },
+                          ]}
+                          onPress={() =>
+                            handlers.handleCategoryChange(category.key as DataCategory, pres.id)
+                          }
+                          accessibilityRole="radio"
+                          accessibilityState={{ checked: selectedPresId === pres.id }}
+                          accessibilityLabel={getPresentationConfigLabel(pres)}
+                        >
+                          <Text
+                            style={[
+                              styles.unitText,
+                              { color: theme.textSecondary },
+                              selectedPresId === pres.id && {
+                                color: theme.text,
+                                fontWeight: '600',
+                              },
+                            ]}
+                          >
+                            {getPresentationConfigLabel(pres)}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                );
+              })}
           </View>
 
-          {/* Advanced Units Card - separate card for advanced options */}
+          {/* Advanced Units Card */}
           <View style={styles.card}>
             <TouchableOpacity
               style={styles.advancedToggle}
@@ -496,49 +203,56 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
             </TouchableOpacity>
 
             {showAdvanced &&
-              CATEGORIES.filter((cat) => cat.isAdvanced).map((category) => {
-              const presentations = PRESENTATIONS[category.key]?.presentations || [];
-              const selectedPresId = formData[category.key];
+              computed.categories
+                .filter((cat) => cat.isAdvanced)
+                .map((category) => {
+                  const catKey = category.key as keyof UnitsFormData;
+                  const presentations = (PRESENTATIONS as Record<string, any>)[category.key]?.presentations || [];
+                  const selectedPresId = formValues[catKey];
 
-              return (
-                <View key={category.key} style={styles.categorySection}>
-                  <Text style={[styles.categoryTitle, { color: theme.text }]}>{category.name}</Text>
+                  return (
+                    <View key={category.key} style={styles.categorySection}>
+                      <Text style={[styles.categoryTitle, { color: theme.text }]}>
+                        {category.name}
+                      </Text>
 
-                  <View style={styles.unitsGrid}>
-                    {presentations.map((pres) => (
-                      <TouchableOpacity
-                        key={pres.id}
-                        style={[
-                          styles.unitButton,
-                          { backgroundColor: theme.surface, borderColor: theme.border },
-                          selectedPresId === pres.id && {
-                            borderColor: theme.interactive,
-                            backgroundColor: `${theme.interactive}15`,
-                          },
-                        ]}
-                        onPress={() => handleUnitSelect(category.key, pres.id)}
-                        accessibilityRole="radio"
-                        accessibilityState={{ checked: selectedPresId === pres.id }}
-                        accessibilityLabel={getPresentationConfigLabel(pres)}
-                      >
-                        <Text
-                          style={[
-                            styles.unitText,
-                            { color: theme.textSecondary },
-                            selectedPresId === pres.id && {
-                              color: theme.text,
-                              fontWeight: '600',
-                            },
-                          ]}
-                        >
-                          {getPresentationConfigLabel(pres)}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              );
-            })}
+                      <View style={styles.unitsGrid}>
+                        {(presentations as any[]).map((pres: any) => (
+                          <TouchableOpacity
+                            key={pres.id}
+                            style={[
+                              styles.unitButton,
+                              { backgroundColor: theme.surface, borderColor: theme.border },
+                              selectedPresId === pres.id && {
+                                borderColor: theme.interactive,
+                                backgroundColor: `${theme.interactive}15`,
+                              },
+                            ]}
+                            onPress={() =>
+                              handlers.handleCategoryChange(category.key as DataCategory, pres.id)
+                            }
+                            accessibilityRole="radio"
+                            accessibilityState={{ checked: selectedPresId === pres.id }}
+                            accessibilityLabel={getPresentationConfigLabel(pres)}
+                          >
+                            <Text
+                              style={[
+                                styles.unitText,
+                                { color: theme.textSecondary },
+                                selectedPresId === pres.id && {
+                                  color: theme.text,
+                                  fontWeight: '600',
+                                },
+                              ]}
+                            >
+                              {getPresentationConfigLabel(pres)}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  );
+                })}
           </View>
         </>
       )}
@@ -546,8 +260,10 @@ export const UnitsConfigDialog: React.FC<UnitsConfigDialogProps> = ({ visible, o
   );
 };
 
-// === STYLES ===
-
+/**
+ * Style factory function
+ * Creates platform-specific StyleSheet with theme colors
+ */
 const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
   StyleSheet.create({
     card: {
@@ -571,10 +287,6 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       alignItems: 'center',
       justifyContent: 'space-between',
       marginBottom: 12,
-    },
-    titleContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
     },
     sectionTitle: {
       fontSize: 18,
@@ -606,7 +318,6 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
     previewLabel: {
       fontSize: platformTokens.typography.caption.fontSize,
       fontFamily: platformTokens.typography.fontFamily,
-      color: theme.textSecondary,
       marginBottom: 8,
       fontWeight: '600',
     },
@@ -639,7 +350,6 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       fontWeight: '600',
       fontFamily: platformTokens.typography.fontFamily,
       marginBottom: 12,
-      color: theme.text,
     },
     unitsGrid: {
       flexDirection: 'row',
@@ -659,3 +369,5 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       fontFamily: platformTokens.typography.fontFamily,
     },
   });
+
+export default UnitsConfigDialog;
