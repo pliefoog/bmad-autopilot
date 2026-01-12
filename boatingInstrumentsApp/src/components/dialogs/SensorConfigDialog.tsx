@@ -248,7 +248,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   /* Initialize Form Data */
   const initialFormData: SensorFormData = useMemo(() => {
     const sensorInstance = getSensorInstance();
-    const sensorName = sensorInstance?.getName();
+    const sensorName = sensorInstance?.name;
     const displayName = selectedSensorType
       ? getSensorDisplayName(
           selectedSensorType,
