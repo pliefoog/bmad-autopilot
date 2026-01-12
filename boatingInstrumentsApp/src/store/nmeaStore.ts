@@ -238,6 +238,20 @@ export const useNmeaStore = create<NmeaStore>()(
               continue;
             }
 
+            // Check if this metric config has actual threshold values
+            const hasMetricThresholds = 
+              (metricConfig as any).critical !== undefined ||
+              (metricConfig as any).warning !== undefined;
+
+            if (!hasMetricThresholds) {
+              log.app('Skipping metric without threshold values', () => ({
+                sensorType,
+                instance,
+                metricKey,
+              }));
+              continue;
+            }
+
             // Extract threshold properties from metric config
             const metricThresholds = {
               critical: (metricConfig as any).critical,
