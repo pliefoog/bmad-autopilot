@@ -210,13 +210,13 @@ export function useFormState<T extends Record<string, any>>(
       setFormData((prev) => ({ ...prev, [field]: value }));
 
       // Clear error for this field when user makes changes
-      if (errors[field]) {
-        setErrors((prev) => {
-          const next = { ...prev };
-          delete next[field];
-          return next;
-        });
-      }
+      // Use functional update to avoid depending on errors state
+      setErrors((prev) => {
+        if (!prev[field]) return prev; // No error to clear, return same object
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
 
       // Debounced save
       if (onSave) {
@@ -228,7 +228,7 @@ export function useFormState<T extends Record<string, any>>(
         }, debounceMs);
       }
     },
-    [errors, onSave, debounceMs, saveNow],
+    [onSave, debounceMs, saveNow],
   );
 
   /**

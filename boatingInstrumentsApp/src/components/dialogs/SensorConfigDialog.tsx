@@ -15,7 +15,7 @@
  * - Direction-aware threshold validation
  */
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -164,7 +164,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     if (visible && initialSensorType && initialSensorType !== selectedSensorType) {
       setSelectedSensorType(initialSensorType);
     }
-  }, [visible, initialSensorType]);
+  }, [visible, initialSensorType, selectedSensorType]);
 
   useEffect(() => {
     if (instances.length > 0 && !instances.find((i) => i.instance === selectedInstance)) {
@@ -209,7 +209,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   const currentThresholds = useMemo(() => {
     if (!selectedSensorType) return { enabled: false };
     return getSensorThresholds(selectedSensorType, selectedInstance) || { enabled: false };
-  }, [selectedSensorType, selectedInstance, getSensorThresholds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSensorType, selectedInstance]);
 
   /* Initial Metric (for enrichment before formData exists) */
   const initialMetric = useMemo(() => {
@@ -685,37 +686,61 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   }, [alarmConfig, formData.criticalValue]);
 
   /* Auto-clamp slider values when ranges change */
+  const prevCriticalRangeRef = useRef<{ min: number; max: number }>(criticalSliderRange);
+  const prevWarningRangeRef = useRef<{ min: number; max: number }>(warningSliderRange);
+  
   useEffect(() => {
-    if (formData.criticalValue !== undefined) {
+    // Only clamp if the RANGE changed, not if the values changed
+    const criticalRangeChanged =
+      prevCriticalRangeRef.current.min !== criticalSliderRange.min ||
+      prevCriticalRangeRef.current.max !== criticalSliderRange.max;
+    const warningRangeChanged =
+      prevWarningRangeRef.current.min !== warningSliderRange.min ||
+      prevWarningRangeRef.current.max !== warningSliderRange.max;
+
+    if (criticalRangeChanged && formData.criticalValue !== undefined) {
       const clampedCritical = clampToRange(
         formData.criticalValue,
         criticalSliderRange.min,
         criticalSliderRange.max,
       );
+
       if (clampedCritical !== formData.criticalValue) {
         updateField('criticalValue', clampedCritical);
       }
+      prevCriticalRangeRef.current = criticalSliderRange;
     }
 
-    if (formData.warningValue !== undefined) {
+    if (warningRangeChanged && formData.warningValue !== undefined) {
       const clampedWarning = clampToRange(
         formData.warningValue,
         warningSliderRange.min,
         warningSliderRange.max,
       );
+
       if (clampedWarning !== formData.warningValue) {
         updateField('warningValue', clampedWarning);
       }
+      prevWarningRangeRef.current = warningSliderRange;
     }
-    // Only re-clamp when slider ranges change, not when values change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    criticalSliderRange.min,
-    criticalSliderRange.max,
-    warningSliderRange.min,
-    warningSliderRange.max,
-    updateField,
-  ]);
+  }, [criticalSliderRange, warningSliderRange, formData.criticalValue, formData.warningValue, updateField]);
+
+  /* Stable callbacks for slider value changes */
+  const handleWarningChange = useCallback(
+    (value: number) => {
+      const clamped = clampToRange(value, warningSliderRange.min, warningSliderRange.max);
+      updateField('warningValue', clamped);
+    },
+    [warningSliderRange.min, warningSliderRange.max, updateField],
+  );
+
+  const handleCriticalChange = useCallback(
+    (value: number) => {
+      const clamped = clampToRange(value, criticalSliderRange.min, criticalSliderRange.max);
+      updateField('criticalValue', clamped);
+    },
+    [criticalSliderRange.min, criticalSliderRange.max, updateField],
+  );
 
   /* Styles - Must be defined BEFORE renderConfigFields callback */
   const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
@@ -1066,22 +1091,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                           alarmDirection={alarmConfig.direction}
                           formatValue={formatMetricValue}
                           unitSymbol={unitSymbol}
-                          onWarningChange={(value) => {
-                            const clamped = clampToRange(
-                              value,
-                              warningSliderRange.min,
-                              warningSliderRange.max,
-                            );
-                            updateField('warningValue', clamped);
-                          }}
-                          onCriticalChange={(value) => {
-                            const clamped = clampToRange(
-                              value,
-                              criticalSliderRange.min,
-                              criticalSliderRange.max,
-                            );
-                            updateField('criticalValue', clamped);
-                          }}
+                          onWarningChange={handleWarningChange}
+                          onCriticalChange={handleCriticalChange}
                           theme={theme}
                         />
                       </View>
