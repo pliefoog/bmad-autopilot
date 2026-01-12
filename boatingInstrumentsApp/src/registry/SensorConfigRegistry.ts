@@ -1117,7 +1117,7 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         valueType: 'string',
         uiType: 'textInput',
         iostate: 'readOnlyIfValue',
-        default: 'unknown',
+        default: '',
         helpText: 'Physical location detected from NMEA data (seawater, engineRoom, cabin, etc.). Editable if not provided by hardware.',
       },
       {
