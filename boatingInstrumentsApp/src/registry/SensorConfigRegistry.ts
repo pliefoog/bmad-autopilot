@@ -1116,9 +1116,9 @@ export const SENSOR_CONFIG_REGISTRY: Record<SensorType, SensorConfigDefinition> 
         mnemonic: 'LOC',
         valueType: 'string',
         uiType: 'textInput',
-        iostate: 'readOnly',
+        iostate: 'readOnlyIfValue',
         default: 'unknown',
-        helpText: 'Physical location detected from NMEA data (seawater, engineRoom, cabin, etc.)',
+        helpText: 'Physical location detected from NMEA data (seawater, engineRoom, cabin, etc.). Editable if not provided by hardware.',
       },
       {
         key: 'units',
