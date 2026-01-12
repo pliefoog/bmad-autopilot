@@ -1,28 +1,31 @@
-refactor: remove deprecated functions and optimize SensorConfigDialog
+docs: add comprehensive architectural optimization review
 
-Dead code cleanup and performance optimizations from senior architect review:
+Senior architect-level code audit identifying optimization opportunities:
 
-SensorConfigRegistry.ts - Removed deprecated functions:
-- Removed getSmartDefaults() (deprecated wrapper, only used in example comment)
-- Removed shouldShowField() (always returned true, no actual logic)
-- Updated example comment to use getAlarmDefaults() directly
-- Lines saved: ~30 lines of dead code
+Document created: ARCHITECTURAL-OPTIMIZATION-REVIEW-2026.md
 
-SensorConfigDialog.tsx - Optimizations and cleanup:
-- Removed shouldShowField import and usage (function removed from registry)
-- Fixed double-call of renderConfigFields() by memoizing result
-- Changed conditional from {renderConfigFields() && ...} to {configFieldsJSX && configFieldsJSX.length > 0 && ...}
-- Prevents calling expensive render function twice (was called for check + render)
-- More robust empty state check (array length > 0 instead of truthy)
+Key Findings:
+1. Barrel export pattern (types/index.ts) could be optimized
+2. No code-splitting for dialogs (~3500 lines loaded eagerly)
+3. Dialog form state has some duplication potential
+4. Store selectors need audit (may have overly broad subscriptions)
+5. Object pooling considered but likely premature optimization
 
-Performance impact:
-- Eliminated redundant field rendering (2x → 1x per form data change)
-- Removed unnecessary conditional check function (shouldShowField)
-- Cleaner dependency arrays in useCallback/useMemo
+Priority Recommendations:
+- Phase 1 (Quick Wins): Add lazy loading to dialogs for 100KB bundle reduction
+- Phase 2 (Technical Debt): Extract useDialogForm hook to reduce duplication
+- Phase 3 (Future): Monitor MetricValue allocation if GC becomes issue
 
-Code quality improvements:
-- Removed backward compatibility layer that provided no value
-- More explicit empty state handling with length check
-- Consistent with React best practices (memoize expensive computations)
+Already Well-Architected:
+- BaseConfigDialog pattern eliminates 260+ lines per dialog
+- Registry-first widget architecture
+- Explicit props over context (Jan 2025 refactor)
+- Zustand with DevTools for observable state
+- PlatformTokens for centralized theming
+- Conditional logging with zero overhead
 
-Files: SensorConfigRegistry.ts, SensorConfigDialog.tsx
+Assessment: Code is production-ready with mature architectural patterns.
+All optimizations are incremental improvements, not architectural issues.
+
+Files: ARCHITECTURAL-OPTIMIZATION-REVIEW-2026.md (new)
+Review Scope: 450+ TypeScript/TSX files analyzed
