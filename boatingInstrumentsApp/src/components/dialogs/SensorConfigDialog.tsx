@@ -463,20 +463,40 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   /* Handle Instance Switch */
   const handleInstanceSwitch = useCallback(
     async (newInstance: number) => {
-      await saveNow();
+      // Only save if form has changes AND enrichment is available
+      if (isDirty && enrichedThresholds) {
+        try {
+          await saveNow();
+        } catch (error) {
+          // Save failed, but still allow switching (form will reset to saved values)
+          log.app('SensorConfigDialog: Instance switch save failed, resetting form', () => ({
+            error: error instanceof Error ? error.message : String(error),
+          }));
+        }
+      }
       setSelectedInstance(newInstance);
     },
-    [saveNow],
+    [isDirty, enrichedThresholds, saveNow],
   );
 
   /* Handle Sensor Type Switch */
   const handleSensorTypeSwitch = useCallback(
     async (newType: SensorType) => {
-      await saveNow();
+      // Only save if form has changes AND enrichment is available
+      if (isDirty && enrichedThresholds) {
+        try {
+          await saveNow();
+        } catch (error) {
+          // Save failed, but still allow switching (form will reset to saved values)
+          log.app('SensorConfigDialog: Sensor type switch save failed, resetting form', () => ({
+            error: error instanceof Error ? error.message : String(error),
+          }));
+        }
+      }
       setSelectedSensorType(newType);
       setSelectedInstance(0);
     },
-    [saveNow],
+    [isDirty, enrichedThresholds, saveNow],
   );
 
   /* Handle Metric Change */
@@ -551,9 +571,20 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
   /* Handle Close */
   const handleClose = useCallback(async () => {
-    await saveNow();
+    // Only save if form has changes AND enrichment is available
+    if (isDirty && enrichedThresholds) {
+      try {
+        await saveNow();
+      } catch (error) {
+        // Save failed - user already saw the alert in onSave callback
+        log.app('SensorConfigDialog: Close save failed, discarding changes', () => ({
+          error: error instanceof Error ? error.message : String(error),
+        }));
+        // Dialog will close anyway, changes are discarded
+      }
+    }
     onClose();
-  }, [saveNow, onClose]);
+  }, [isDirty, enrichedThresholds, saveNow, onClose]);
 
   /* Test Sound */
   const handleTestSound = useCallback(async (soundPattern: string) => {
