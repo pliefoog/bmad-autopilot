@@ -3100,21 +3100,79 @@ export class NmeaSensorProcessor {
   ): ProcessingResult {
     try {
       const tempData = pgnParser.parseTemperaturePgn(hexData);
-      if (!tempData) {
+      if (!tempData || tempData.temperature === undefined) {
         return { success: false, errors: ['Failed to parse temperature PGN'] };
       }
 
-      const update: SensorUpdate = {
-        sensorType: 'water_temperature',
-        instance: tempData.instance,
+      // Map NMEA 2000 temperature source codes to location strings
+      // Source byte (byte 1 in PGN 130310):
+      // 0 = Sea/Water, 1 = Outside Air, 2 = Inside/Cabin, 3 = Engine Room
+      // 4 = Main Cabin, 5 = Live Well, 6 = Bait Well, 7 = Refrigeration
+      // 8 = Heating System, 9 = Dew Point, 10 = Wind Chill, 11 = Freezer, 12+ = Reserved
+      let location: TemperatureSensorData['location'] = 'seawater'; // Default
+      let name = 'Temperature Sensor';
+
+      switch (tempData.source) {
+        case 0:
+          location = 'seawater';
+          name = 'Sea Water Temp';
+          break;
+        case 1:
+          location = 'outside';
+          name = 'Outside Air Temp';
+          break;
+        case 2:
+          location = 'cabin';
+          name = 'Cabin Temp';
+          break;
+        case 3:
+          location = 'engineRoom';
+          name = 'Engine Room Temp';
+          break;
+        case 4:
+          location = 'cabin'; // Main cabin
+          name = 'Main Cabin Temp';
+          break;
+        case 5:
+          location = 'liveWell';
+          name = 'Live Well Temp';
+          break;
+        case 6:
+          location = 'baitWell';
+          name = 'Bait Well Temp';
+          break;
+        case 7:
+          location = 'refrigeration';
+          name = 'Refrigeration Temp';
+          break;
+        case 11:
+          location = 'freezer';
+          name = 'Freezer Temp';
+          break;
+        default:
+          // Unknown source - use engineRoom as fallback
+          location = 'engineRoom';
+          name = `Temperature Sensor ${tempData.source}`;
+          break;
+      }
+
+      const temperatureData: Partial<TemperatureSensorData> = {
+        name,
         value: tempData.temperature,
-        unit: 'celsius',
+        location,
+        units: 'C',
         timestamp,
       };
 
       return {
         success: true,
-        updates: [update],
+        updates: [
+          {
+            sensorType: 'temperature',
+            instance: tempData.instance,
+            data: temperatureData,
+          },
+        ],
         messageType: 'BINARY',
       };
     } catch (error) {
