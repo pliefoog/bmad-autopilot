@@ -38,6 +38,7 @@ import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { PlatformToggle } from './inputs/PlatformToggle';
 import { PlatformPicker, PlatformPickerItem } from './inputs/PlatformPicker';
+import { getPlatformTokens } from '../../theme/settingsTokens';
 import { getAlarmDirection, getAlarmTriggerHint } from '../../utils/sensorAlarmUtils';
 import { getSensorDisplayName } from '../../utils/sensorDisplayName';
 import { sensorRegistry } from '../../services/SensorDataRegistry';
@@ -118,6 +119,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   sensorType: initialSensorType,
 }) => {
   const theme = useTheme();
+  const platformTokens = getPlatformTokens();
   const { width } = useWindowDimensions();
   const isNarrow = width < 768;
 
@@ -906,6 +908,9 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       });
   }, [selectedSensorType, formData, selectedInstance, theme, updateField, getSensorInstance]);
 
+  /* Styles */
+  const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
+
   /* Empty State */
   if (availableSensorTypes.length === 0) {
     return (
@@ -938,16 +943,21 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       <ScrollView style={styles.container}>
         {/* Sensor Type Picker */}
         {!initialSensorType && availableSensorTypes.length > 1 ? (
-          <View style={[styles.field, styles.sensorPickerField]}>
-            <Text style={[styles.label, { color: theme.text }]}>Sensor Type</Text>
-            <PlatformPicker
-              value={selectedSensorType}
-              onValueChange={(value) => handleSensorTypeSwitch(value as SensorType)}
-              items={availableSensorTypes.map((type) => ({
-                label: getSensorConfig(type).displayName,
-                value: type,
-              }))}
-            />
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Sensor Selection</Text>
+            <View style={styles.settingRow}>
+              <Text style={[styles.label, { color: theme.text }]}>Sensor Type</Text>
+              <View style={styles.inputWrapper}>
+                <PlatformPicker
+                  value={selectedSensorType}
+                  onValueChange={(value) => handleSensorTypeSwitch(value as SensorType)}
+                  items={availableSensorTypes.map((type) => ({
+                    label: getSensorConfig(type).displayName,
+                    value: type,
+                  }))}
+                />
+              </View>
+            </View>
           </View>
         ) : null}
 
@@ -960,36 +970,45 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         />
 
         {/* Config Fields */}
-        {renderConfigFields()}
+        {renderConfigFields() && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Sensor Configuration</Text>
+            {renderConfigFields()}
+          </View>
+        )}
 
         {/* Alarm Configuration */}
         {supportsAlarms && (
-          <View style={styles.alarmSection}>
-            <View style={styles.alarmHeader}>
-              <Text style={[styles.alarmTitle, { color: theme.text }]}>Alarm Configuration</Text>
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Alarms</Text>
+            <View style={styles.settingRow}>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Enable alarms</Text>
               <PlatformToggle
-                label=""
+                label="Enable alarms"
                 value={formData.enabled}
                 onValueChange={handleEnabledChange}
-                scale={0.75}
               />
             </View>
 
             {formData.enabled && (
-              <View>
+              <View style={styles.settingGroup}>
                 {/* Metric Selector */}
                 {requiresMetricSelection && sensorConfig?.alarmMetrics ? (
-                  <MetricSelector
-                    alarmMetrics={sensorConfig.alarmMetrics}
-                    selectedMetric={formData.selectedMetric}
-                    onMetricChange={handleMetricChange}
-                    theme={theme}
-                  />
+                  <>
+                    <Text style={styles.groupLabel}>Alarm metric</Text>
+                    <MetricSelector
+                      alarmMetrics={sensorConfig.alarmMetrics}
+                      selectedMetric={formData.selectedMetric}
+                      onMetricChange={handleMetricChange}
+                      theme={theme}
+                    />
+                  </>
                 ) : null}
 
                 {/* Threshold Slider */}
                 {alarmConfig && (
                   <View style={styles.sliderSection}>
+                    <Text style={styles.groupLabel}>Threshold values</Text>
                     <View style={styles.sliderRow}>
                       <View style={styles.sliderMinMax}>
                         <Text style={[styles.minMaxText, { color: theme.textSecondary }]}>
@@ -1062,88 +1081,134 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  field: {
-    marginBottom: 16,
-  },
-  sensorPickerField: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    fontSize: 16,
-  },
-  helpText: {
-    fontSize: 11,
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  alarmSection: {
-    marginTop: 24,
-    paddingTop: 24,
-  },
-  alarmHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  alarmTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  sliderSection: {
-    marginTop: 16,
-  },
-  sliderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingTop: 20,
-  },
-  sliderMinMax: {
-    height: 60,
-    paddingTop: 5,
-  },
-  minMaxText: {
-    fontSize: 10,
-    minWidth: 40,
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  sliderContainer: {
-    flex: 1,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyStateText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-});
+const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    card: {
+      backgroundColor: theme.surface,
+      borderRadius: platformTokens.borderRadius.card,
+      padding: 20,
+      marginBottom: 16,
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 2,
+        },
+        web: {
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        },
+      }),
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      fontFamily: platformTokens.typography.fontFamily,
+      color: theme.text,
+      marginBottom: 16,
+    },
+    settingRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    settingLabel: {
+      fontSize: 16,
+      fontWeight: '600',
+      fontFamily: platformTokens.typography.fontFamily,
+      color: theme.text,
+    },
+    settingGroup: {
+      marginTop: 16,
+    },
+    groupLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      fontFamily: platformTokens.typography.fontFamily,
+      color: theme.text,
+      marginBottom: 8,
+      marginTop: 8,
+    },
+    inputWrapper: {
+      flex: 1,
+      marginLeft: 16,
+    },
+    field: {
+      marginBottom: 16,
+    },
+    label: {
+      fontSize: 16,
+      fontWeight: '600',
+      fontFamily: platformTokens.typography.fontFamily,
+      marginBottom: 8,
+    },
+    input: {
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: platformTokens.borderRadius.input,
+      borderWidth: 1,
+      fontSize: 16,
+    },
+    helpText: {
+      fontSize: platformTokens.typography.hint.fontSize,
+      fontWeight: platformTokens.typography.hint.fontWeight,
+      lineHeight: platformTokens.typography.hint.lineHeight,
+      fontFamily: platformTokens.typography.fontFamily,
+      fontStyle: platformTokens.typography.hint.fontStyle,
+      color: theme.textSecondary,
+      marginTop: 12,
+    },
+    toggleRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    sliderSection: {
+      marginTop: 16,
+    },
+    sliderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingTop: 20,
+    },
+    sliderMinMax: {
+      height: 60,
+      paddingTop: 5,
+    },
+    minMaxText: {
+      fontSize: 10,
+      minWidth: 40,
+      textAlign: 'center',
+      fontWeight: 'bold',
+      fontFamily: platformTokens.typography.fontFamily,
+    },
+    sliderContainer: {
+      flex: 1,
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 32,
+    },
+    emptyStateText: {
+      fontSize: 18,
+      fontWeight: '600',
+      fontFamily: platformTokens.typography.fontFamily,
+      marginTop: 16,
+    },
+    emptyStateSubtext: {
+      fontSize: 14,
+      fontFamily: platformTokens.typography.fontFamily,
+      marginTop: 8,
+      textAlign: 'center',
+    },
+  });

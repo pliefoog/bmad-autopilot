@@ -1,33 +1,34 @@
-fix: restore TrendLine display by converting historical SI values to display units
+refactor: modernize SensorConfigDialog with card-based layout and platformTokens
 
-Critical architectural fix after major refactor - TrendLine components were
-not displaying because historical data was stored in SI units (Pascals) but
-displayed without conversion, causing values to be off-scale.
+Comprehensive cleanup following Jan 2025 Settings Dialog UI Language requirements:
 
-Root Cause:
-- History buffers store SI values for memory efficiency (line 501)
-- getHistoryForMetric() was returning raw SI values
-- TrendLine auto-scales to data range, but 100,000 Pa is off-scale for hPa display
-- Min/max stats worked because they use MetricValue.enrich() with conversion
+Architecture improvements:
+- Card-based layout with proper visual separation (sensor selection, config, alarms)
+- Platform-specific shadows (iOS shadowOpacity, Android elevation, web boxShadow)
+- Consistent 20px padding and 16px marginBottom across all cards
 
-Architecture Fix:
-- SensorInstance.getHistoryForMetric() now converts SI → display units
-- Uses ConversionRegistry.convertToDisplay() matching MetricValue pattern
-- Widgets receive pre-converted data (zero transformation in UI layer)
-- Aligns with "widgets are dumb consumers" principle
+Theme integration:
+- Added getPlatformTokens() for typography, borderRadius, shadows
+- Replaced hardcoded values with platformTokens references throughout
+- Consistent fontFamily usage across all text elements
 
-Additional Fixes:
-- Added WeatherSensorData interface (pressure, airTemperature, humidity, dewPoint)
-- Fixed TankSensorData documentation (0-100% not 0.0-1.0 ratio)
-- Added battery temperature Kelvin detection for temps >100°C with 'C' units
-- Fixed simulator battery temps (297K → 25°C in coastal-sailing.yml)
-- Added TrendLine unit fallback using ConversionRegistry.getUnit()
+Typography hierarchy:
+- sectionTitle: 18px, 700 weight for card headers ("Sensor Selection", "Alarms")
+- settingLabel: 16px, 600 weight for setting names
+- groupLabel: 14px, 600 weight for subsection labels ("Alarm metric", "Threshold values")
+- helpText: Uses platformTokens.typography.hint (11px, italic, secondary color)
 
-Files:
-- SensorInstance.ts: getHistoryForMetric() SI→display conversion
-- SensorData.ts: Added WeatherSensorData, fixed TankSensorData docs
-- NmeaSensorProcessor.ts: Battery temp Kelvin detection + pressure validation
-- TrendLine.tsx: Unit display fallback, debug logging
-- coastal-sailing.yml: Battery temps Kelvin→Celsius
+UI patterns:
+- settingRow: Horizontal layout for "Enable alarms" toggle
+- settingGroup: Container for nested controls when alarm enabled
+- inputWrapper: Proper spacing for picker controls
+- Minimalistic information hierarchy (no redundant labels)
 
-Result: All TrendLines now display correctly with proper unit scaling
+Benefits:
+- Consistent with other dialogs (UnitsConfigDialog, ConnectionConfigDialog)
+- Better visual separation with card shadows
+- Improved readability with proper typography scale
+- Platform-appropriate styling (iOS/Android/web differences)
+- Cleaner codebase with centralized styling
+
+Files: SensorConfigDialog.tsx (1215 lines)
