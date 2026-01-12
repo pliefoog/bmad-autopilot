@@ -684,6 +684,84 @@ npm run web
 # No rebuild required for code changes
 ```
 
+**⚠️ CRITICAL: Expo Web + ESM Packages with import.meta (Jan 2025 Fix):**
+
+If you encounter `Uncaught SyntaxError: Cannot use 'import.meta' outside a module` when using ESM packages (like react-hook-form, zustand, or any package with import.meta):
+
+**Root Cause:** Expo Web doesn't support native browser ESM. When Hermes is enabled or Metro bundles ESM packages, import.meta statements aren't transformed, causing runtime errors.
+
+**Solution - Add to babel.config.js:**
+```javascript
+module.exports = function (api) {
+  api.cache(true);
+  
+  const config = {
+    presets: [
+      [
+        'babel-preset-expo',
+        {
+          jsxRuntime: 'automatic',
+          unstable_transformImportMeta: true,  // ⭐ CRITICAL FIX
+          web: {
+            unstable_transformProfile: undefined,
+          },
+        },
+      ],
+    ],
+    // ... rest of config
+  };
+  
+  return config;
+};
+```
+
+**Additional Required Changes:**
+1. **Disable Hermes for Web** (app.json):
+   ```json
+   {
+     "expo": {
+       "newArchEnabled": false,
+       "web": {
+         "bundler": "metro",
+         "hermes": false
+       }
+     }
+   }
+   ```
+
+2. **Remove .mjs Blocklist** (metro.config.js):
+   ```javascript
+   // ❌ REMOVE THIS - blocks ESM resolution
+   config.resolver = {
+     blockList: [/.*\/node_modules\/.*\.mjs$/]
+   };
+   
+   // ✅ Metro can handle .mjs files with proper Babel config
+   ```
+
+3. **Clean Rebuild After Changes:**
+   ```bash
+   rm -rf .metro-cache .expo node_modules
+   npm install
+   npx expo start --web --clear
+   ```
+
+**Why This Works:**
+- `unstable_transformImportMeta` transforms import.meta.url → require('url').pathToFileURL(__filename)
+- Babel processes ESM packages through transformation pipeline
+- Result: Bundled code works in non-ESM browser environments
+
+**References:**
+- GitHub Issue: https://github.com/expo/expo/issues/30323
+- Expo SDK 53+ has this feature built-in
+- Alternative: Use `babel-plugin-transform-import-meta` for older Expo versions
+
+**Symptoms Fixed:**
+- ✅ "Cannot use 'import.meta' outside a module" browser console errors
+- ✅ "Unable to resolve react-hook-form" bundling errors  
+- ✅ Blank web page with "Welcome to Expo" message
+- ✅ Bundle URL showing `transform.engine=hermes` parameters
+
 **iOS (Requires macOS):**
 ```bash
 # 1. Install dependencies

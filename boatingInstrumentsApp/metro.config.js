@@ -39,6 +39,7 @@ config.resolver.alias = {
 };
 
 // Configure for web compatibility
+config.resolver.sourceExts = [...(config.resolver.sourceExts || []), 'mjs'];
 config.resolver.platforms = ['native', 'web', 'ios', 'android'];
 
 // Configure transformer to handle ESM and import.meta for web builds

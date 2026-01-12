@@ -7,6 +7,7 @@ module.exports = function (api) {
         'babel-preset-expo',
         {
           jsxRuntime: 'automatic',
+          unstable_transformImportMeta: true,
           web: {
             // Disable hermes transform which might be causing issues
             unstable_transformProfile: undefined,

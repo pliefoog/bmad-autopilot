@@ -14,9 +14,7 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    <script>
-      // Force non-Hermes bundle load
-      window.location.href = '/index.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=.%2Fapp&unstable_transformProfile=default';
-    </script>
+    <!-- Load bundle without Hermes transform -->
+    <script src="/index.bundle?platform=web&dev=true&hot=false&lazy=true&transform.routerRoot=.%2Fapp&unstable_transformProfile=default" defer></script>
   </body>
 </html>

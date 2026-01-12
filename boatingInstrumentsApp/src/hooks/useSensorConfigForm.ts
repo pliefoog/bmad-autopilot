@@ -212,21 +212,21 @@ export const useSensorConfigForm = (
 
     // Get sound patterns from store
     if (requiresMetricSelection && firstMetric) {
-      const metricConfig = currentThresholds.metrics?.[firstMetric];
+      const metricConfig = currentThresholds?.metrics?.[firstMetric];
       if (metricConfig) {
         criticalSoundPattern = metricConfig.criticalSoundPattern || 'rapid_pulse';
         warningSoundPattern = metricConfig.warningSoundPattern || 'warble';
       }
-    } else {
+    } else if (currentThresholds) {
       criticalSoundPattern = currentThresholds.criticalSoundPattern || 'rapid_pulse';
       warningSoundPattern = currentThresholds.warningSoundPattern || 'warble';
     }
 
     return {
       name: displayName,
-      enabled: currentThresholds.enabled || false,
-      batteryChemistry: (currentThresholds.context?.batteryChemistry as any) || 'lead-acid',
-      engineType: (currentThresholds.context?.engineType as any) || 'diesel',
+      enabled: currentThresholds?.enabled || false,
+      batteryChemistry: (currentThresholds?.context?.batteryChemistry as any) || 'lead-acid',
+      engineType: (currentThresholds?.context?.engineType as any) || 'diesel',
       selectedMetric: firstMetric || '',
       criticalValue,
       warningValue,
