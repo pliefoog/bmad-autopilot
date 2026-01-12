@@ -676,6 +676,9 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     updateField,
   ]);
 
+  /* Styles - Must be defined BEFORE renderConfigFields callback */
+  const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
+
   /* Render Config Fields */
   const renderConfigFields = useCallback(() => {
     if (!selectedSensorType) return null;
@@ -887,9 +890,6 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
   /* Memoize rendered config fields */
   const configFieldsJSX = useMemo(() => renderConfigFields(), [renderConfigFields]);
-
-  /* Styles */
-  const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
 
   /* Empty State */
   if (availableSensorTypes.length === 0) {
