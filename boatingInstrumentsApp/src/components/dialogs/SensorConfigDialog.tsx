@@ -789,11 +789,6 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                   placeholderTextColor={theme.textSecondary}
                   editable={!isReadOnly}
                 />
-                {field.helpText ? (
-                  <Text style={[styles.helpText, { color: theme.textSecondary }]}>
-                    {field.helpText}
-                  </Text>
-                ) : null}
               </View>
             );
 
@@ -853,11 +848,6 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                   keyboardType="numeric"
                   editable={!isReadOnly}
                 />
-                {field.helpText ? (
-                  <Text style={[styles.helpText, { color: theme.textSecondary }]}>
-                    {field.helpText}
-                  </Text>
-                ) : null}
               </View>
             );
 
