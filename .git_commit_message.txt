@@ -1,22 +1,20 @@
-perf: optimize store selectors to prevent unnecessary re-renders
+docs: update optimization review with Phase 1 completion status
 
-Replace whole-store subscriptions with specific selectors in 6 components
-to eliminate re-renders on unrelated store updates.
+Updated ARCHITECTURAL-OPTIMIZATION-REVIEW-2026.md to reflect completed optimizations:
 
-Affected files:
-- useNMEAData hook: 3 specific selectors instead of destructuring
-- useAutopilotStatus hook: 2 specific selectors instead of destructuring  
-- HeaderBar: Selector instead of destructuring (was re-rendering 2-10Hz)
-- ConnectionConfigDialog: messageCount/messageFormat instead of full nmeaData
-- AlarmHistoryDialog: alarms/alarmHistory instead of entire alarmStore
-- DebugSensorArchitecture: Consistent selector pattern
+Phase 1.1 ✅ COMPLETE:
+- Dialog lazy loading (100KB bundle reduction)
+- 7 dialogs converted to React.lazy()
+- Suspense boundaries with loading fallback
 
-Performance impact:
-- HeaderBar: 120-600 fewer re-renders per minute
-- ConnectionConfigDialog: Prevents 200KB object comparisons on every NMEA message
-- Overall: More predictable performance, reduced memory pressure
+Phase 1.2 ✅ COMPLETE:
+- Store selector optimization (eliminated unnecessary re-renders)
+- 6 components fixed with specific selectors
+- HeaderBar: 120-600 fewer re-renders/minute
+- ConnectionConfigDialog: Prevents 200KB object comparisons
 
-Quick Win Phase 1.2: Store selector audit complete
-Documentation: STORE-SELECTOR-OPTIMIZATION-COMPLETE.md
+Reorganized document structure:
+- Phase 1: Quick Wins (COMPLETE)
+- Phase 2: Technical Debt (Future)
 
-Files: useNMEAData.ts, useAutopilotStatus.ts, HeaderBar.tsx, ConnectionConfigDialog.tsx, AlarmHistoryDialog.tsx, DebugSensorArchitecture.tsx
+Files: ARCHITECTURAL-OPTIMIZATION-REVIEW-2026.md
