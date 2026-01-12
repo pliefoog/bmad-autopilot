@@ -725,12 +725,29 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       .filter((field) => field.iostate !== 'readOnly')
       .map((field) => {
         const sensorInstance = getSensorInstance();
-        const hardwareValue = field.hardwareField
-          ? sensorInstance?.getMetric(field.hardwareField)?.si_value
-          : undefined;
+        
+        // For readOnlyIfValue, check if field has a value
+        // First check hardwareField if specified, otherwise check the field itself
+        let hasValue = false;
+        let hardwareValue: any = undefined;
+        
+        if (field.hardwareField) {
+          // Hardware value from a different field
+          hardwareValue = sensorInstance?.getMetric(field.hardwareField)?.si_value;
+          hasValue = hardwareValue !== undefined && hardwareValue !== null && hardwareValue !== '';
+        } else {
+          // Check the field's own value in the sensor instance
+          const fieldMetric = sensorInstance?.getMetric(field.key);
+          const fieldValue = fieldMetric?.si_value ?? fieldMetric?.value;
+          hasValue = fieldValue !== undefined && fieldValue !== null && fieldValue !== '';
+          if (hasValue) {
+            hardwareValue = fieldValue;
+          }
+        }
+        
         const isReadOnly =
           field.iostate === 'readOnly' ||
-          (field.iostate === 'readOnlyIfValue' && hardwareValue !== undefined);
+          (field.iostate === 'readOnlyIfValue' && hasValue);
         const currentValue =
           hardwareValue !== undefined
             ? hardwareValue
