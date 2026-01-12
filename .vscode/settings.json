@@ -99,5 +99,6 @@
 
   // MEMORY OPTIMIZATION: Git performance
   "git.untrackedChanges": "hidden",
-  "git.autorefresh": false
+  "git.autorefresh": false,
+  "chat.useAgentSkills": true
 }

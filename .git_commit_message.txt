@@ -1,23 +1,37 @@
-fix: SensorInstance.name is property not method - fix dialog error
+fix(sensor-config): fix infinite render loop - comprehensive solution
 
-Fixed runtime error in SensorConfigDialog after useFormState migration.
+Root cause analysis identified multiple cascading issues:
 
-Error: "sensorInstance?.getName is not a function"
-Location: SensorConfigDialog.tsx:251
+1. **useFormState Hook - updateField instability**:
+   - updateField had 'errors' in dependency array
+   - errors state changes → updateField recreates → consumers re-render
+   - Fixed: Use functional setErrors update instead of checking errors state
+   - Result: updateField now stable (only recreates when onSave/debounceMs/saveNow change)
 
-Root Cause:
-- SensorInstance class has public `name` property, not `getName()` method
-- Dialog was calling `sensorInstance?.getName()` which doesn't exist
-- This worked before but broke during form state migration refactor
+2. **SensorConfigDialog - Unstable slider callbacks**:
+   - Inline arrow functions in AlarmThresholdSlider props
+   - Created new functions on every render
+   - Fixed: Extract to memoized useCallback (handleWarningChange, handleCriticalChange)
+   - Result: Slider callbacks stable, no unnecessary re-renders
 
-Fix:
-- Changed `sensorInstance?.getName()` to `sensorInstance?.name`
-- Direct property access (correct pattern for SensorInstance)
+3. **currentThresholds useMemo - Unnecessary dependency**:
+   - Had getSensorThresholds in deps array
+   - getSensorThresholds is stable Zustand function (doesn't change)
+   - Fixed: Remove from deps, add eslint-disable comment
+   - Result: currentThresholds only recalculates when sensor changes
 
-Verification:
-- Zero TypeScript errors
-- Compiles successfully
-- Web dev server running without errors
+**Why infinite loop occurred:**
+- User enables alarm → form updates
+- updateField recreates (errors changed)
+- handleWarningChange/handleCriticalChange recreate (depend on updateField)
+- AlarmThresholdSlider re-renders
+- Clamping useEffect runs → calls updateField
+- Form updates → validation runs → errors change
+- Loop repeats infinitely
 
-File: SensorConfigDialog.tsx
-Change: 1 line (method call → property access)
+**Solution approach:**
+- Break the chain at its weakest link: make updateField stable
+- Memoize all slider callbacks properly
+- Remove unnecessary dependencies from useMemo
+
+Files: useFormState.ts (updateField deps fix), SensorConfigDialog.tsx (stable callbacks)
