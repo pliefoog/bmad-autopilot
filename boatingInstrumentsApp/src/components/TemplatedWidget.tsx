@@ -21,6 +21,7 @@ import React, { ReactElement } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 import { useNmeaStore } from '../store/nmeaStore';
+import { useSensorConfigStore } from '../store/sensorConfigStore';
 import { sensorRegistry } from '../services/SensorDataRegistry';
 import type { SensorInstance } from '../types/SensorInstance';
 import type { SensorType } from '../types/SensorData';
@@ -118,12 +119,15 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
   // Get widget metadata for header
   const widgetMetadata = WIDGET_METADATA_REGISTRY[widgetId ?? sensorType];
 
-  // Get sensor name from metrics (user-defined or default "sensorType-instance")
-  const sensorName = React.useMemo(() => {
-    if (!sensorInstance) return undefined;
-    const nameMetric = sensorInstance.getMetric('name');
-    return nameMetric?.formattedValue;
-  }, [sensorInstance]);
+  // Subscribe to sensor configuration for custom name
+  // This ensures header updates when user changes name in SensorConfigDialog
+  const customName = useSensorConfigStore((state) => {
+    const config = state.getConfig(sensorType, instanceNumber);
+    return config?.name;
+  });
+
+  // Use custom name if provided, otherwise show nothing (just base title)
+  const sensorName = customName;
 
   // Build header title: "Battery 1 - House Bank" or "Battery 2 - Service"
   // For multi-instance widgets, always show instance number (1-based for user display)
