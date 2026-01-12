@@ -75,7 +75,7 @@ export const SoundPatternControl: React.FC<SoundPatternControlProps> = ({
         <UniversalIcon
           name="volume-high-outline"
           size={20}
-          color={pattern === 'none' ? theme.textSecondary : '#FFFFFF'}
+          color={pattern === 'none' ? theme.textSecondary : theme.textInverse}
         />
       </TouchableOpacity>
     </View>

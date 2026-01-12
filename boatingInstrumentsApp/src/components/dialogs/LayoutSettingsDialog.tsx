@@ -293,7 +293,7 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       color: theme.text,
     },
     optionButtonTextActive: {
-      color: '#FFFFFF',
+      color: theme.textInverse,
     },
     hintText: {
       fontSize: platformTokens.typography.hint.fontSize,
