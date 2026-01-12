@@ -41,7 +41,7 @@ import { PlatformToggle } from './inputs/PlatformToggle';
 import { PlatformPicker, PlatformPickerItem } from './inputs/PlatformPicker';
 import { getPlatformTokens } from '../../theme/settingsTokens';
 import { getAlarmDirection, getAlarmTriggerHint } from '../../utils/sensorAlarmUtils';
-import { getSensorDisplayName, formatSensorTypeInstance } from '../../utils/sensorDisplayName';
+import { getSensorDisplayName } from '../../utils/sensorDisplayName';
 import { sensorRegistry } from '../../services/SensorDataRegistry';
 import {
   SOUND_PATTERNS,
@@ -319,8 +319,12 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       onSave: async (data) => {
         if (!selectedSensorType) return;
 
+        // If name field is empty, set default format: sensorType-instance
+        const trimmedName = data.name?.trim();
+        const defaultName = trimmedName || `${selectedSensorType}-${selectedInstance}`;
+
         const updates: Partial<SensorConfiguration> = {
-          name: data.name?.trim() || undefined,
+          name: defaultName,
           enabled: data.enabled,
           direction: getAlarmDirection(
             selectedSensorType,
@@ -756,14 +760,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         // Calculate currentValue with special handling for 'name' field
         let currentValue: any;
         if (field.key === 'name') {
-          // For name field: if empty, use fallback format "SensorType Instance"
-          const formValue = formData[field.key as keyof SensorFormData];
-          if (formValue && String(formValue).trim()) {
-            currentValue = formValue;
-          } else {
-            // Use fallback format when name is empty
-            currentValue = formatSensorTypeInstance(selectedSensorType, selectedInstance);
-          }
+          // For name field: allow it to be empty during editing
+          currentValue = formData[field.key as keyof SensorFormData] ?? field.default;
         } else {
           currentValue =
             hardwareValue !== undefined
