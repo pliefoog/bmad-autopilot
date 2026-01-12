@@ -29,6 +29,7 @@ import {
   Switch,
 } from 'react-native';
 import { z } from 'zod';
+import { useFormState } from '../../hooks/useFormState';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useNmeaStore } from '../../store/nmeaStore';
 import { useSensorConfigStore } from '../../store/sensorConfigStore';
@@ -312,20 +313,101 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     getSensorInstance,
   ]);
 
-  const [formData, setFormData] = useState<SensorFormData>(initialFormData);
+  /* Form State with useFormState Hook */
+  const { formData, updateField, updateFields, saveNow, isDirty, reset } =
+    useFormState<SensorFormData>(initialFormData, {
+      onSave: async (data) => {
+        if (!selectedSensorType) return;
+
+        const updates: Partial<SensorConfiguration> = {
+          name: data.name?.trim() || undefined,
+          enabled: data.enabled,
+          direction: getAlarmDirection(
+            selectedSensorType,
+            requiresMetricSelection ? data.selectedMetric : undefined,
+          ).direction,
+          criticalSoundPattern: data.criticalSoundPattern,
+          warningSoundPattern: data.warningSoundPattern,
+        };
+
+        {/* Validate enriched thresholds available before saving */}
+        if (!enrichedThresholds) {
+          const errorMsg =
+            'Cannot save thresholds - unit conversion unavailable. This would corrupt data.';
+          log.app('SensorConfigDialog: Cannot save - enrichment unavailable', () => ({
+            message: errorMsg,
+          }));
+          if (Platform.OS === 'web') {
+            alert(errorMsg);
+          } else {
+            Alert.alert('Configuration Error', errorMsg);
+          }
+          throw new Error(errorMsg); // Prevent save
+        }
+
+        if (requiresMetricSelection && data.selectedMetric) {
+          {/* Multi-metric: convert display values to SI */}
+          const criticalSI =
+            data.criticalValue !== undefined
+              ? enrichedThresholds.convertToSI(data.criticalValue)
+              : undefined;
+          const warningSI =
+            data.warningValue !== undefined
+              ? enrichedThresholds.convertToSI(data.warningValue)
+              : undefined;
+
+          updates.metrics = {
+            [data.selectedMetric]: {
+              critical: criticalSI,
+              warning: warningSI,
+              criticalSoundPattern: data.criticalSoundPattern,
+              warningSoundPattern: data.warningSoundPattern,
+              enabled: data.enabled,
+            },
+          };
+        } else {
+          {/* Single-metric: convert display values to SI */}
+          updates.critical =
+            data.criticalValue !== undefined
+              ? enrichedThresholds.convertToSI(data.criticalValue)
+              : undefined;
+          updates.warning =
+            data.warningValue !== undefined
+              ? enrichedThresholds.convertToSI(data.warningValue)
+              : undefined;
+        }
+
+        if (data.batteryChemistry) {
+          updates.context = { ...updates.context, batteryChemistry: data.batteryChemistry };
+        }
+        if (data.engineType) {
+          updates.context = { ...updates.context, engineType: data.engineType };
+        }
+
+        try {
+          updateSensorThresholds(selectedSensorType, selectedInstance, updates);
+          await setConfig(selectedSensorType, selectedInstance, updates);
+        } catch (error) {
+          log.app('SensorConfigDialog: Error saving sensor config', () => ({
+            error: error instanceof Error ? error.message : String(error),
+            sensorType: selectedSensorType,
+            instance: selectedInstance,
+          }));
+          if (Platform.OS === 'web') {
+            alert('Failed to save configuration. Please try again.');
+          } else {
+            Alert.alert('Error', 'Failed to save configuration. Please try again.');
+          }
+          throw error; // Re-throw to prevent hook from updating state
+        }
+      },
+      debounceMs: 300,
+    });
 
   /* Update form when sensor/instance changes */
   useEffect(() => {
-    setFormData(initialFormData);
-  }, [initialFormData]);
-
-  /* Update Field */
-  const updateField = useCallback(
-    <K extends keyof SensorFormData>(field: K, value: SensorFormData[K]) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-    },
-    [],
-  );
+    reset(initialFormData);
+  }, [initialFormData, reset]);
 
   /* Get Metric-Specific Category for enrichment */
   const currentMetricForEnrichment = useMemo(() => {
@@ -378,123 +460,23 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     [enrichedThresholds],
   );
 
-  /* Save Current Form */
-  const saveCurrentForm = useCallback(async () => {
-    if (!selectedSensorType) return;
-
-    const updates: Partial<SensorConfiguration> = {
-      name: formData.name?.trim() || undefined,
-      enabled: formData.enabled,
-      direction: getAlarmDirection(
-        selectedSensorType,
-        requiresMetricSelection ? formData.selectedMetric : undefined,
-      ).direction,
-      criticalSoundPattern: formData.criticalSoundPattern,
-      warningSoundPattern: formData.warningSoundPattern,
-    };
-
-    {
-      /* Validate enriched thresholds available before saving */
-    }
-    if (!enrichedThresholds) {
-      const errorMsg =
-        'Cannot save thresholds - unit conversion unavailable. This would corrupt data.';
-      log.app('SensorConfigDialog: Cannot save - enrichment unavailable', () => ({
-        message: errorMsg,
-      }));
-      if (Platform.OS === 'web') {
-        alert(errorMsg);
-      } else {
-        Alert.alert('Configuration Error', errorMsg);
-      }
-      return;
-    }
-
-    if (requiresMetricSelection && formData.selectedMetric) {
-      {
-        /* Multi-metric: convert display values to SI */
-      }
-      const criticalSI =
-        formData.criticalValue !== undefined
-          ? enrichedThresholds.convertToSI(formData.criticalValue)
-          : undefined;
-      const warningSI =
-        formData.warningValue !== undefined
-          ? enrichedThresholds.convertToSI(formData.warningValue)
-          : undefined;
-
-      updates.metrics = {
-        [formData.selectedMetric]: {
-          critical: criticalSI,
-          warning: warningSI,
-          criticalSoundPattern: formData.criticalSoundPattern,
-          warningSoundPattern: formData.warningSoundPattern,
-          enabled: formData.enabled,
-        },
-      };
-    } else {
-      {
-        /* Single-metric: convert display values to SI */
-      }
-      updates.critical =
-        formData.criticalValue !== undefined
-          ? enrichedThresholds.convertToSI(formData.criticalValue)
-          : undefined;
-      updates.warning =
-        formData.warningValue !== undefined
-          ? enrichedThresholds.convertToSI(formData.warningValue)
-          : undefined;
-    }
-
-    if (formData.batteryChemistry) {
-      updates.context = { ...updates.context, batteryChemistry: formData.batteryChemistry };
-    }
-    if (formData.engineType) {
-      updates.context = { ...updates.context, engineType: formData.engineType };
-    }
-
-    try {
-      updateSensorThresholds(selectedSensorType, selectedInstance, updates);
-      await setConfig(selectedSensorType, selectedInstance, updates);
-    } catch (error) {
-      log.app('SensorConfigDialog: Error saving sensor config', () => ({
-        error: error instanceof Error ? error.message : String(error),
-        sensorType: selectedSensorType,
-        instance: selectedInstance,
-      }));
-      if (Platform.OS === 'web') {
-        alert('Failed to save configuration. Please try again.');
-      } else {
-        Alert.alert('Error', 'Failed to save configuration. Please try again.');
-      }
-    }
-  }, [
-    selectedSensorType,
-    selectedInstance,
-    formData,
-    requiresMetricSelection,
-    enrichedThresholds,
-    updateSensorThresholds,
-    setConfig,
-  ]);
-
   /* Handle Instance Switch */
   const handleInstanceSwitch = useCallback(
     async (newInstance: number) => {
-      await saveCurrentForm();
+      await saveNow();
       setSelectedInstance(newInstance);
     },
-    [saveCurrentForm],
+    [saveNow],
   );
 
   /* Handle Sensor Type Switch */
   const handleSensorTypeSwitch = useCallback(
     async (newType: SensorType) => {
-      await saveCurrentForm();
+      await saveNow();
       setSelectedSensorType(newType);
       setSelectedInstance(0);
     },
-    [saveCurrentForm],
+    [saveNow],
   );
 
   /* Handle Metric Change */
@@ -522,14 +504,13 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       const criticalValue = enriched?.display.critical?.value;
       const warningValue = enriched?.display.warning?.value;
 
-      setFormData((prev) => ({
-        ...prev,
+      updateFields({
         selectedMetric: newMetric,
         criticalValue,
         warningValue,
-      }));
+      });
     },
-    [selectedSensorType, selectedInstance, sensorConfig],
+    [selectedSensorType, selectedInstance, sensorConfig, updateFields],
   );
 
   /* Handle Alarm Enable with Safety Confirmation */
@@ -570,9 +551,9 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
   /* Handle Close */
   const handleClose = useCallback(async () => {
-    await saveCurrentForm();
+    await saveNow();
     onClose();
-  }, [saveCurrentForm, onClose]);
+  }, [saveNow, onClose]);
 
   /* Test Sound */
   const handleTestSound = useCallback(async (soundPattern: string) => {
@@ -671,7 +652,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         criticalSliderRange.max,
       );
       if (clampedCritical !== formData.criticalValue) {
-        setFormData((prev) => ({ ...prev, criticalValue: clampedCritical }));
+        updateField('criticalValue', clampedCritical);
       }
     }
 
@@ -682,7 +663,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         warningSliderRange.max,
       );
       if (clampedWarning !== formData.warningValue) {
-        setFormData((prev) => ({ ...prev, warningValue: clampedWarning }));
+        updateField('warningValue', clampedWarning);
       }
     }
   }, [
@@ -692,6 +673,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     warningSliderRange.max,
     formData.criticalValue,
     formData.warningValue,
+    updateField,
   ]);
 
   /* Render Config Fields */
