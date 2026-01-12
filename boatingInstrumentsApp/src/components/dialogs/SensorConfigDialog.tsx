@@ -707,13 +707,13 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         updateField('warningValue', clampedWarning);
       }
     }
+    // Only re-clamp when slider ranges change, not when values change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     criticalSliderRange.min,
     criticalSliderRange.max,
     warningSliderRange.min,
     warningSliderRange.max,
-    formData.criticalValue,
-    formData.warningValue,
     updateField,
   ]);
 
