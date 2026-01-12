@@ -41,7 +41,7 @@ import { PlatformToggle } from './inputs/PlatformToggle';
 import { PlatformPicker, PlatformPickerItem } from './inputs/PlatformPicker';
 import { getPlatformTokens } from '../../theme/settingsTokens';
 import { getAlarmDirection, getAlarmTriggerHint } from '../../utils/sensorAlarmUtils';
-import { getSensorDisplayName } from '../../utils/sensorDisplayName';
+import { getSensorDisplayName, formatSensorTypeInstance } from '../../utils/sensorDisplayName';
 import { sensorRegistry } from '../../services/SensorDataRegistry';
 import {
   SOUND_PATTERNS,
@@ -752,10 +752,24 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         const isReadOnly =
           field.iostate === 'readOnly' ||
           (field.iostate === 'readOnlyIfValue' && hasValue);
-        const currentValue =
-          hardwareValue !== undefined
-            ? hardwareValue
-            : formData[field.key as keyof SensorFormData] ?? field.default;
+        
+        // Calculate currentValue with special handling for 'name' field
+        let currentValue: any;
+        if (field.key === 'name') {
+          // For name field: if empty, use fallback format "SensorType Instance"
+          const formValue = formData[field.key as keyof SensorFormData];
+          if (formValue && String(formValue).trim()) {
+            currentValue = formValue;
+          } else {
+            // Use fallback format when name is empty
+            currentValue = formatSensorTypeInstance(selectedSensorType, selectedInstance);
+          }
+        } else {
+          currentValue =
+            hardwareValue !== undefined
+              ? hardwareValue
+              : formData[field.key as keyof SensorFormData] ?? field.default;
+        }
 
         // Switch on uiType to determine rendering (valueType determines data handling)
         switch (field.uiType) {
