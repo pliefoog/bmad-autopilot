@@ -1,34 +1,28 @@
-refactor: modernize SensorConfigDialog with card-based layout and platformTokens
+refactor: remove deprecated functions and optimize SensorConfigDialog
 
-Comprehensive cleanup following Jan 2025 Settings Dialog UI Language requirements:
+Dead code cleanup and performance optimizations from senior architect review:
 
-Architecture improvements:
-- Card-based layout with proper visual separation (sensor selection, config, alarms)
-- Platform-specific shadows (iOS shadowOpacity, Android elevation, web boxShadow)
-- Consistent 20px padding and 16px marginBottom across all cards
+SensorConfigRegistry.ts - Removed deprecated functions:
+- Removed getSmartDefaults() (deprecated wrapper, only used in example comment)
+- Removed shouldShowField() (always returned true, no actual logic)
+- Updated example comment to use getAlarmDefaults() directly
+- Lines saved: ~30 lines of dead code
 
-Theme integration:
-- Added getPlatformTokens() for typography, borderRadius, shadows
-- Replaced hardcoded values with platformTokens references throughout
-- Consistent fontFamily usage across all text elements
+SensorConfigDialog.tsx - Optimizations and cleanup:
+- Removed shouldShowField import and usage (function removed from registry)
+- Fixed double-call of renderConfigFields() by memoizing result
+- Changed conditional from {renderConfigFields() && ...} to {configFieldsJSX && configFieldsJSX.length > 0 && ...}
+- Prevents calling expensive render function twice (was called for check + render)
+- More robust empty state check (array length > 0 instead of truthy)
 
-Typography hierarchy:
-- sectionTitle: 18px, 700 weight for card headers ("Sensor Selection", "Alarms")
-- settingLabel: 16px, 600 weight for setting names
-- groupLabel: 14px, 600 weight for subsection labels ("Alarm metric", "Threshold values")
-- helpText: Uses platformTokens.typography.hint (11px, italic, secondary color)
+Performance impact:
+- Eliminated redundant field rendering (2x → 1x per form data change)
+- Removed unnecessary conditional check function (shouldShowField)
+- Cleaner dependency arrays in useCallback/useMemo
 
-UI patterns:
-- settingRow: Horizontal layout for "Enable alarms" toggle
-- settingGroup: Container for nested controls when alarm enabled
-- inputWrapper: Proper spacing for picker controls
-- Minimalistic information hierarchy (no redundant labels)
+Code quality improvements:
+- Removed backward compatibility layer that provided no value
+- More explicit empty state handling with length check
+- Consistent with React best practices (memoize expensive computations)
 
-Benefits:
-- Consistent with other dialogs (UnitsConfigDialog, ConnectionConfigDialog)
-- Better visual separation with card shadows
-- Improved readability with proper typography scale
-- Platform-appropriate styling (iOS/Android/web differences)
-- Cleaner codebase with centralized styling
-
-Files: SensorConfigDialog.tsx (1215 lines)
+Files: SensorConfigRegistry.ts, SensorConfigDialog.tsx

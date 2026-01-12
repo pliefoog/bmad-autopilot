@@ -40,7 +40,7 @@
  *     // ... custom fields
  *   ],
  *   alarmSupport: 'single-metric', // or 'multi-metric' or 'none'
- *   getDefaults: (context) => getSmartDefaults('newSensor', context),
+ *   getDefaults: (context) => getAlarmDefaults('newSensor', context),
  * }
  * ```
  *
@@ -1968,22 +1968,6 @@ export function validateFieldDependencies(
 }
 
 /**
- * Check if a specific field should be shown based on dependencies
- *
- * **NOTE:** Field dependencies (dependsOn) were removed in the category→unitType refactor.
- * This function is maintained for backward compatibility but always returns true.
- *
- * @param field - Field configuration
- * @param formData - Current form values
- * @returns true if field should be shown, false if dependencies not satisfied
- * @deprecated Field dependencies removed - this function always returns true
- */
-export function shouldShowField(field: SensorFieldConfig, formData: Record<string, any>): boolean {
-  // Field dependencies removed in refactor - all fields visible
-  return true;
-}
-
-/**
  * Check if sensor supports alarm configuration
  *
  * **Usage:**
@@ -2203,16 +2187,6 @@ export function getAlarmDefaults(
   }
 
   return undefined;
-}
-
-/**
- * @deprecated Use getAlarmDefaults() instead. This function is maintained for backward compatibility only.
- */
-export function getSmartDefaults(
-  sensorType: SensorType,
-  context?: Record<string, any>,
-): SensorConfiguration | ThresholdConfig | undefined {
-  return getAlarmDefaults(sensorType, context);
 }
 
 /**

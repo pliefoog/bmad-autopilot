@@ -51,7 +51,6 @@ import {
   SENSOR_CONFIG_REGISTRY,
   getSensorConfig,
   getAlarmDefaults,
-  shouldShowField,
 } from '../../registry/SensorConfigRegistry';
 import { ThresholdPresentationService } from '../../services/ThresholdPresentationService';
 import { log } from '../../utils/logging/logger';
@@ -704,10 +703,6 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     return config.fields
       .filter((field) => field.iostate !== 'readOnly')
       .map((field) => {
-        if (!shouldShowField(field, formData)) {
-          return null;
-        }
-
         const sensorInstance = getSensorInstance();
         const hardwareValue = field.hardwareField
           ? sensorInstance?.getMetric(field.hardwareField)?.si_value
@@ -908,6 +903,9 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       });
   }, [selectedSensorType, formData, selectedInstance, theme, updateField, getSensorInstance]);
 
+  /* Memoize rendered config fields */
+  const configFieldsJSX = useMemo(() => renderConfigFields(), [renderConfigFields]);
+
   /* Styles */
   const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
 
@@ -970,10 +968,10 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         />
 
         {/* Config Fields */}
-        {renderConfigFields() && (
+        {configFieldsJSX && configFieldsJSX.length > 0 && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Sensor Configuration</Text>
-            {renderConfigFields()}
+            {configFieldsJSX}
           </View>
         )}
 
