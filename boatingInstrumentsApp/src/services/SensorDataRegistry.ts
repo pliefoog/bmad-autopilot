@@ -67,7 +67,9 @@ export class SensorDataRegistry {
     this.alarmEvaluator = new AlarmEvaluator(this);
     this.calculatedMetricsService = new CalculatedMetricsService(this);
     // Prevent EventEmitter warnings - we may have many widget subscriptions
-    this.eventEmitter.setMaxListeners(100);
+    // Each cell (PrimaryMetricCell, SecondaryMetricCell, TrendLine) uses useSensorInstance
+    // which subscribes to 'sensorCreated' events. Large dashboards can have 100+ cells.
+    this.eventEmitter.setMaxListeners(500);
   }
 
   /**

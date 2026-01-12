@@ -308,21 +308,6 @@ export const TrendLine: React.FC<TrendLineProps> = ({
         timestamp: point.timestamp,
       }));
 
-    // TEMPORARY: Always log pressure TrendLine for debugging
-    if (metric === 'pressure') {
-      console.log('[TrendLine PRESSURE DEBUG]', {
-        sensor: `${sensor}.${instance}.${metric}`,
-        rawDataPoints: rawTrendData.length,
-        numericDataPoints: numericData.length,
-        timeWindow: timeWindowMs,
-        firstRawPoint: rawTrendData[0],
-        firstNumericPoint: numericData[0],
-        lastNumericPoint: numericData[numericData.length - 1],
-        sampleValues: numericData.slice(0, 3).map((p) => p.value),
-        note: 'Values should be in display units (hPa ~1000), not SI (Pa ~100000)',
-      });
-    }
-    
     // Conditional DEBUG logging for TrendLine history fetch
     log.uiTrendline('TrendLine history fetch', () => ({
       sensor: `${sensor}.${instance}.${metric}`,
