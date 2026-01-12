@@ -204,6 +204,24 @@ export const useNmeaStore = create<NmeaStore>()(
           sensorInstance.name = thresholds.name;
         }
 
+        // Extract actual threshold values from configuration object
+        // (thresholds parameter is actually a SensorConfiguration update object)
+        const hasThresholdValues = 
+          thresholds.critical !== undefined || 
+          thresholds.warning !== undefined ||
+          thresholds.metrics !== undefined;
+
+        // Only update thresholds if threshold values are present
+        if (!hasThresholdValues) {
+          log.app('No threshold values to update - skipping threshold update', () => ({
+            sensorType,
+            instance,
+            hasName: !!thresholds.name,
+            hasEnabled: thresholds.enabled !== undefined,
+          }));
+          return;
+        }
+
         // Get metric key to update
         const metricKeys = sensorInstance.getMetricKeys();
         if (metricKeys.length === 0) {
@@ -228,7 +246,18 @@ export const useNmeaStore = create<NmeaStore>()(
           return;
         }
         
-        sensorInstance.updateThresholds(targetMetricKey, thresholds);
+        // Extract only threshold-specific properties for updateThresholds
+        // (not the full configuration object with name, enabled, etc.)
+        const metricThresholds = {
+          critical: thresholds.critical,
+          warning: thresholds.warning,
+          min: thresholds.min,
+          max: thresholds.max,
+          direction: thresholds.direction,
+          staleThresholdMs: thresholds.staleThresholdMs,
+        };
+        
+        sensorInstance.updateThresholds(targetMetricKey, metricThresholds);
       },
 
       /**
