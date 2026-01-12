@@ -330,8 +330,13 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
           warningSoundPattern: data.warningSoundPattern,
         };
 
-        {/* Validate enriched thresholds available before saving */}
-        if (!enrichedThresholds) {
+        // Check if we're saving threshold values (critical/warning)
+        const hasCriticalValue = data.criticalValue !== undefined;
+        const hasWarningValue = data.warningValue !== undefined;
+        const isSavingThresholds = hasCriticalValue || hasWarningValue;
+
+        // Only validate enrichedThresholds if we're actually saving threshold values
+        if (isSavingThresholds && !enrichedThresholds) {
           const errorMsg =
             'Cannot save thresholds - unit conversion unavailable. This would corrupt data.';
           log.app('SensorConfigDialog: Cannot save - enrichment unavailable', () => ({
@@ -346,13 +351,13 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         }
 
         if (requiresMetricSelection && data.selectedMetric) {
-          {/* Multi-metric: convert display values to SI */}
+          {/* Multi-metric: convert display values to SI (only if values exist) */}
           const criticalSI =
-            data.criticalValue !== undefined
+            data.criticalValue !== undefined && enrichedThresholds
               ? enrichedThresholds.convertToSI(data.criticalValue)
               : undefined;
           const warningSI =
-            data.warningValue !== undefined
+            data.warningValue !== undefined && enrichedThresholds
               ? enrichedThresholds.convertToSI(data.warningValue)
               : undefined;
 
@@ -366,13 +371,13 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
             },
           };
         } else {
-          {/* Single-metric: convert display values to SI */}
+          {/* Single-metric: convert display values to SI (only if values exist) */}
           updates.critical =
-            data.criticalValue !== undefined
+            data.criticalValue !== undefined && enrichedThresholds
               ? enrichedThresholds.convertToSI(data.criticalValue)
               : undefined;
           updates.warning =
-            data.warningValue !== undefined
+            data.warningValue !== undefined && enrichedThresholds
               ? enrichedThresholds.convertToSI(data.warningValue)
               : undefined;
         }
