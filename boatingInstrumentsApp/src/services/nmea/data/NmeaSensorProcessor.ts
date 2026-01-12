@@ -82,8 +82,11 @@ export class NmeaSensorProcessor {
    * - GP (GPS) → 0
    * - GL (GLONASS) → 1
    * - EC (ECDIS) → 2
-   * - HC (Heading - magnetic compass) → 0
-   * - HE (Heading - gyro) → 1
+   * - HC/HE/HN (Heading sensors) → 0 (consolidated - most boats have single compass)
+   *
+   * Note: HC (magnetic compass) and HE (gyro compass) talker IDs typically indicate
+   * compass TYPE, not separate physical devices. Consolidate to instance 0 unless
+   * explicitly different via instance field.
    */
   private extractInstanceId(message: ParsedNmeaMessage): number {
     // Priority 1: Explicit instance field (RPM, XDR)
@@ -101,10 +104,12 @@ export class NmeaSensorProcessor {
       GB: 3, // BeiDou
       GN: 4, // Combined GNSS
 
-      // Heading sensors
+      // Heading sensors - ALL consolidated to instance 0
+      // HC (magnetic compass), HE (gyro), HN (north-seeking gyro) are typically
+      // the same physical device, just different talker IDs indicating compass type
       HC: 0, // Magnetic compass
-      HE: 1, // Gyro compass
-      HN: 2, // North seeking gyro
+      HE: 0, // Gyro compass (was 1, now consolidated)
+      HN: 0, // North seeking gyro (was 2, now consolidated)
 
       // Depth sounders
       SD: 0, // Depth sounder (primary)
