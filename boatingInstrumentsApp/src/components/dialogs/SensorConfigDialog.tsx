@@ -416,7 +416,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   /* Update form when sensor/instance changes */
   useEffect(() => {
     reset(initialFormData);
-  }, [initialFormData, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSensorType, selectedInstance, reset]);
 
   /* Get Metric-Specific Category for enrichment */
   const currentMetricForEnrichment = useMemo(() => {
