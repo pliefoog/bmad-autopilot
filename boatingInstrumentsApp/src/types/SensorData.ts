@@ -102,7 +102,7 @@ export interface BaseSensorData {
 
 export interface TankSensorData extends BaseSensorData {
   type: 'fuel' | 'water' | 'waste' | 'ballast' | 'blackwater';
-  level: number; // 0.0 to 1.0 ratio - PRIMARY metric for TankWidget
+  level: number; // 0-100% - PRIMARY metric for TankWidget (percentage, not ratio)
   capacity?: number; // Liters - secondary metric
   temperature?: number; // Optional additional metric
 }
@@ -137,6 +137,8 @@ export interface WindSensorData extends BaseSensorData {
 export interface SpeedSensorData extends BaseSensorData {
   throughWater?: number; // Speed through water (STW) - PRIMARY for log
   overGround?: number; // Speed over ground (SOG) - PRIMARY for GPS
+  tripDistance?: number; // Trip distance (meters) - resettable odometer
+  totalDistance?: number; // Total distance (meters) - lifetime odometer
 }
 
 export interface GpsSensorData extends BaseSensorData {
@@ -242,6 +244,13 @@ export interface NavigationSensorData extends BaseSensorData {
   // Navigation status
   arrivalStatus?: 'active' | 'arrived' | 'perpendicular';
   steerDirection?: 'left' | 'right'; // Which way to steer to correct XTE
+}
+
+export interface WeatherSensorData extends BaseSensorData {
+  pressure?: number; // PRIMARY metric - Barometric pressure in Pascals
+  airTemperature?: number; // Air temperature in Celsius
+  humidity?: number; // Relative humidity (0-100%)
+  dewPoint?: number; // Dew point temperature in Celsius
 }
 
 // Union type for all sensor data

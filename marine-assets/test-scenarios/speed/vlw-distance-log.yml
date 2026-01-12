@@ -1,0 +1,44 @@
+# VLW Distance Log Test Scenario
+# Tests Airmar tri-ducer VLW message parsing
+# Format: $--VLW,x.x,N,x.x,N*hh (Total distance, Trip distance)
+
+description: "VLW Distance Log Test - Airmar Tri-Ducer"
+interval_ms: 1000
+
+messages:
+  # Initial trip start - both distances at 0
+  - sentence: "$IIVLW,0.0,N,0.0,N*5E"
+    delay_ms: 0
+  
+  # After 1 hour of cruising at 5 knots
+  - sentence: "$IIVLW,1234.5,N,5.0,N*3A"
+    delay_ms: 1000
+  
+  # After 2 hours
+  - sentence: "$IIVLW,1234.5,N,10.0,N*31"
+    delay_ms: 1000
+  
+  # After 3 hours
+  - sentence: "$IIVLW,1234.5,N,15.0,N*30"
+    delay_ms: 1000
+  
+  # After 4 hours (20 NM trip)
+  - sentence: "$IIVLW,1234.5,N,20.0,N*3D"
+    delay_ms: 1000
+  
+  # Trip reset (trip back to 0, total keeps accumulating)
+  - sentence: "$IIVLW,1254.5,N,0.0,N*58"
+    delay_ms: 1000
+  
+  # New trip progress
+  - sentence: "$IIVLW,1254.5,N,2.5,N*5C"
+    delay_ms: 1000
+  
+  - sentence: "$IIVLW,1254.5,N,5.0,N*5B"
+    delay_ms: 1000
+  
+  - sentence: "$IIVLW,1254.5,N,7.5,N*5F"
+    delay_ms: 1000
+  
+  - sentence: "$IIVLW,1254.5,N,10.0,N*50"
+    delay_ms: 1000

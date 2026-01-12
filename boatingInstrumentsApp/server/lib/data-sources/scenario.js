@@ -261,10 +261,11 @@ class ScenarioDataSource extends EventEmitter {
     this.currentLegEndWaypoint = null;
 
     // State for VLW distance log tracking (cumulative distance through water)
+    // Will be initialized after scenario is loaded in loadScenario()
     this.distanceLog = {
-      totalDistance: 0, // Total cumulative distance in nautical miles
-      tripDistance: 0, // Trip distance (resettable) in nautical miles
-      lastUpdateTime: null, // Last time distance was updated
+      totalDistance: 0,
+      tripDistance: 0,
+      lastUpdateTime: null,
     };
 
     // NMEA data generators for common scenarios
@@ -320,6 +321,20 @@ class ScenarioDataSource extends EventEmitter {
 
       this.emit('status', `Loaded scenario: ${this.scenario.name || this.config.scenarioName}`);
       this.emit('status', `Description: ${this.scenario.description || 'No description'}`);
+
+      // Initialize VLW distance log from scenario parameters (must be done AFTER scenario is loaded)
+      const initialTotalDistance = this.scenario?.parameters?.distance_log?.initial_total_distance ?? 0;
+      const initialTripDistance = this.scenario?.parameters?.distance_log?.initial_trip_distance ?? 0;
+      
+      this.distanceLog = {
+        totalDistance: initialTotalDistance,
+        tripDistance: initialTripDistance,
+        lastUpdateTime: null,
+      };
+      
+      if (initialTotalDistance > 0 || initialTripDistance > 0) {
+        console.log(`📊 VLW: Initialized with Total=${initialTotalDistance}nm, Trip=${initialTripDistance}nm`);
+      }
 
       // Initialize YAML-defined sentence generators now that scenario is loaded
       this.initializeYAMLGenerators();
@@ -2554,8 +2569,19 @@ class ScenarioDataSource extends EventEmitter {
     const deviation = sensor.physical_properties?.deviation || 0;
     const variation = sensor.physical_properties?.variation || 0;
 
-    // Generate HDG sentence with deviation and variation
-    return this.generateHDG(heading, deviation, variation);
+    // Generate HDG sentence (magnetic heading with deviation and variation)
+    const hdg = this.generateHDG(heading, deviation, variation);
+    
+    // Calculate and generate HDT sentence (true heading)
+    // True heading = Magnetic heading + Magnetic variation
+    const trueHeading = heading + variation;
+    // Normalize to 0-360 range
+    const normalizedTrue = trueHeading < 0 ? trueHeading + 360 : 
+                           trueHeading >= 360 ? trueHeading - 360 : trueHeading;
+    const hdt = this.generateHDT(normalizedTrue);
+    
+    // Return both sentences (matches real EV-100 hardware behavior)
+    return [hdg, hdt];
   }
 
   generateTemperatureFromSensor(sensor, sentenceType) {

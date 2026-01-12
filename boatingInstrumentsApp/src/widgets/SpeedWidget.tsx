@@ -11,9 +11,9 @@ interface SpeedWidgetProps {
 /**
  * Speed Widget - Declarative Configuration
  * Template: 2Rx2C-SEP-2Rx2C
- * Primary: SOG, STW, MAX SOG, MAX STW (current + session max speeds)
- * Secondary: AVG SOG, AVG STW (session average speeds)
- * Multi-sensor: Uses both 'gps' (SOG) and 'speed' (STW) sensors
+ * Primary: SOG, STW, Trip Distance, Total Distance
+ * Secondary: MAX SOG, MAX STW, AVG SOG, AVG STW
+ * Multi-sensor: Uses both 'gps' (SOG) and 'speed' (STW/distances) sensors
  * Virtual metrics: Uses .max and .avg suffixes for session statistics
  * 
  * **NO SUBSCRIPTIONS:** Widget is pure layout. TemplatedWidget fetches sensor,
@@ -31,11 +31,13 @@ export const SpeedWidget: React.FC<SpeedWidgetProps> = React.memo(({ id, instanc
       <PrimaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="speedOverGround" />
       <PrimaryMetricCell sensorType="speed" instance={instanceNumber} metricKey="throughWater" />
 
-      {/* Primary Grid Row 2: MAX SOG and MAX STW */}
-      <PrimaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="speedOverGround.max" />
-      <PrimaryMetricCell sensorType="speed" instance={instanceNumber} metricKey="throughWater.max" />
+      {/* Primary Grid Row 2: Trip and Total Distance */}
+      <PrimaryMetricCell sensorType="speed" instance={instanceNumber} metricKey="tripDistance" />
+      <PrimaryMetricCell sensorType="speed" instance={instanceNumber} metricKey="totalDistance" />
 
-      {/* Secondary Grid: AVG SOG and AVG STW */}
+      {/* Secondary Grid: MAX and AVG speeds */}
+      <SecondaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="speedOverGround.max" />
+      <SecondaryMetricCell sensorType="speed" instance={instanceNumber} metricKey="throughWater.max" />
       <SecondaryMetricCell sensorType="gps" instance={instanceNumber} metricKey="speedOverGround.avg" />
       <SecondaryMetricCell sensorType="speed" instance={instanceNumber} metricKey="throughWater.avg" />
     </TemplatedWidget>

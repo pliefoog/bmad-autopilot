@@ -9,6 +9,11 @@ bridge_mode: "nmea0183"  # Can be: nmea0183 | nmea2000 | hybrid
 parameters:
   vessel:
     keel_offset: 1.8              # meters below transducer (required - used in DPT/DBK offset field)
+  distance_log:
+    initial_total_distance: 1000     # nautical miles - starting odometer reading (e.g., 1000 for used boat)
+    initial_trip_distance: 0      # nautical miles - starting trip log (typically 0 at trip start)
+  engine_hours:
+    initial_hours: 1247.5         # hours - starting engine hour meter (e.g., 1247.5 for used engine)
   sonar:
     max_range: 100.0              # meters (required - used in DPT max range field)
   gps:
@@ -128,10 +133,11 @@ sensors:
             time: 600    # 10 min end - heading ~56° NE
 
   # ========== HEADING SENSOR ==========
+  # EV-100 EV-1/EV-2 Fluxgate Compass - Transmits PGN 127250 (Vessel Heading) → HDG/HDT in NMEA 0183
   - type: heading_sensor
     instance: 0
     name: "Fluxgate Compass"
-    update_rate: 5  # Hz
+    update_rate: 5  # Hz (matches EV-1 update rate)
     physical_properties:
       reference: "magnetic"
       deviation: 0.0                # degrees (maps to HDG.deviation or PGN 127250 byte[4-5])
@@ -327,7 +333,7 @@ sensors:
         max: 6.0
       engine_hours:
         type: "linear"
-        start: 1247.5                # Starting hours
+        start: 1247.5                # Starting hours (can be overridden via parameters.engine_hours.initial_hours)
         rate: 0.0167                 # Hours per second (1 hour per 60 seconds at 1Hz = 1hr/min realtime)
         min: 0
         max: 9999.9
@@ -359,10 +365,10 @@ sensors:
         max: 20.0
       temperature:
         type: "gaussian"
-        mean: 298.15                # K (25°C)
+        mean: 25.0                  # °C (room temperature)
         std_dev: 2.0
-        min: 288.15
-        max: 308.15
+        min: 15.0                   # °C
+        max: 35.0                   # °C
 
   - type: battery_sensor
     instance: 1
@@ -389,10 +395,10 @@ sensors:
         max: 30.0
       temperature:
         type: "gaussian"
-        mean: 298.15
+        mean: 25.0                  # °C (room temperature)
         std_dev: 1.5
-        min: 290.15
-        max: 305.15
+        min: 17.0                   # °C
+        max: 32.0                   # °C
 
   # ========== TANK SENSORS (4x) ==========
   - type: tank_sensor
@@ -464,10 +470,11 @@ sensors:
         max: 100
 
   # ========== RUDDER SENSOR ==========
+  # EV-100 ACU - Transmits/Receives PGN 127245 (Rudder) → RSA in NMEA 0183
   - type: rudder_sensor
     instance: 0
     name: "Rudder Position Sensor"
-    update_rate: 2  # Hz
+    update_rate: 2  # Hz (matches ACU update rate)
     physical_properties:
       rudder_instance: 0            # 0=main rudder (maps to RSA.position or PGN 127245 byte[0])
       max_angle: 35                 # degrees
@@ -491,3 +498,27 @@ sensors:
 #    - reference_type → MWV.reference (0183) or PGN 130306 byte[5] (2000)
 #    - fluid_type → none (0183) or PGN 127505 byte[1] (2000)
 # 5. Data generation remains protocol-agnostic - same tidal_cycle works for both DBT and PGN 128267
+#
+# EV-100 AUTOPILOT NMEA SENTENCE MAPPING:
+# ========================================
+# This scenario transmits NMEA 0183 sentences matching Raymarine EV-100 autopilot system:
+#
+# EV-1/EV-2 COMPASS TRANSMITS (→ ACU/Display):
+#   ✓ HDG (Vessel Heading) - from heading_sensor → PGN 127250
+#   ✓ HDT (True Heading) - from heading_sensor (calculated from HDG + variation)
+#   ○ Magnetic Variation - included in HDG sentence fields → PGN 127258
+#
+# ACU AUTOPILOT CONTROL UNIT TRANSMITS:
+#   ✓ RSA (Rudder Angle) - from rudder_sensor → PGN 127245
+#
+# EV-1/EV-2 RECEIVES (from other sensors → forwarded to ACU):
+#   ✓ VHW (Speed Through Water) - from speed_sensor → PGN 128259
+#   ✓ VTG (COG & SOG) - from gps_sensor → PGN 129026
+#   ✓ RMC/GGA (GNSS Position) - from gps_sensor → PGN 129029
+#   ✓ MWV (Wind Data) - from wind_sensor → PGN 130306
+#   ○ XTE (Cross Track Error) - requires navigation mode → PGN 129283
+#   ○ APB/RMB (Navigation Data) - requires active route → PGN 129284
+#   ○ BWC (Waypoint Data) - requires active waypoint → PGN 129285
+#
+# Note: XTE/APB/RMB/BWC sentences require GPS waypoints and navigation mode.
+#       Current scenario has waypoints defined - bridge code generates APB automatically.

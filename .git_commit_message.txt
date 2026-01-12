@@ -1,0 +1,33 @@
+fix: restore TrendLine display by converting historical SI values to display units
+
+Critical architectural fix after major refactor - TrendLine components were
+not displaying because historical data was stored in SI units (Pascals) but
+displayed without conversion, causing values to be off-scale.
+
+Root Cause:
+- History buffers store SI values for memory efficiency (line 501)
+- getHistoryForMetric() was returning raw SI values
+- TrendLine auto-scales to data range, but 100,000 Pa is off-scale for hPa display
+- Min/max stats worked because they use MetricValue.enrich() with conversion
+
+Architecture Fix:
+- SensorInstance.getHistoryForMetric() now converts SI → display units
+- Uses ConversionRegistry.convertToDisplay() matching MetricValue pattern
+- Widgets receive pre-converted data (zero transformation in UI layer)
+- Aligns with "widgets are dumb consumers" principle
+
+Additional Fixes:
+- Added WeatherSensorData interface (pressure, airTemperature, humidity, dewPoint)
+- Fixed TankSensorData documentation (0-100% not 0.0-1.0 ratio)
+- Added battery temperature Kelvin detection for temps >100°C with 'C' units
+- Fixed simulator battery temps (297K → 25°C in coastal-sailing.yml)
+- Added TrendLine unit fallback using ConversionRegistry.getUnit()
+
+Files:
+- SensorInstance.ts: getHistoryForMetric() SI→display conversion
+- SensorData.ts: Added WeatherSensorData, fixed TankSensorData docs
+- NmeaSensorProcessor.ts: Battery temp Kelvin detection + pressure validation
+- TrendLine.tsx: Unit display fallback, debug logging
+- coastal-sailing.yml: Battery temps Kelvin→Celsius
+
+Result: All TrendLines now display correctly with proper unit scaling

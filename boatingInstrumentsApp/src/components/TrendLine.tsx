@@ -148,9 +148,29 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   // Get sensor instance using MetricContext (not nmeaStore)
   const sensorInstance = useSensorInstance(sensorType, instance);
 
-  // Get current unit from MetricValue to display in label (like MetricCell)
+  // Get current metric value and unit (with fallback to registry - like MetricCell pattern)
   const currentMetric = useMetricValue(sensorType, instance, metric);
-  const unit = currentMetric?.unit ?? '';
+  
+  // Get unit: prefer from MetricValue (when data exists), fallback to registry category
+  const unit = useMemo(() => {
+    // If metricValue has a unit (data exists), use it
+    if (currentMetric?.unit) {
+      return currentMetric.unit;
+    }
+
+    // If no data but field has unitType, get unit from ConversionRegistry
+    if (fieldConfig?.unitType) {
+      try {
+        return ConversionRegistry.getUnit(fieldConfig.unitType);
+      } catch (error) {
+        // Category not found, return empty string
+        return '';
+      }
+    }
+
+    return '';
+  }, [fieldConfig?.unitType, currentMetric?.unit]);
+  
   // Sanitize unit - ensure it's not just whitespace or a single period
   const sanitizedUnit = unit.trim();
   // Explicit boolean check to avoid text node leaks (per Critical React Native Rules)
@@ -277,7 +297,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   const rawTrendData = useMetricHistory(sensorType, instance, metric, { timeWindowMs });
 
   // Convert DataPoint<number | string>[] to { value: number, timestamp: number }[]
-  // Filter out non-numeric values
+  // Filter out non-numeric values (SI → display conversion happens in SensorInstance.getHistoryForMetric)
   const trendData = useMemo(() => {
     const numericData = rawTrendData
       .filter((point): point is { value: number; timestamp: number } => 
@@ -288,6 +308,21 @@ export const TrendLine: React.FC<TrendLineProps> = ({
         timestamp: point.timestamp,
       }));
 
+    // TEMPORARY: Always log pressure TrendLine for debugging
+    if (metric === 'pressure') {
+      console.log('[TrendLine PRESSURE DEBUG]', {
+        sensor: `${sensor}.${instance}.${metric}`,
+        rawDataPoints: rawTrendData.length,
+        numericDataPoints: numericData.length,
+        timeWindow: timeWindowMs,
+        firstRawPoint: rawTrendData[0],
+        firstNumericPoint: numericData[0],
+        lastNumericPoint: numericData[numericData.length - 1],
+        sampleValues: numericData.slice(0, 3).map((p) => p.value),
+        note: 'Values should be in display units (hPa ~1000), not SI (Pa ~100000)',
+      });
+    }
+    
     // Conditional DEBUG logging for TrendLine history fetch
     log.uiTrendline('TrendLine history fetch', () => ({
       sensor: `${sensor}.${instance}.${metric}`,

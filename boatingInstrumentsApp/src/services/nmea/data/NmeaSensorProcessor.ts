@@ -167,6 +167,9 @@ export class NmeaSensorProcessor {
         case 'VHW':
           result = this.processVHW(parsedMessage, timestamp);
           break;
+        case 'VLW':
+          result = this.processVLW(parsedMessage, timestamp);
+          break;
         case 'MWV':
           result = this.processMWV(parsedMessage, timestamp);
           break;
@@ -846,6 +849,60 @@ export class NmeaSensorProcessor {
   }
 
   /**
+   * Process VLW (Distance Log) message
+   * Format: $--VLW,x.x,N,x.x,N*hh
+   * Always store distance in meters (base unit)
+   */
+  private processVLW(message: ParsedNmeaMessage, timestamp: number): ProcessingResult {
+    const fields = message.fields;
+    const instance = this.extractInstanceId(message);
+
+    // Check if we have valid distance data
+    if (fields.total_distance === null && fields.trip_distance === null) {
+      return {
+        success: false,
+        errors: ['No valid VLW distance data found'],
+        messageType: 'VLW',
+      };
+    }
+
+    const speedData: Partial<SpeedSensorData> = {
+      name: `Speed Log ${instance > 0 ? `#${instance}` : ''}`.trim(),
+      timestamp: timestamp,
+    };
+
+    // Total distance (lifetime odometer)
+    if (fields.total_distance !== null && !isNaN(fields.total_distance)) {
+      speedData.totalDistance = fields.total_distance; // Meters (SI unit)
+      log.speed('VLW: Total distance', () => ({
+        meters: fields.total_distance,
+        instance,
+      }));
+    }
+
+    // Trip distance (resettable odometer)
+    if (fields.trip_distance !== null && !isNaN(fields.trip_distance)) {
+      speedData.tripDistance = fields.trip_distance; // Meters (SI unit)
+      log.speed('VLW: Trip distance', () => ({
+        meters: fields.trip_distance,
+        instance,
+      }));
+    }
+
+    return {
+      success: true,
+      updates: [
+        {
+          sensorType: 'speed',
+          instance: instance,
+          data: speedData,
+        },
+      ],
+      messageType: 'VLW',
+    };
+  }
+
+  /**
    * Process MWV (Wind Speed and Angle) message
    * Always store wind speed in knots (base unit)
    */
@@ -1033,6 +1090,32 @@ export class NmeaSensorProcessor {
       magneticHeading: fields.magnetic_heading, // Magnetic heading in degrees (base unit)
       timestamp: timestamp,
     };
+
+    // Calculate true heading if variation is provided
+    // Formula: True Heading = Magnetic Heading + Variation
+    // East variation is positive, West is negative
+    if (fields.magnetic_variation !== null && !isNaN(fields.magnetic_variation)) {
+      const variation = fields.variation_dir === 'W' 
+        ? -fields.magnetic_variation 
+        : fields.magnetic_variation;
+      
+      let trueHeading = fields.magnetic_heading + variation;
+      
+      // Normalize to 0-360 range
+      if (trueHeading < 0) trueHeading += 360;
+      if (trueHeading >= 360) trueHeading -= 360;
+      
+      compassData.trueHeading = trueHeading;
+      compassData.variation = variation; // Store signed variation
+    }
+
+    // Store deviation if provided
+    if (fields.magnetic_deviation !== null && !isNaN(fields.magnetic_deviation)) {
+      const deviation = fields.deviation_dir === 'W'
+        ? -fields.magnetic_deviation
+        : fields.magnetic_deviation;
+      compassData.deviation = deviation;
+    }
 
     return {
       success: true,
@@ -1598,11 +1681,22 @@ export class NmeaSensorProcessor {
             } else if (measurementType === 'C' && (units === 'C' || units === 'F')) {
               let temperature = parseFloat(measurementValue);
               if (!isNaN(temperature)) {
+                // Handle Fahrenheit conversion
                 if (units === 'F') {
                   temperature = (temperature - 32) * (5 / 9);
                 }
+                // Bug Fix (Jan 2026): Detect Kelvin masquerading as Celsius
+                // Real-world NMEA equipment sometimes sends Kelvin with 'C' unit marker
+                // Battery temps >100°C are physically impossible (batteries don't operate above ~60°C)
+                // Values 273-373 range indicate Kelvin (0-100°C in Celsius)
+                else if (units === 'C' && temperature > 100) {
+                  temperature = temperature - 273.15; // Kelvin → Celsius
+                  log.battery(
+                    `⚠️ Battery Temperature: Detected Kelvin (${(temperature + 273.15).toFixed(1)}K) with 'C' unit marker, converted to ${temperature.toFixed(1)}°C`,
+                  );
+                }
                 batteryData.temperature = temperature;
-                log.battery(`✅ Battery Temperature: ${temperature}°C`);
+                log.battery(`✅ Battery Temperature: ${temperature.toFixed(1)}°C`);
                 updates.push({
                   sensorType: 'battery',
                   instance: instance,

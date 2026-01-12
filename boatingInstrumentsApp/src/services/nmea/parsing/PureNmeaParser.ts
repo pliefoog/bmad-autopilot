@@ -211,6 +211,8 @@ function parseMessageFields(messageType: string, sentence: string): Record<strin
         return parseVWRFields(parts);
       case 'VWT':
         return parseVWTFields(parts);
+      case 'VLW':
+        return parseVLWFields(parts);
       case 'GLL':
         return parseGLLFields(parts);
       case 'HDM':
@@ -503,6 +505,28 @@ function parseVWTFields(parts: string[]): Record<string, any> {
       wind_speed_knots: parts[3] ? (isNaN(parseFloat(parts[3])) ? null : parseFloat(parts[3])) : null,
       wind_speed_ms: parts[5] ? (isNaN(parseFloat(parts[5])) ? null : parseFloat(parts[5])) : null,
       wind_speed_kmh: parts[7] ? (isNaN(parseFloat(parts[7])) ? null : parseFloat(parts[7])) : null,
+    };
+  }
+
+  /**
+   * Parse VLW (Distance Log) fields
+   * Format: $--VLW,x.x,N,x.x,N*hh
+   * Fields: 1=Total distance, 2=N (nautical miles), 3=Trip distance, 4=N
+   * Example: $IIVLW,1234.5,N,567.8,N*3E
+   */
+function parseVLWFields(parts: string[]): Record<string, any> {
+    return {
+      field_1: parts[1], // Total distance
+      field_2: parts[2], // Units (N = nautical miles)
+      field_3: parts[3], // Trip distance
+      field_4: parts[4], // Units (N = nautical miles)
+      // Parsed values (convert to meters for SI units)
+      total_distance: parts[1] && parts[2] === 'N' 
+        ? (isNaN(parseFloat(parts[1])) ? null : parseFloat(parts[1]) * 1852) // NM to meters
+        : null,
+      trip_distance: parts[3] && parts[4] === 'N'
+        ? (isNaN(parseFloat(parts[3])) ? null : parseFloat(parts[3]) * 1852) // NM to meters
+        : null,
     };
   }
 

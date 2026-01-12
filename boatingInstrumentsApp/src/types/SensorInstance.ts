@@ -43,6 +43,7 @@ import { AdaptiveHistoryBuffer, DataPoint } from '../utils/AdaptiveHistoryBuffer
 import { getDataFields } from '../registry/SensorConfigRegistry';
 import { evaluateAlarm } from '../utils/alarmEvaluation';
 import { log } from '../utils/logging/logger';
+import { ConversionRegistry } from '../utils/ConversionRegistry';
 
 /**
  * Enriched metric data point (backward compatibility)
@@ -381,21 +382,37 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
   /**
    * Get history for specific metric
+   * 
+   * CRITICAL: Converts SI values → display units using current user preferences
+   * Matches MetricValue.enrich() pattern - widgets receive pre-converted values
    *
    * @param fieldName - Field name
    * @param timeWindowMs - Optional time window in milliseconds
-   * @returns Array of data points (raw SI values with timestamps)
+   * @returns Array of data points (converted to display units with timestamps)
    */
   getHistoryForMetric(fieldName: string, timeWindowMs?: number): DataPoint<number | string>[] {
     const buffer = this._history.get(fieldName);
     if (!buffer) return [];
 
-    if (timeWindowMs) {
-      const cutoff = Date.now() - timeWindowMs;
-      return buffer.getAll().filter((p) => p.timestamp >= cutoff);
+    // Get raw SI values from buffer
+    const rawPoints = timeWindowMs
+      ? buffer.getAll().filter((p) => p.timestamp >= Date.now() - timeWindowMs)
+      : buffer.getAll();
+
+    // Convert SI → display units (same as MetricValue.enrich())
+    const unitType = this._metricUnitTypes.get(fieldName);
+    if (!unitType) {
+      // No unit conversion available, return raw SI values
+      return rawPoints;
     }
 
-    return buffer.getAll();
+    // Convert each point using ConversionRegistry
+    return rawPoints.map((point) => ({
+      value: typeof point.value === 'number' 
+        ? ConversionRegistry.convertToDisplay(point.value, unitType)
+        : point.value,
+      timestamp: point.timestamp,
+    }));
   }
 
   /**
