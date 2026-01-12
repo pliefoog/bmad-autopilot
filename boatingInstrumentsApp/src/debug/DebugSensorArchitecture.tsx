@@ -11,7 +11,9 @@ import { useNmeaStore } from '../store/nmeaStore';
 import { sensorRegistry } from '../services/SensorDataRegistry';
 
 export const DebugSensorArchitecture: React.FC = () => {
-  const { connectionStatus, nmeaData } = useNmeaStore();
+  // Use specific selectors to prevent unnecessary re-renders (even in debug components)
+  const connectionStatus = useNmeaStore((state) => state.connectionStatus);
+  const nmeaData = useNmeaStore((state) => state.nmeaData);
 
   useEffect(() => {
     // Log every second to monitor sensor data

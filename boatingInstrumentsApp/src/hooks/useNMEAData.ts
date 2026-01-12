@@ -99,8 +99,10 @@ export function useNMEAData(options: UseNMEADataOptions = {}): UseNMEADataReturn
   });
   const [error, setError] = useState<string | null>(null);
 
-  // Zustand store subscriptions
-  const { nmeaData, connectionStatus, lastError } = useNmeaStore();
+  // Zustand store subscriptions - use selectors to prevent unnecessary re-renders
+  const nmeaData = useNmeaStore((state) => state.nmeaData);
+  const connectionStatus = useNmeaStore((state) => state.connectionStatus);
+  const lastError = useNmeaStore((state) => state.lastError);
 
   // Filter data by specified fields
   const filteredData = useMemo(() => {

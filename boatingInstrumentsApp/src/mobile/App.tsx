@@ -24,17 +24,19 @@ import HeaderBar, { HEADER_HEIGHT } from '../components/HeaderBar';
 
 import { ToastContainer } from '../components/toast';
 import { AlarmBanner } from '../widgets/AlarmBanner';
-import { ConnectionConfigDialog } from '../components/dialogs/ConnectionConfigDialog';
 import { AutopilotControlScreen } from '../widgets/AutopilotControlScreen';
 
 import { OnboardingScreen } from '../components/onboarding/OnboardingScreen';
-import { UnitsConfigDialog } from '../components/dialogs/UnitsConfigDialog';
-import { FactoryResetDialog } from '../components/dialogs/FactoryResetDialog';
-import { LayoutSettingsDialog } from '../components/dialogs/LayoutSettingsDialog';
-import { DisplayThemeDialog } from '../components/dialogs/DisplayThemeDialog';
 import { initializeWidgetSystem } from '../services/initializeWidgetSystem';
-import { AlarmHistoryDialog } from '../components/dialogs/AlarmHistoryDialog';
-import { SensorConfigDialog } from '../components/dialogs/SensorConfigDialog';
+
+// Lazy load dialogs for better initial bundle size (~100KB reduction)
+const ConnectionConfigDialog = React.lazy(() => import('../components/dialogs/ConnectionConfigDialog').then(m => ({ default: m.ConnectionConfigDialog })));
+const UnitsConfigDialog = React.lazy(() => import('../components/dialogs/UnitsConfigDialog').then(m => ({ default: m.UnitsConfigDialog })));
+const FactoryResetDialog = React.lazy(() => import('../components/dialogs/FactoryResetDialog').then(m => ({ default: m.FactoryResetDialog })));
+const LayoutSettingsDialog = React.lazy(() => import('../components/dialogs/LayoutSettingsDialog').then(m => ({ default: m.LayoutSettingsDialog })));
+const DisplayThemeDialog = React.lazy(() => import('../components/dialogs/DisplayThemeDialog').then(m => ({ default: m.DisplayThemeDialog })));
+const AlarmHistoryDialog = React.lazy(() => import('../components/dialogs/AlarmHistoryDialog').then(m => ({ default: m.AlarmHistoryDialog })));
+const SensorConfigDialog = React.lazy(() => import('../components/dialogs/SensorConfigDialog').then(m => ({ default: m.SensorConfigDialog })));
 import { MemoryMonitor } from '../components/MemoryMonitor';
 import {
   getConnectionDefaults,
@@ -48,6 +50,18 @@ import {
 import { useUIStore } from '../store/uiStore';
 
 const STORAGE_KEY = 'nmea-connection-config';
+
+/**
+ * DialogLoadingFallback - Loading indicator for lazy-loaded dialogs
+ * Shows minimal spinner while dialog code is loading
+ */
+const DialogLoadingFallback: React.FC = () => (
+  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+    <View style={{ backgroundColor: '#1a1f2e', padding: 20, borderRadius: 8 }}>
+      <Text style={{ color: '#fff', fontSize: 14 }}>Loading...</Text>
+    </View>
+  </View>
+);
 
 /**
  * DashboardContent - Measures layout and provides dimensions via context
@@ -473,50 +487,66 @@ const App = () => {
             onClose={() => setShowAutopilotControl(false)}
           />
 
-          <ConnectionConfigDialog
-            visible={showConnectionDialog}
-            onClose={() => setShowConnectionDialog(false)}
-            onConnect={handleConnectionConnect}
-            onDisconnect={handleConnectionDisconnect}
-            currentConfig={{
-              ip,
-              port: parseInt(port, 10),
-              protocol: protocol as 'tcp' | 'udp' | 'websocket',
-            }}
-            shouldEnableConnectButton={isConnectButtonEnabled}
-          />
+          <React.Suspense fallback={<DialogLoadingFallback />}>
+            {showConnectionDialog && (
+              <ConnectionConfigDialog
+                visible={showConnectionDialog}
+                onClose={() => setShowConnectionDialog(false)}
+                onConnect={handleConnectionConnect}
+                onDisconnect={handleConnectionDisconnect}
+                currentConfig={{
+                  ip,
+                  port: parseInt(port, 10),
+                  protocol: protocol as 'tcp' | 'udp' | 'websocket',
+                }}
+                shouldEnableConnectButton={isConnectButtonEnabled}
+              />
+            )}
 
-          <UnitsConfigDialog visible={showUnitsDialog} onClose={() => setShowUnitsDialog(false)} />
+            {showUnitsDialog && (
+              <UnitsConfigDialog visible={showUnitsDialog} onClose={() => setShowUnitsDialog(false)} />
+            )}
 
-          <FactoryResetDialog
-            visible={showFactoryResetDialog}
-            onConfirm={handleFactoryResetConfirm}
-            onCancel={() => setShowFactoryResetDialog(false)}
-          />
+            {showFactoryResetDialog && (
+              <FactoryResetDialog
+                visible={showFactoryResetDialog}
+                onConfirm={handleFactoryResetConfirm}
+                onCancel={() => setShowFactoryResetDialog(false)}
+              />
+            )}
 
-          <LayoutSettingsDialog
-            visible={showLayoutSettingsDialog}
-            onClose={() => setShowLayoutSettingsDialog(false)}
-          />
+            {showLayoutSettingsDialog && (
+              <LayoutSettingsDialog
+                visible={showLayoutSettingsDialog}
+                onClose={() => setShowLayoutSettingsDialog(false)}
+              />
+            )}
 
-          <DisplayThemeDialog
-            visible={showDisplayThemeDialog}
-            onClose={() => setShowDisplayThemeDialog(false)}
-          />
+            {showDisplayThemeDialog && (
+              <DisplayThemeDialog
+                visible={showDisplayThemeDialog}
+                onClose={() => setShowDisplayThemeDialog(false)}
+              />
+            )}
 
-          <AlarmHistoryDialog
-            visible={showAlarmHistoryDialog}
-            onClose={() => setShowAlarmHistoryDialog(false)}
-          />
+            {showAlarmHistoryDialog && (
+              <AlarmHistoryDialog
+                visible={showAlarmHistoryDialog}
+                onClose={() => setShowAlarmHistoryDialog(false)}
+              />
+            )}
 
-          <SensorConfigDialog
-            visible={showAlarmConfigDialog}
-            onClose={() => {
-              log.alarm('App: Closing SensorConfigDialog');
-              setShowAlarmConfigDialog(false);
-            }}
-            sensorType={alarmConfigSensor}
-          />
+            {showAlarmConfigDialog && (
+              <SensorConfigDialog
+                visible={showAlarmConfigDialog}
+                onClose={() => {
+                  log.alarm('App: Closing SensorConfigDialog');
+                  setShowAlarmConfigDialog(false);
+                }}
+                sensorType={alarmConfigSensor}
+              />
+            )}
+          </React.Suspense>
 
           {/* Memory Monitor - DISABLED: Causing infinite render loop */}
           {/* <MemoryMonitor position="bottom-right" updateInterval={1000} /> */}

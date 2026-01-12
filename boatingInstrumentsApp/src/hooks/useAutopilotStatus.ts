@@ -15,7 +15,9 @@ export interface AutopilotState {
 }
 
 export const useAutopilotStatus = (): AutopilotState => {
-  const { nmeaData, connectionStatus } = useNmeaStore();
+  // Use specific selectors to prevent unnecessary re-renders
+  const nmeaData = useNmeaStore((state) => state.nmeaData);
+  const connectionStatus = useNmeaStore((state) => state.connectionStatus);
 
   return useMemo(() => {
     const autopilot = nmeaData?.autopilot;

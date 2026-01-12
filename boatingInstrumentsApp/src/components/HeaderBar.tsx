@@ -60,7 +60,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   onStopPlayback,
 }) => {
   const theme = useTheme();
-  const { connectionStatus } = useNmeaStore();
+  const connectionStatus = useNmeaStore((state) => state.connectionStatus);
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
   const styles = createStyles(theme);
   

@@ -34,7 +34,9 @@ export const AlarmHistoryDialog: React.FC<AlarmHistoryDialogProps> = ({ visible,
   const theme = useTheme();
   const platformTokens = getPlatformTokens();
   const styles = React.useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
-  const alarmStore = useAlarmStore();
+  // Use specific selectors to prevent unnecessary re-renders
+  const alarms = useAlarmStore((state) => state.alarms);
+  const alarmHistory = useAlarmStore((state) => state.alarmHistory);
 
   const handleClearHistory = () => {
     Alert.alert('Clear Alarm History', 'This will remove all alarm history records. Continue?', [

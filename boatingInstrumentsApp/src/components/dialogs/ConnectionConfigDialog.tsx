@@ -286,7 +286,9 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
   const styles = useMemo(() => createStyles(theme, platformTokens), [theme, platformTokens]);
   const defaults = getConnectionDefaults();
   const connectionStatus = useNmeaStore((state) => state.connectionStatus);
-  const nmeaData = useNmeaStore((state) => state.nmeaData);
+  // Only subscribe to specific fields, not entire nmeaData object
+  const messageCount = useNmeaStore((state) => state.nmeaData.messageCount);
+  const messageFormat = useNmeaStore((state) => state.nmeaData.messageFormat);
   const isConnected = connectionStatus === 'connected';
   const isWeb = Platform.OS === 'web';
 
@@ -567,13 +569,13 @@ export const ConnectionConfigDialog: React.FC<ConnectionConfigDialogProps> = ({
             <View style={styles.statRow}>
               <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Mode</Text>
               <Text style={[styles.statValue, { color: theme.text }]}>
-                {nmeaData.messageFormat || '-'}
+                {messageFormat || '-'}
               </Text>
             </View>
             <View style={styles.statRow}>
               <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Messages</Text>
               <Text style={[styles.statValue, { color: theme.text }]}>
-                {nmeaData.messageCount.toLocaleString()}
+                {messageCount.toLocaleString()}
               </Text>
             </View>
           </View>
