@@ -1,20 +1,21 @@
-docs: update optimization review with Phase 1 completion status
+docs: add performance measurement guide for Phase 1 optimizations
 
-Updated ARCHITECTURAL-OPTIMIZATION-REVIEW-2026.md to reflect completed optimizations:
+Created comprehensive guide for measuring impact of completed optimizations:
 
-Phase 1.1 ✅ COMPLETE:
-- Dialog lazy loading (100KB bundle reduction)
-- 7 dialogs converted to React.lazy()
-- Suspense boundaries with loading fallback
+Phase 1.1 - Dialog Lazy Loading:
+- Bundle size analysis (expected 100-150KB reduction)
+- Network tab verification of code-splitting
+- Initial load time comparison
 
-Phase 1.2 ✅ COMPLETE:
-- Store selector optimization (eliminated unnecessary re-renders)
-- 6 components fixed with specific selectors
-- HeaderBar: 120-600 fewer re-renders/minute
-- ConnectionConfigDialog: Prevents 200KB object comparisons
+Phase 1.2 - Store Selector Optimization:
+- React DevTools Profiler scenarios
+- HeaderBar re-render test (expect 98-99% reduction)
+- ConnectionConfigDialog re-render test
 
-Reorganized document structure:
-- Phase 1: Quick Wins (COMPLETE)
-- Phase 2: Technical Debt (Future)
+Includes:
+- Step-by-step measurement procedures
+- Expected results for each optimization
+- Before/after performance benchmarks
+- Recommendations for Phase 2 (optional technical debt)
 
-Files: ARCHITECTURAL-OPTIMIZATION-REVIEW-2026.md
+File: PERFORMANCE-MEASUREMENT-GUIDE.md
