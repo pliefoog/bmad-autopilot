@@ -199,6 +199,11 @@ export const useNmeaStore = create<NmeaStore>()(
           return;
         }
 
+        // Update sensor name if provided in thresholds configuration
+        if (thresholds.name) {
+          sensorInstance.name = thresholds.name;
+        }
+
         // Get metric key to update
         const metricKeys = sensorInstance.getMetricKeys();
         if (metricKeys.length === 0) {
