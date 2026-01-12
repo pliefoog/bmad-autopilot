@@ -25,25 +25,26 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Platform, Alert } from 'react-native';
 
-import { useNmeaStore } from '../../../store/nmeaStore';
-import { useSensorConfigStore } from '../../../store/sensorConfigStore';
-import { useTheme } from '../../../store/themeStore';
-import { useSettingsStore } from '../../../store/settingsStore';
+import { useNmeaStore } from '../store/nmeaStore';
+import { useSensorConfigStore } from '../store/sensorConfigStore';
+import { useTheme } from '../store/themeStore';
+import { useSettingsStore } from '../store/settingsStore';
 
-import type { SensorType, SensorConfiguration } from '../../../types/SensorData';
-import type { SensorInstance } from '../../../types/SensorInstance';
-import type { EnrichedThresholdInfo } from '../../../services/ThresholdPresentationService';
+import type { SensorType, SensorConfiguration } from '../types/SensorData';
+import type { SensorInstance } from '../types/SensorInstance';
+import type { EnrichedThresholdInfo } from '../services/ThresholdPresentationService';
 
-import { ThresholdPresentationService } from '../../../services/ThresholdPresentationService';
-import { MarineAudioAlertManager, CriticalAlarmType, AlarmEscalationLevel } from '../../../services/alarms/MarineAudioAlertManager';
-import { getSensorConfig, getAlarmDefaults } from '../../../registry/SensorConfigRegistry';
-import { sensorRegistry } from '../../../services/SensorDataRegistry';
-import { getAlarmDirection, getAlarmTriggerHint } from '../../../utils/sensorAlarmUtils';
-import { getSensorDisplayName } from '../../../utils/sensorDisplayName';
-import { getCriticalSliderRange, getWarningSliderRange } from '../../../utils/alarmSliderUtils';
-import { SOUND_TEST_DURATION_MS } from '../../../constants/timings';
-import { log } from '../../../utils/logging/logger';
-import { useConfirmDialog, useClamped } from '../../../hooks/forms';
+import { ThresholdPresentationService } from '../services/ThresholdPresentationService';
+import { MarineAudioAlertManager } from '../services/alarms/MarineAudioAlertManager';
+import { CriticalAlarmType, AlarmEscalationLevel } from '../services/alarms/types';
+import { getSensorConfig, getAlarmDefaults } from '../registry/SensorConfigRegistry';
+import { sensorRegistry } from '../services/SensorDataRegistry';
+import { getAlarmDirection, getAlarmTriggerHint } from '../utils/sensorAlarmUtils';
+import { getSensorDisplayName } from '../utils/sensorDisplayName';
+import { getCriticalSliderRange, getWarningSliderRange } from '../utils/alarmSliderUtils';
+import { SOUND_TEST_DURATION_MS } from '../constants/timings';
+import { log } from '../utils/logging/logger';
+import { useConfirmDialog, useClamped } from './forms';
 
 /**
  * Form data structure for sensor configuration
@@ -156,7 +157,7 @@ export const useSensorConfigForm = (
   onSave: (sensorType: SensorType, instance: number, data: SensorFormData) => Promise<void>,
 ): UseSensorConfigFormReturn => {
   const theme = useTheme();
-  const gloveMode = useSettingsStore((state) => state.gloveMode);
+  const gloveMode = useSettingsStore((state) => state.themeSettings.gloveMode);
   const { confirm } = useConfirmDialog();
 
   // Store access
@@ -190,7 +191,7 @@ export const useSensorConfigForm = (
       ? getSensorDisplayName(sensorType, selectedInstance, currentThresholds, sensorInstance?.name)
       : '';
 
-    const firstMetric = requiresMetricSelection && sensorConfig?.alarmMetrics?.[0]?.key;
+    const firstMetric = requiresMetricSelection ? sensorConfig?.alarmMetrics?.[0]?.key : undefined;
     let criticalValue: number | undefined;
     let warningValue: number | undefined;
     let criticalSoundPattern = 'rapid_pulse';
@@ -356,32 +357,16 @@ export const useSensorConfigForm = (
 
   // Handler: Alarm enable with safety confirmation
   const handleEnabledChange = useCallback(
-    (value: boolean) => {
+    async (value: boolean) => {
       const isCritical =
         sensorType && ['depth', 'battery', 'engine'].includes(sensorType);
 
       if (!value && isCritical) {
-        if (Platform.OS === 'web') {
-          if (
-            confirm(
-              `${sensorType?.toUpperCase()} alarms are critical for vessel safety. Disable this alarm?`,
-            )
-          ) {
-            form.setValue('enabled', value);
-          }
-        } else {
-          Alert.alert(
-            'Disable Critical Alarm?',
-            `${sensorType?.toUpperCase()} alarms are critical for vessel safety. Disable this alarm?`,
-            [
-              { text: 'Cancel', style: 'cancel' },
-              {
-                text: 'Disable',
-                style: 'destructive',
-                onPress: () => form.setValue('enabled', value),
-              },
-            ],
-          );
+        const title = 'Disable Critical Alarm?';
+        const message = `${sensorType?.toUpperCase()} alarms are critical for vessel safety. Disable this alarm?`;
+        const ok = await confirm(title, message);
+        if (ok) {
+          form.setValue('enabled', value);
         }
       } else {
         form.setValue('enabled', value);

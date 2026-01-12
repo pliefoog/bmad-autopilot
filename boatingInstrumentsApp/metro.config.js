@@ -33,10 +33,6 @@ config.resolver.alias = {
   '@utils': path.resolve(__dirname, 'src/utils'),
   '@widgets': path.resolve(__dirname, 'src/widgets'),
 
-  // Fix for Expo Router web build: Metro can't resolve process.env in require.context
-  // Redirect to our local version with hardcoded values
-  'expo-router/_ctx.web': path.resolve(__dirname, 'expo-router-ctx.web.js'),
-
   // Web compatibility: Mock native modules that don't work in web environment
   'react-native-sound': path.resolve(__dirname, '__mocks__/Sound.js'),
   'react-native-vector-icons/Ionicons': path.resolve(__dirname, '__mocks__/Ionicons.js'),
@@ -49,22 +45,22 @@ config.resolver.platforms = ['native', 'web', 'ios', 'android'];
 config.transformer = {
   ...config.transformer,
   unstable_allowRequireContext: true,
+  // Disable Hermes for web - it doesn't support import.meta
+  hermesParser: false,
   // Force all modules to be transformed through Babel
-  getTransformOptions: async () => ({
-    transform: {
-      experimentalImportSupport: false,
-      inlineRequires: true, // MEMORY OPTIMIZATION: Reduce bundle size
-    },
-  }),
-};
-
-// Exclude problematic modules that use import.meta from transformation
-config.resolver = {
-  ...config.resolver,
-  blockList: [
-    // Add patterns for modules that cause import.meta issues
-    /.*\/node_modules\/.*\.mjs$/,
-  ],
+  getTransformOptions: async (entryPoints, options, getDependenciesOf) => {
+    const platform = options.platform;
+    return {
+      transform: {
+        experimentalImportSupport: false,
+        inlineRequires: true, // MEMORY OPTIMIZATION: Reduce bundle size
+        // Disable Hermes transform for web
+        ...(platform === 'web' && {
+          unstable_transformProfile: 'default',
+        }),
+      },
+    };
+  },
 };
 
 // MEMORY OPTIMIZATION: Limit concurrent worker processes to reduce memory usage

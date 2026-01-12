@@ -5,14 +5,16 @@
     "scheme": "easynav",
     "version": "0.0.1",
     "icon": "./assets/icon.png",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "platforms": [
       "ios",
       "android",
       "web"
     ],
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "hermes": false,
+      "favicon": "./assets/favicon.png"
     },
     "experiments": {
       "typedRoutes": true
@@ -31,6 +33,9 @@
             "enableProguardInReleaseBuilds": false,
             "enableShrinkResourcesInReleaseBuilds": false,
             "enableMinifyInReleaseBuilds": false
+          },
+          "ios": {
+            "useHermes": false
           }
         }
       ]

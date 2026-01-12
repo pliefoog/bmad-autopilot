@@ -13,7 +13,7 @@
     "start": "react-native start",
     "start:lowmem": "react-native start --max-workers=2",
     "web": "EXPO_ROUTER_APP_ROOT=./app npx expo start --web --port 8082 --clear",
-    "web:safari": "BROWSER='Safari' EXPO_ROUTER_APP_ROOT=./app npx expo start --web --port 8082 --clear",
+    "web:safari": "BROWSER='Safari' EXPO_USE_METRO_WORKSPACE_ROOT=1 EXPO_UNSTABLE_TREE_SHAKING=false EXPO_ROUTER_APP_ROOT=./app npx expo start --web --port 8082 --clear",
     "web:lowmem": "EXPO_ROUTER_APP_ROOT=./app npx expo start --web --port 8082 --clear --max-workers=2",
     "web:build": "npx expo export --platform web",
     "clean:cache": "rm -rf .metro-cache node_modules/.cache",
