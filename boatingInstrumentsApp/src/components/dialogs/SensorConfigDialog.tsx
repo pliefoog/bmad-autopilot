@@ -731,17 +731,21 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         let hasValue = false;
         let hardwareValue: any = undefined;
         
-        if (field.hardwareField) {
-          // Hardware value from a different field
-          hardwareValue = sensorInstance?.getMetric(field.hardwareField)?.si_value;
-          hasValue = hardwareValue !== undefined && hardwareValue !== null && hardwareValue !== '';
-        } else {
-          // Check the field's own value in the sensor instance
-          const fieldMetric = sensorInstance?.getMetric(field.key);
-          const fieldValue = fieldMetric?.si_value ?? fieldMetric?.value;
-          hasValue = fieldValue !== undefined && fieldValue !== null && fieldValue !== '';
-          if (hasValue) {
-            hardwareValue = fieldValue;
+        // Special case: 'name' field should NEVER read from hardware
+        // It's a pure config field initialized from getSensorDisplayName with proper priority
+        if (field.key !== 'name') {
+          if (field.hardwareField) {
+            // Hardware value from a different field
+            hardwareValue = sensorInstance?.getMetric(field.hardwareField)?.si_value;
+            hasValue = hardwareValue !== undefined && hardwareValue !== null && hardwareValue !== '';
+          } else {
+            // Check the field's own value in the sensor instance
+            const fieldMetric = sensorInstance?.getMetric(field.key);
+            const fieldValue = fieldMetric?.si_value ?? fieldMetric?.value;
+            hasValue = fieldValue !== undefined && fieldValue !== null && fieldValue !== '';
+            if (hasValue) {
+              hardwareValue = fieldValue;
+            }
           }
         }
         
