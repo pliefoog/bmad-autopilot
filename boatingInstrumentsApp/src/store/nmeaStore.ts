@@ -222,7 +222,38 @@ export const useNmeaStore = create<NmeaStore>()(
           return;
         }
 
-        // Get metric key to update
+        // Handle multi-metric sensors (e.g., weather, battery, engine)
+        if (thresholds.metrics) {
+          // Multi-metric: iterate through each metric in the metrics object
+          for (const [metricKey, metricConfig] of Object.entries(thresholds.metrics)) {
+            // Validate metric key exists in sensor
+            const metricKeys = sensorInstance.getMetricKeys();
+            if (!metricKeys.includes(metricKey)) {
+              log.app('Skipping unknown metric key in multi-metric update', () => ({
+                sensorType,
+                instance,
+                metricKey,
+                availableMetrics: metricKeys,
+              }));
+              continue;
+            }
+
+            // Extract threshold properties from metric config
+            const metricThresholds = {
+              critical: (metricConfig as any).critical,
+              warning: (metricConfig as any).warning,
+              min: (metricConfig as any).min,
+              max: (metricConfig as any).max,
+              direction: thresholds.direction || (metricConfig as any).direction,
+              staleThresholdMs: (metricConfig as any).staleThresholdMs,
+            };
+
+            sensorInstance.updateThresholds(metricKey, metricThresholds);
+          }
+          return;
+        }
+
+        // Handle single-metric sensors (e.g., depth, speed)
         const metricKeys = sensorInstance.getMetricKeys();
         if (metricKeys.length === 0) {
           log.app('Cannot update thresholds - no metrics found', () => ({
