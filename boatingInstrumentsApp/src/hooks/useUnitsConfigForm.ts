@@ -223,6 +223,74 @@ export interface UseUnitsConfigFormReturn {
   };
 }
 
+/**
+ * useUnitsConfigForm - Maritime unit system configuration with preset management
+ *
+ * Manages 23 unit categories with regional presets (EU/US/UK) and GPS-specific settings.
+ * Supports atomic preset changes (all categories update together) and custom per-category selection.
+ *
+ * @param onSave - Callback invoked when user explicitly saves configuration
+ *   - Receives current form state including all 23 categories
+ *   - Called only on explicit save (not on every field change)
+ *   - Validation ensures data integrity before callback
+ *
+ * @returns Object containing:
+ *   - form: RHF UseFormReturn with units configuration state
+ *   - handlers: { handlePresetChange, handleCategoryChange, handleGpsSetting, handleSave, handleReset }
+ *   - computed: { presets, categories, selectedPreset, isDirty }
+ *
+ * @categories
+ * Essential (6): depth, speed, wind, temperature, coordinates, time
+ * Advanced (17): pressure (2 types), angle, voltage, current, volume, date, duration,
+ *                 distance, capacity, flowRate, frequency, power, rpm, angularVelocity, percentage
+ *
+ * @presets
+ * - EU: Metric (meters, Celsius, km/h, bar) + 24h time
+ * - US: Imperial (feet, Fahrenheit, mph, psi) + 12h time
+ * - UK: Mixed (feet for depth, Celsius, knots, bar) + 24h time
+ * - Custom: User-defined mix (switches to this when individual categories changed)
+ *
+ * @behavior
+ * - Preset selection: Atomically updates all 23 categories + sets marineRegion in store
+ * - Category change: Updates single category + auto-switches preset to 'custom'
+ * - GPS settings: Managed separately (coordinateFormat, timezone) via settingsStore
+ * - Dirty tracking: Form isDirty when any field differs from initial store values
+ *
+ * @validation
+ * - Zod schema validates preset enum + 23 optional presentation ID strings
+ * - No cross-field validation (each category independent)
+ * - GPS settings validated separately (coordinate format enum, timezone string)
+ *
+ * @example
+ * ```tsx
+ * const { form, handlers, computed } = useUnitsConfigForm((data) => {
+ *   console.log('Saving', data.preset, 'with', data.depth, 'depth units');
+ * });
+ *
+ * // User selects EU preset
+ * handlers.handlePresetChange('eu'); // Updates all 23 categories at once
+ *
+ * // User manually changes depth unit
+ * handlers.handleCategoryChange('depth', 'feet'); // Auto-switches to 'custom'
+ *
+ * // User changes GPS coordinate format
+ * handlers.handleGpsSetting('coordinateFormat', 'degrees_minutes');
+ *
+ * // Render preset selector with live preview
+ * computed.selectedPreset?.examples.map(ex => `${ex.category}: ${ex.value}`)
+ * ```
+ *
+ * @performance
+ * - Initial form data memoized (recomputes only when store values change)
+ * - Preset examples pre-computed with actual formatters (no recalculation on render)
+ * - Handlers memoized with tight dependencies
+ *
+ * @maritime
+ * - Regional standards for safety: EU/US/UK maritime conventions
+ * - Mixed units common: UK uses feet for depth but Celsius for temperature
+ * - Time formats: 24h (EU/UK) vs 12h (US) for log entries and timestamps
+ * - GPS coordinate formats for chart plotting and position reporting
+ */
 export const useUnitsConfigForm = (
   onSave: (data: UnitsFormData) => void,
 ): UseUnitsConfigFormReturn => {

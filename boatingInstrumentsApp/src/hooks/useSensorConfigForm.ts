@@ -116,12 +116,39 @@ export interface UseSensorConfigFormReturn {
 }
 
 /**
- * useSensorConfigForm - Unified form management with RHF
+ * useSensorConfigForm - Unified form management with React Hook Form
  *
- * @param sensorType - Currently selected sensor type
- * @param selectedInstance - Currently selected sensor instance
- * @param onSave - Callback when form is explicitly saved
- * @returns Form methods, computed values, and handlers
+ * Encapsulates all sensor configuration form state, validation, and business logic.
+ * Follows maritime UX patterns: save-on-transition, one-handed operation, critical confirmations.
+ *
+ * @param sensorType - Currently selected sensor type (depth, engine, battery, etc.)
+ * @param selectedInstance - Instance number for multi-sensor systems (0-based)
+ * @param onSave - Async callback invoked on explicit save (form submission)
+ *
+ * @returns Object containing:
+ *   - form: RHF UseFormReturn with all form state and methods
+ *   - enrichedThresholds: Pre-enriched threshold data with display units (null if enrichment fails)
+ *   - handlers: Memoized event handlers for all form interactions
+ *   - computed: Derived values (alarm config, slider ranges, labels)
+ *
+ * @example
+ * const { form, handlers, computed } = useSensorConfigForm(
+ *   'depth',
+ *   0,
+ *   async (type, instance, data) => {
+ *     await saveSensorConfig(type, instance, data);
+ *   }
+ * );
+ *
+ * @performance
+ * - Uses useWatch for selective field subscriptions (not form.watch)
+ * - Handlers memoized with tight dependency arrays
+ * - Enrichment cached until unit system changes
+ *
+ * @maritime
+ * - Confirmation dialogs for critical sensors (depth, engine)
+ * - Glove-mode compatible (48x48px touch targets)
+ * - Save-on-transition prevents data loss during emergency situations
  */
 export const useSensorConfigForm = (
   sensorType: SensorType | null,

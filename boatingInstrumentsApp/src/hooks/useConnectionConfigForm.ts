@@ -206,12 +206,64 @@ const getSuggestedHost = (protocol: 'tcp' | 'udp' | 'websocket'): string => {
 };
 
 /**
- * useConnectionConfigForm hook
+ * useConnectionConfigForm - NMEA connection configuration with React Hook Form
  *
- * @param initialConfig Current connection config for form initialization
- * @param onConnect Callback when connect is clicked with validated config
- * @param onDisconnect Optional callback for protocol changes while connected
- * @returns Form methods, handlers, and computed values
+ * Manages NMEA network connection settings with protocol-aware validation and platform-specific defaults.
+ * Supports TCP (direct boat network), UDP (multicast discovery), and WebSocket (simulator/bridge).
+ *
+ * @param initialConfig - Current connection settings from store
+ *   - ip: Host address (IPv4, IPv6, hostname, or localhost)
+ *   - port: Port number (1-65535)
+ *   - protocol: 'tcp' | 'udp' | 'websocket'
+ *
+ * @param onConnect - Callback invoked when form is submitted with validated config
+ *   - Only called if form validates successfully
+ *   - Receives sanitized config object with numeric port
+ *
+ * @param onDisconnect - Optional callback for protocol changes while connected
+ *   - Called before protocol switch to allow graceful disconnection
+ *   - Prevents connection state corruption
+ *
+ * @returns Object containing:
+ *   - form: RHF UseFormReturn with connection form state
+ *   - handlers: { handleProtocolChange, handleConnect, handleReset }
+ *   - computed: { isConnectEnabled, suggestedPort }
+ *
+ * @validation
+ * Protocol-aware IP validation:
+ * - TCP: Unicast IPv4/IPv6 or hostname (no multicast)
+ * - UDP: Multicast IPv4 (224-239.x.x.x) or unicast (fallback)
+ * - WebSocket: Any valid address including localhost
+ *
+ * Default ports:
+ * - TCP: 2000 (NMEA 0183 over TCP)
+ * - UDP: 10110 (NMEA multicast standard 239.2.1.1:10110)
+ * - WebSocket: 8080 (nmea-bridge simulator)
+ *
+ * @platform
+ * - Web: Defaults to localhost (simulator testing)
+ * - iOS/Android: Defaults to 192.168.1.100 (boat WiFi network)
+ * - UDP multicast: 239.2.1.1 (NMEA 2000 gateway standard)
+ *
+ * @example
+ * ```tsx
+ * const { form, handlers, computed } = useConnectionConfigForm(
+ *   currentConfig,
+ *   (config) => connectToNMEA(config),
+ *   () => disconnectFromNMEA()
+ * );
+ *
+ * // User changes protocol
+ * handlers.handleProtocolChange('udp'); // Auto-updates port to 10110
+ *
+ * // User submits form
+ * handlers.handleConnect(); // Validates, then calls onConnect
+ * ```
+ *
+ * @maritime
+ * - Multicast UDP for automatic NMEA 2000 gateway discovery
+ * - TCP for direct wired connections (RS-422/RS-232 adapters)
+ * - WebSocket for shore-based testing and simulation
  */
 export interface UseConnectionConfigFormReturn {
   form: UseFormReturn<ConnectionFormData>;
