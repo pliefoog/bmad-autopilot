@@ -30,6 +30,7 @@ import {
   Platform,
   Alert,
   useWindowDimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useWatch } from 'react-hook-form';
 import { useTheme, ThemeColors } from '../../store/themeStore';
@@ -245,6 +246,9 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     [sensorConfig],
   );
 
+  // Track unsaved changes for UI feedback
+  const hasUnsavedChanges = form.formState.isDirty && !form.formState.isSubmitting;
+
   if (!selectedSensorType) {
     return (
       <BaseConfigDialog visible={visible} onClose={onClose} title="Sensor Configuration">
@@ -270,6 +274,24 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   }
 
   const sensorConfig = getSensorConfig(selectedSensorType);
+  
+  // Guard: If sensorConfig fails to load, show error state
+  if (!sensorConfig) {
+    return (
+      <BaseConfigDialog visible={visible} onClose={onClose} title="Sensor Configuration">
+        <View style={styles.emptyState}>
+          <UniversalIcon name="alert-circle-outline" size={64} color={theme.textSecondary} />
+          <Text style={[styles.emptyStateText, { color: theme.text }]}>
+            Configuration unavailable
+          </Text>
+          <Text style={[styles.emptyStateSubtext, { color: theme.textSecondary }]}>
+            Unable to load sensor configuration
+          </Text>
+        </View>
+      </BaseConfigDialog>
+    );
+  }
+
   const soundPatternItems = [
     { label: 'None', value: 'none' },
     ...SOUND_PATTERNS.map((p) => ({ label: p.label, value: p.value })),
@@ -280,6 +302,22 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       visible={visible}
       onClose={() => handlers.handleClose()}
       title="Sensor Configuration"
+      headerRight={
+        <View style={styles.headerStatus}>
+          {form.formState.isSubmitting && (
+            <View style={[styles.statusBadge, { backgroundColor: theme.primary }]}>
+              <ActivityIndicator size="small" color="white" />
+              <Text style={styles.statusBadgeText}>Saving...</Text>
+            </View>
+          )}
+          {hasUnsavedChanges && !form.formState.isSubmitting && (
+            <View style={[styles.statusBadge, { backgroundColor: theme.warning }]}>
+              <UniversalIcon name="alert-circle" size={14} color="white" />
+              <Text style={styles.statusBadgeText}>Unsaved</Text>
+            </View>
+          )}
+        </View>
+      }
     >
       <ScrollView style={styles.container}>
         {/* Sensor Type Picker - only show if not initialized with specific type */}
@@ -373,18 +411,40 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                 ) : null}
 
                 {/* Threshold Sliders */}
-                {computed.alarmConfig && (
+                {computed.alarmConfig && enrichedThresholds && (
                   <View style={styles.sliderSection}>
                     <Text style={styles.groupLabel}>Threshold values</Text>
-                    <View style={styles.sliderRow}>
-                      <View style={styles.sliderMinMax}>
-                        <Text style={[styles.minMaxText, { color: theme.textSecondary }]}>
-                          {enrichedThresholds?.formatValue(computed.alarmConfig.min) ??
-                            computed.alarmConfig.min.toFixed(1)}{' '}
-                          {enrichedThresholds?.display.min.unit || ''}
+                    
+                    {/* Color-coded threshold legend */}
+                    <View style={styles.thresholdLegend}>
+                      <View style={[styles.legendItem, { borderLeftColor: theme.warning, borderLeftWidth: 4 }]}>
+                        <Text style={[styles.legendLabel, { color: theme.textSecondary }]}>Warning</Text>
+                        <Text style={[styles.legendValue, { color: theme.warning }]}>
+                          {enrichedThresholds?.formatValue(warningValueWatch ?? 0)}
                         </Text>
                       </View>
-
+                      
+                      <View style={[styles.legendItem, { borderLeftColor: theme.critical, borderLeftWidth: 4 }]}>
+                        <Text style={[styles.legendLabel, { color: theme.textSecondary }]}>Critical</Text>
+                        <Text style={[styles.legendValue, { color: theme.critical }]}>
+                          {enrichedThresholds?.formatValue(criticalValueWatch ?? 0)}
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    {/* Horizontal range indicator above slider */}
+                    <View style={styles.rangeIndicator}>
+                      <View style={styles.rangeLabels}>
+                        <Text style={[styles.rangeLabel, styles.rangeMin]}>Min</Text>
+                        <Text style={[styles.rangeLabel, styles.rangeMid]}>Range</Text>
+                        <Text style={[styles.rangeLabel, styles.rangeMax]}>Max</Text>
+                      </View>
+                      <View style={[styles.rangeTrack, { backgroundColor: theme.surface }]}>
+                        <View style={[styles.rangeHighlight, { backgroundColor: theme.primary }]} />
+                      </View>
+                    </View>
+                    
+                    <View style={styles.sliderRow}>
                       <View style={styles.sliderContainer}>
                         <AlarmThresholdSlider
                           min={computed.alarmConfig.min}
@@ -403,14 +463,6 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                           onCriticalChange={(value) => form.setValue('criticalValue', value)}
                           theme={theme}
                         />
-                      </View>
-
-                      <View style={styles.sliderMinMax}>
-                        <Text style={[styles.minMaxText, { color: theme.textSecondary }]}>
-                          {enrichedThresholds?.formatValue(computed.alarmConfig.max) ??
-                            computed.alarmConfig.max.toFixed(1)}{' '}
-                          {enrichedThresholds?.display.max.unit || ''}
-                        </Text>
                       </View>
                     </View>
 
@@ -554,5 +606,83 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 8,
     textAlign: 'center',
+  },
+
+  // NEW: Unsaved changes indicator
+  headerStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 12,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'white',
+  },
+
+  // NEW: Threshold legend with color coding
+  thresholdLegend: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+    paddingVertical: 12,
+  },
+  legendItem: {
+    flex: 1,
+    paddingLeft: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  legendLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  legendValue: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  // NEW: Horizontal range indicator
+  rangeIndicator: {
+    marginBottom: 12,
+  },
+  rangeLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+    marginBottom: 4,
+  },
+  rangeLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+  },
+  rangeMin: {
+    textAlign: 'left',
+  },
+  rangeMid: {
+    textAlign: 'center',
+  },
+  rangeMax: {
+    textAlign: 'right',
+  },
+  rangeTrack: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  rangeHighlight: {
+    height: '100%',
+    borderRadius: 2,
   },
 });

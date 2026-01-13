@@ -156,10 +156,8 @@ export const useSensorConfigForm = (
 ): UseSensorConfigFormReturn => {
   const { confirm } = useConfirmDialog();
 
-  // Store access
-  const updateSensorThresholds = useNmeaStore((state) => state.updateSensorThresholds);
+  // Store access - only getSensorThresholds needed here
   const getSensorThresholds = useNmeaStore((state) => state.getSensorThresholds);
-  const setConfig = useSensorConfigStore((state) => state.setConfig);
 
   // Get sensor config and derived values
   const sensorConfig = sensorType ? getSensorConfig(sensorType) : null;
@@ -442,7 +440,7 @@ export const useSensorConfigForm = (
   }, [form, enrichedThresholds, sensorType, selectedInstance, onSave, confirm]);
 
   // Handler: Test sound
-  const handleTestSound = useCallback(async (soundPattern: string) => {
+  const handleTestSound = useCallback(async (soundPattern: string): Promise<void> => {
     if (soundPattern === 'none') return;
     try {
       const audioManager = MarineAudioAlertManager.getInstance();

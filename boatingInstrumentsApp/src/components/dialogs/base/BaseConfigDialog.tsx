@@ -58,6 +58,9 @@ export interface BaseConfigDialogProps {
     testID?: string;
   };
 
+  /** Optional custom content for right side of header (e.g., status badges) */
+  headerRight?: React.ReactNode;
+
   /** Dialog content */
   children: React.ReactNode;
 
@@ -76,6 +79,7 @@ export const BaseConfigDialog: React.FC<BaseConfigDialogProps> = ({
   title,
   onClose,
   actionButton,
+  headerRight,
   children,
   testID,
 }) => {
@@ -116,8 +120,10 @@ export const BaseConfigDialog: React.FC<BaseConfigDialogProps> = ({
             {title}
           </Text>
 
-          {/* Action Button (Right) or Spacer */}
-          {actionButton ? (
+          {/* Custom header content OR action button (Right) or Spacer */}
+          {headerRight ? (
+            headerRight
+          ) : actionButton ? (
             <TouchableOpacity
               style={[styles.headerButton, actionButton.disabled && styles.headerButtonDisabled]}
               onPress={actionButton.onPress}
