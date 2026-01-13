@@ -35,6 +35,7 @@ import { useWatch } from 'react-hook-form';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useNmeaStore } from '../../store/nmeaStore';
 import { useSensorConfigStore } from '../../store/sensorConfigStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { SensorType, SensorConfiguration } from '../../types/SensorData';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { UniversalIcon } from '../atoms/UniversalIcon';
@@ -235,6 +236,15 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   const warningValueWatch = useWatch({ control: form.control, name: 'warningValue' });
   const criticalValueWatch = useWatch({ control: form.control, name: 'criticalValue' });
 
+  // Get glove mode setting
+  const gloveMode = useSettingsStore((state) => state.themeSettings.gloveMode);
+
+  // Cache filtered config fields to avoid calling filter twice
+  const editableFields = useMemo(
+    () => sensorConfig?.fields.filter((field) => field.iostate !== 'readOnly') || [],
+    [sensorConfig],
+  );
+
   if (!selectedSensorType) {
     return (
       <BaseConfigDialog visible={visible} onClose={onClose} title="Sensor Configuration">
@@ -307,25 +317,23 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         />
 
         {/* Config Fields - render each field via ConfigFieldRenderer */}
-        {sensorConfig.fields.filter((field) => field.iostate !== 'readOnly').length > 0 && (
+        {editableFields.length > 0 && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Sensor Configuration</Text>
-            {sensorConfig.fields
-              .filter((field) => field.iostate !== 'readOnly')
-              .map((field) => (
-                <ConfigFieldRenderer
-                  key={field.key}
-                  field={field}
-                  value={form.watch(field.key as any) ?? field.default}
-                  onChange={(fieldKey: string, value: any) => form.setValue(fieldKey as any, value)}
-                  sensorInstance={
-                    selectedSensorType
-                      ? sensorRegistry.get(selectedSensorType, selectedInstance) ?? undefined
-                      : undefined
-                  }
-                  theme={theme}
-                  gloveMode={false}
-                />
+            {editableFields.map((field) => (
+              <ConfigFieldRenderer
+                key={field.key}
+                field={field}
+                value={form.watch(field.key as any)}
+                onChange={(fieldKey: string, value: any) => form.setValue(fieldKey as any, value)}
+                sensorInstance={
+                  selectedSensorType
+                    ? sensorRegistry.get(selectedSensorType, selectedInstance) ?? undefined
+                    : undefined
+                }
+                theme={theme}
+                gloveMode={gloveMode}
+              />
               ))}
           </View>
         )}
