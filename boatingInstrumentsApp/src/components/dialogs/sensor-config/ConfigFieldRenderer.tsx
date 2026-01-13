@@ -33,6 +33,7 @@ import {
 } from 'react-native';
 import { ThemeColors } from '../../../store/themeStore';
 import { PlatformPicker } from '../inputs/PlatformPicker';
+import { UniversalIcon } from '../../atoms/UniversalIcon';
 import { SensorFieldConfig } from '../../../registry/SensorConfigRegistry';
 import type { SensorInstance } from '../../../types/SensorInstance';
 import { getFieldHeight, getTouchTargetSize } from '../../../constants/gloveMode';
@@ -119,17 +120,21 @@ const ConfigFieldRendererComponent: React.FC<ConfigFieldRendererProps> = ({
   switch (field.uiType) {
     case 'textInput':
       return (
-        <View style={styles.field}>
-          <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
+        <View style={[styles.field, isReadOnly && styles.readOnlyField]}>
+          <View style={styles.labelRow}>
+            <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
+            {isReadOnly && <UniversalIcon name="lock" size={14} color={theme.textSecondary} />}
+          </View>
           <TextInput
             style={[
               styles.input,
               {
-                backgroundColor: theme.background,
+                backgroundColor: isReadOnly ? theme.surface : theme.background,
                 color: theme.text,
-                borderColor: theme.border,
+                borderColor: isReadOnly ? theme.border : theme.border,
                 minHeight: getFieldHeight(gloveMode),
               },
+              isReadOnly && styles.readOnlyInput,
             ]}
             value={String(currentValue || '')}
             onChangeText={(text) => {
@@ -147,24 +152,28 @@ const ConfigFieldRendererComponent: React.FC<ConfigFieldRendererProps> = ({
 
     case 'numericInput':
       return (
-        <View style={styles.field}>
-          <Text style={[styles.label, { color: theme.text }]}>
-            {field.label}
-            {field.valueType === 'number' && 'min' in field && 'max' in field && field.min !== undefined && field.max !== undefined ? (
-              <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
-                {` (${field.min}-${field.max})`}
-              </Text>
-            ) : null}
-          </Text>
+        <View style={[styles.field, isReadOnly && styles.readOnlyField]}>
+          <View style={styles.labelRow}>
+            <Text style={[styles.label, { color: theme.text }]}>
+              {field.label}
+              {field.valueType === 'number' && 'min' in field && 'max' in field && field.min !== undefined && field.max !== undefined ? (
+                <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                  {` (${field.min}-${field.max})`}
+                </Text>
+              ) : null}
+            </Text>
+            {isReadOnly && <UniversalIcon name="lock" size={14} color={theme.textSecondary} />}
+          </View>
           <TextInput
             style={[
               styles.input,
               {
-                backgroundColor: theme.background,
+                backgroundColor: isReadOnly ? theme.surface : theme.background,
                 color: theme.text,
-                borderColor: theme.border,
+                borderColor: isReadOnly ? theme.border : theme.border,
                 minHeight: getFieldHeight(gloveMode),
               },
+              isReadOnly && styles.readOnlyInput,
             ]}
             value={String(currentValue ?? '')}
             onChangeText={(text) => {
@@ -290,11 +299,19 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
     field: {
       marginBottom: 16,
     },
+    readOnlyField: {
+      opacity: 0.7,
+    },
+    labelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
     label: {
       fontSize: 16,
       fontWeight: '600',
       fontFamily: platformTokens.typography.fontFamily,
-      marginBottom: 8,
     },
     input: {
       paddingHorizontal: 12,
@@ -302,6 +319,9 @@ const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getP
       borderRadius: platformTokens.borderRadius.input,
       borderWidth: 1,
       fontSize: 16,
+    },
+    readOnlyInput: {
+      opacity: 0.7,
     },
     toggleRow: {
       flexDirection: 'row',
