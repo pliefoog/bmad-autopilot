@@ -21,7 +21,7 @@
  * Dialog renders InstanceTabBar, MetricSelector, and ConfigFieldRenderer components
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -31,6 +31,7 @@ import {
   Alert,
   useWindowDimensions,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { useWatch } from 'react-hook-form';
 import { useTheme, ThemeColors } from '../../store/themeStore';
@@ -78,6 +79,50 @@ interface SensorInstance {
   location?: string;
   lastUpdate?: number;
 }
+
+/**
+ * AnimatedThresholdValue - Smooth value updates with pulse feedback
+ *
+ * Animates opacity when threshold value changes, providing visual
+ * feedback that the value has been updated. Helps user follow slider
+ * interactions with visual confirmation.
+ */
+interface AnimatedThresholdValueProps {
+  label: string;
+  value: string;
+  color: string;
+}
+
+const AnimatedThresholdValue: React.FC<AnimatedThresholdValueProps> = ({
+  label,
+  value,
+  color,
+}) => {
+  const opacityAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    // Pulse animation when value changes
+    Animated.sequence([
+      Animated.timing(opacityAnim, {
+        toValue: 0.6,
+        duration: 100,
+        useNativeDriver: false,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, [value, opacityAnim]);
+
+  return (
+    <Animated.View style={[{ opacity: opacityAnim }]}>
+      <Text style={[styles.legendLabel, { color: '#666' }]}>{label}</Text>
+      <Text style={[styles.legendValue, { color }]}>{value}</Text>
+    </Animated.View>
+  );
+};
 
 /**
  * SensorConfigDialog Component
@@ -415,20 +460,22 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                   <View style={styles.sliderSection}>
                     <Text style={styles.groupLabel}>Threshold values</Text>
                     
-                    {/* Color-coded threshold legend */}
+                    {/* Color-coded threshold legend with animated values */}
                     <View style={styles.thresholdLegend}>
                       <View style={[styles.legendItem, { borderLeftColor: theme.warning, borderLeftWidth: 4 }]}>
-                        <Text style={[styles.legendLabel, { color: theme.textSecondary }]}>Warning</Text>
-                        <Text style={[styles.legendValue, { color: theme.warning }]}>
-                          {enrichedThresholds?.formatValue(warningValueWatch ?? 0)}
-                        </Text>
+                        <AnimatedThresholdValue
+                          label="Warning"
+                          value={enrichedThresholds?.formatValue(warningValueWatch ?? 0) || '—'}
+                          color={theme.warning}
+                        />
                       </View>
                       
                       <View style={[styles.legendItem, { borderLeftColor: theme.critical, borderLeftWidth: 4 }]}>
-                        <Text style={[styles.legendLabel, { color: theme.textSecondary }]}>Critical</Text>
-                        <Text style={[styles.legendValue, { color: theme.critical }]}>
-                          {enrichedThresholds?.formatValue(criticalValueWatch ?? 0)}
-                        </Text>
+                        <AnimatedThresholdValue
+                          label="Critical"
+                          value={enrichedThresholds?.formatValue(criticalValueWatch ?? 0) || '—'}
+                          color={theme.critical}
+                        />
                       </View>
                     </View>
                     
