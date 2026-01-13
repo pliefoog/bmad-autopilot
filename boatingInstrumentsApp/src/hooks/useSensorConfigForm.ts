@@ -19,7 +19,7 @@
  * - Enrichment guards prevent data corruption on unit conversion failures
  */
 
-import { useCallback, useMemo, useEffect, useRef } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import { useForm, useWatch, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -242,7 +242,8 @@ export const useSensorConfigForm = (
   // Without this, switching sensors shows stale data from previous sensor
   useEffect(() => {
     form.reset(initialFormData);
-  }, [sensorType, selectedInstance]); // Note: Deliberately omit initialFormData to avoid infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sensorType, selectedInstance, initialFormData]); // initialFormData stable via useMemo
 
   // Watch specific fields for derived value calculation (not whole-form watching)
   const watchedMetric = useWatch({
@@ -311,13 +312,15 @@ export const useSensorConfigForm = (
     if (clampedCritical !== watchedCritical && clampedCritical !== undefined) {
       form.setValue('criticalValue', clampedCritical);
     }
-  }, [clampedCritical, watchedCritical, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clampedCritical, watchedCritical]); // form.setValue is stable, omit form object
 
   useEffect(() => {
     if (clampedWarning !== watchedWarning && clampedWarning !== undefined) {
       form.setValue('warningValue', clampedWarning);
     }
-  }, [clampedWarning, watchedWarning, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clampedWarning, watchedWarning]); // form.setValue is stable, omit form object
 
   // Compute display values
   const unitSymbol = useMemo(() => enrichedThresholds?.display.min.unit || '', [enrichedThresholds]);
