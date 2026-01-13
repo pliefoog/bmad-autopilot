@@ -133,15 +133,15 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   }, [instances, selectedInstance]);
 
   // Get form hook (all form logic centralized here)
-  const updateSensorThresholds = useNmeaStore((state) => state.updateSensorThresholds);
-  const getSensorThresholds = useNmeaStore((state) => state.getSensorThresholds);
-  const setConfig = useSensorConfigStore((state) => state.setConfig);
-
   const { form, enrichedThresholds, handlers, computed } = useSensorConfigForm(
     selectedSensorType,
     selectedInstance,
     async (sensorType, instance, data) => {
       if (!sensorType) return;
+      
+      // Capture store methods inside callback to avoid stale closure
+      const updateSensorThresholds = useNmeaStore.getState().updateSensorThresholds;
+      const setConfig = useSensorConfigStore.getState().setConfig;
       
       // If name field is empty, set default format
       const trimmedName = data.name?.trim();
@@ -272,7 +272,10 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               <View style={styles.inputWrapper}>
                 <PlatformPicker
                   value={selectedSensorType}
-                  onValueChange={(value) => handlers.handleSensorTypeSwitch(value as SensorType)}
+                  onValueChange={async (value) => {
+                    await handlers.handleSensorTypeSwitch(value as SensorType);
+                    setSelectedSensorType(value as SensorType);
+                  }}
                   items={availableSensorTypes.map((type) => ({
                     label: getSensorConfig(type).displayName,
                     value: type,

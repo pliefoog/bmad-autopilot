@@ -1,37 +1,7 @@
-fix(sensor-config): fix infinite render loop - comprehensive solution
+fix(web): disable Hermes and fix Metro .mjs blocklist for react-hook-form
 
-Root cause analysis identified multiple cascading issues:
-
-1. **useFormState Hook - updateField instability**:
-   - updateField had 'errors' in dependency array
-   - errors state changes → updateField recreates → consumers re-render
-   - Fixed: Use functional setErrors update instead of checking errors state
-   - Result: updateField now stable (only recreates when onSave/debounceMs/saveNow change)
-
-2. **SensorConfigDialog - Unstable slider callbacks**:
-   - Inline arrow functions in AlarmThresholdSlider props
-   - Created new functions on every render
-   - Fixed: Extract to memoized useCallback (handleWarningChange, handleCriticalChange)
-   - Result: Slider callbacks stable, no unnecessary re-renders
-
-3. **currentThresholds useMemo - Unnecessary dependency**:
-   - Had getSensorThresholds in deps array
-   - getSensorThresholds is stable Zustand function (doesn't change)
-   - Fixed: Remove from deps, add eslint-disable comment
-   - Result: currentThresholds only recalculates when sensor changes
-
-**Why infinite loop occurred:**
-- User enables alarm → form updates
-- updateField recreates (errors changed)
-- handleWarningChange/handleCriticalChange recreate (depend on updateField)
-- AlarmThresholdSlider re-renders
-- Clamping useEffect runs → calls updateField
-- Form updates → validation runs → errors change
-- Loop repeats infinitely
-
-**Solution approach:**
-- Break the chain at its weakest link: make updateField stable
-- Memoize all slider callbacks properly
-- Remove unnecessary dependencies from useMemo
-
-Files: useFormState.ts (updateField deps fix), SensorConfigDialog.tsx (stable callbacks)
+- Disabled newArchEnabled in app.json (was forcing Hermes)
+- Removed .mjs blocklist from metro.config.js
+- Removed broken expo-router/_ctx.web alias
+- Added custom web/index.html with default transform
+- Fresh npm install to fix corrupted node_modules

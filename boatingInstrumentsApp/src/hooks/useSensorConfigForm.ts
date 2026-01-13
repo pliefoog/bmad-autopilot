@@ -27,8 +27,6 @@ import { Platform, Alert } from 'react-native';
 
 import { useNmeaStore } from '../store/nmeaStore';
 import { useSensorConfigStore } from '../store/sensorConfigStore';
-import { useTheme } from '../store/themeStore';
-import { useSettingsStore } from '../store/settingsStore';
 
 import type { SensorType, SensorConfiguration } from '../types/SensorData';
 import type { SensorInstance } from '../types/SensorInstance';
@@ -156,8 +154,6 @@ export const useSensorConfigForm = (
   selectedInstance: number,
   onSave: (sensorType: SensorType, instance: number, data: SensorFormData) => Promise<void>,
 ): UseSensorConfigFormReturn => {
-  const theme = useTheme();
-  const gloveMode = useSettingsStore((state) => state.themeSettings.gloveMode);
   const { confirm } = useConfirmDialog();
 
   // Store access
@@ -242,6 +238,12 @@ export const useSensorConfigForm = (
     defaultValues: initialFormData,
   });
 
+  // CRITICAL: Reset form when sensor type or instance changes
+  // Without this, switching sensors shows stale data from previous sensor
+  useEffect(() => {
+    form.reset(initialFormData);
+  }, [sensorType, selectedInstance]); // Note: Deliberately omit initialFormData to avoid infinite loop
+
   // Watch specific fields for derived value calculation (not whole-form watching)
   const watchedMetric = useWatch({
     control: form.control,
@@ -272,7 +274,7 @@ export const useSensorConfigForm = (
     const metric = requiresMetricSelection ? watchedMetric : undefined;
     const direction = getAlarmDirection(sensorType, metric).direction;
     const triggerHint = getAlarmTriggerHint(sensorType);
-    const defaults = getAlarmDefaults(sensorType, currentThresholds.context);
+    const defaults = getAlarmDefaults(sensorType, currentThresholds?.context);
     const metricKey = requiresMetricSelection ? watchedMetric : undefined;
     const metricDefaults = metricKey && defaults?.metrics?.[metricKey];
 
@@ -454,12 +456,7 @@ export const useSensorConfigForm = (
     }
   }, []);
 
-  // Cleanup: Unsubscribe listeners on unmount
-  useEffect(() => {
-    return () => {
-      form.reset();
-    };
-  }, [form]);
+  // Note: form.reset() called in handleClose() - no additional cleanup needed
 
   return {
     form,
