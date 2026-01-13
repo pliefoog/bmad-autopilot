@@ -31,6 +31,7 @@ import {
   Alert,
   useWindowDimensions,
 } from 'react-native';
+import { useWatch } from 'react-hook-form';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useNmeaStore } from '../../store/nmeaStore';
 import { useSensorConfigStore } from '../../store/sensorConfigStore';
@@ -226,6 +227,14 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     },
   );
 
+  // Watch form fields for conditional rendering (performance optimized)
+  const enabledValue = useWatch({ control: form.control, name: 'enabled' });
+  const selectedMetricValue = useWatch({ control: form.control, name: 'selectedMetric' });
+  const criticalPatternValue = useWatch({ control: form.control, name: 'criticalSoundPattern' });
+  const warningPatternValue = useWatch({ control: form.control, name: 'warningSoundPattern' });
+  const warningValueWatch = useWatch({ control: form.control, name: 'warningValue' });
+  const criticalValueWatch = useWatch({ control: form.control, name: 'criticalValue' });
+
   if (!selectedSensorType) {
     return (
       <BaseConfigDialog visible={visible} onClose={onClose} title="Sensor Configuration">
@@ -290,8 +299,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         <InstanceTabBar
           instances={instances}
           selectedInstance={selectedInstance}
-          onInstanceSelect={(instance) => {
-            handlers.handleInstanceSwitch(instance);
+          onInstanceSelect={async (instance) => {
+            await handlers.handleInstanceSwitch(instance);
             setSelectedInstance(instance);
           }}
           theme={theme}
@@ -329,7 +338,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               <Text style={[styles.settingLabel, { color: theme.text }]}>Enable alarms</Text>
               <PlatformToggle
                 label="Enable alarms"
-                value={form.watch('enabled') ?? false}
+                value={enabledValue ?? false}
                 onValueChange={(value) => {
                   if (!value && ['depth', 'battery', 'engine'].includes(selectedSensorType)) {
                     handlers.handleEnabledChange(value);
@@ -340,7 +349,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               />
             </View>
 
-            {form.watch('enabled') && (
+            {enabledValue && (
               <View style={styles.settingGroup}>
                 {/* Metric Selector */}
                 {computed.requiresMetricSelection && sensorConfig?.alarmMetrics ? (
@@ -348,7 +357,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                     <Text style={styles.groupLabel}>Alarm metric</Text>
                     <MetricSelector
                       alarmMetrics={sensorConfig.alarmMetrics}
-                      selectedMetric={form.watch('selectedMetric') ?? ''}
+                      selectedMetric={selectedMetricValue ?? ''}
                       onMetricChange={(metric) => handlers.handleMetricChange(metric)}
                       theme={theme}
                     />
@@ -373,8 +382,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                           min={computed.alarmConfig.min}
                           max={computed.alarmConfig.max}
                           step={computed.alarmConfig.step}
-                          warningValue={form.watch('warningValue')}
-                          criticalValue={form.watch('criticalValue')}
+                          warningValue={warningValueWatch}
+                          criticalValue={criticalValueWatch}
                           alarmDirection={computed.alarmConfig.direction}
                           formatValue={(si) =>
                             enrichedThresholds?.formatValue(
@@ -407,8 +416,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
                 {/* Sound Pattern Control */}
                 <SoundPatternControl
-                  criticalPattern={form.watch('criticalSoundPattern') ?? 'rapid_pulse'}
-                  warningPattern={form.watch('warningSoundPattern') ?? 'warble'}
+                  criticalPattern={criticalPatternValue ?? 'rapid_pulse'}
+                  warningPattern={warningPatternValue ?? 'warble'}
                   soundPatternItems={soundPatternItems}
                   onCriticalChange={(pattern) => form.setValue('criticalSoundPattern', pattern)}
                   onWarningChange={(pattern) => form.setValue('warningSoundPattern', pattern)}

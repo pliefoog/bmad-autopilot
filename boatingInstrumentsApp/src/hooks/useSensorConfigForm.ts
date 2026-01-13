@@ -221,8 +221,8 @@ export const useSensorConfigForm = (
     return {
       name: displayName,
       enabled: currentThresholds?.enabled || false,
-      batteryChemistry: (currentThresholds?.context?.batteryChemistry as any) || 'lead-acid',
-      engineType: (currentThresholds?.context?.engineType as any) || 'diesel',
+      batteryChemistry: (currentThresholds?.context?.batteryChemistry as 'lead-acid' | 'agm' | 'lifepo4') || 'lead-acid',
+      engineType: (currentThresholds?.context?.engineType as 'diesel' | 'gasoline' | 'outboard') || 'diesel',
       selectedMetric: firstMetric || '',
       criticalValue,
       warningValue,
@@ -405,7 +405,7 @@ export const useSensorConfigForm = (
       if (form.formState.isDirty && enrichedThresholds) {
         try {
           await form.handleSubmit(async (data) => {
-            await onSave(sensorType || 'depth', selectedInstance, data);
+            await onSave(sensorType || newType, selectedInstance, data);
           })();
         } catch (error) {
           log.app('useSensorConfigForm: Sensor type switch save failed', () => ({
