@@ -3,17 +3,22 @@
 **Goal:** Consolidate sensor definitions from split architecture (SensorData.ts interfaces + SensorConfigRegistry.ts) into single unified SENSOR_SCHEMAS source of truth.
 
 **Timeline:** 22-23 days  
-**Active Rollback Point:** `rollback/start` (not yet created)
+**Active Rollback Point:** `rollback/start`
+
+**Baseline Metrics:**
+- TypeScript errors: 1 (gracefulDegradationService.ts syntax error - pre-existing)
+- Branch: `refactor/unified-sensor-schema`
+- Commit: `b79bf078`
 
 ---
 
 ## Phase Status
 
-### Phase 0: Git Setup & Baseline (0.5 days)
-- [ ] Create refactor branch: `refactor/unified-sensor-schema`
-- [ ] Create rollback tag: `rollback/start`
-- [ ] Document baseline metrics (TypeScript errors, bundle size)
-- [ ] Commit: "chore: initialize unified sensor schema refactor"
+### Phase 0: Git Setup & Baseline (0.5 days) ✅ COMPLETE
+- [x] Create refactor branch: `refactor/unified-sensor-schema`
+- [x] Create rollback tag: `rollback/start`
+- [x] Document baseline metrics (TypeScript errors, bundle size)
+- [x] Commit: "chore: initialize unified sensor schema refactor"
 
 ### Phase 0.5: Documentation Infrastructure (0.5 days)
 - [ ] Audit existing documentation
@@ -99,12 +104,9 @@
 
 ## Next Step
 
-**Create git branch and rollback point** (Phase 0)
+**Begin Phase 0.5: Documentation Infrastructure**
 
-```bash
-git checkout -b refactor/unified-sensor-schema
-git tag -a rollback/start -m "Refactor start point"
-```
+Audit existing documentation and create cleanup infrastructure.
 
 ---
 
