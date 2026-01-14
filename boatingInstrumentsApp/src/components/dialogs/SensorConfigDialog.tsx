@@ -44,7 +44,7 @@ import { UniversalIcon } from '../atoms/UniversalIcon';
 import { PlatformToggle } from './inputs/PlatformToggle';
 import { PlatformPicker } from './inputs/PlatformPicker';
 import { getPlatformTokens } from '../../theme/settingsTokens';
-import { getSensorConfig } from '../../registry';
+import { getSensorSchema } from '../../registry';
 import { getAlarmDirection } from '../../utils/sensorAlarmUtils';
 import { sensorRegistry } from '../../services/SensorDataRegistry';
 import {
@@ -279,14 +279,29 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
   // Get sensor config EARLY - before useMemo that uses it
   // Safe to call: selectedSensorType is guaranteed to exist by guard below
-  const sensorConfig = selectedSensorType ? getSensorConfig(selectedSensorType) : null;
+  const sensorConfig = selectedSensorType ? getSensorSchema(selectedSensorType) : null;
 
   // Cache filtered config fields to avoid calling filter twice
   // Now safe: sensorConfig is defined above
-  const editableFields = useMemo(
-    () => sensorConfig?.fields.filter((field) => field.iostate !== 'readOnly') || [],
-    [sensorConfig],
-  );
+  // Convert fields object to array with key property for ConfigFieldRenderer
+  const editableFields = useMemo(() => {
+    if (!sensorConfig) return [];
+    return Object.entries(sensorConfig.fields)
+      .filter(([_, field]) => field.iostate !== 'readOnly')
+      .map(([key, field]) => ({ ...field, key }));
+  }, [sensorConfig]);
+
+  // Compute alarm metrics from fields with alarm configuration
+  const alarmMetrics = useMemo(() => {
+    if (!sensorConfig) return [];
+    return Object.entries(sensorConfig.fields)
+      .filter(([_, field]) => field.alarm !== undefined)
+      .map(([key, field]) => ({
+        key,
+        label: field.label,
+        category: field.unitType,
+      }));
+  }, [sensorConfig]);
 
   // Watch form fields for conditional rendering (performance optimized)
   const enabledValue = useWatch({ control: form.control, name: 'enabled' });
@@ -388,7 +403,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                     setSelectedSensorType(value as SensorType);
                   }}
                   items={availableSensorTypes.map((type) => ({
-                    label: getSensorConfig(type).displayName,
+                    label: getSensorSchema(type).displayName,
                     value: type,
                   }))}
                 />
@@ -452,11 +467,11 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
             {enabledValue && (
               <View style={styles.settingGroup}>
                 {/* Metric Selector */}
-                {computed.requiresMetricSelection && sensorConfig?.alarmMetrics ? (
+                {computed.requiresMetricSelection && alarmMetrics.length > 0 ? (
                   <>
                     <Text style={styles.groupLabel}>Alarm metric</Text>
                     <MetricSelector
-                      alarmMetrics={sensorConfig.alarmMetrics}
+                      alarmMetrics={alarmMetrics}
                       selectedMetric={selectedMetricValue ?? ''}
                       onMetricChange={(metric) => handlers.handleMetricChange(metric)}
                       theme={theme}

@@ -5,7 +5,7 @@ import { FlashingText } from './FlashingText';
 import { ALARM_VISUAL_STATES } from '../types/AlarmTypes';
 import type { AlarmLevel } from '../types/AlarmTypes';
 import type { SensorType, SensorMetricProps } from '../types/SensorData';
-import { getSensorField } from '../registry';
+import { getFieldDefinition } from '../registry';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
 import { useMetricValue, useSensorInstance } from '../contexts/MetricContext';
 
@@ -55,7 +55,7 @@ interface PrimaryMetricCellProps extends SensorMetricProps {
  * **Auto-Fetch Pattern:**
  * 1. Reads sensor context (instance + type)
  * 2. Fetches MetricValue via instance.getMetric(metricKey)
- * 3. Fetches field config via getSensorField(sensorType, metricKey)
+ * 3. Fetches field config via getFieldDefinition(sensorType, metricKey)
  * 4. Displays: mnemonic, value, unit, alarm state
  *
  * **Virtual Metrics (Dot Notation):**
@@ -112,7 +112,7 @@ const PrimaryMetricCellComponent: React.FC<PrimaryMetricCellProps> = ({
   // Auto-fetch field configuration from registry (use base field name)
   const fieldConfig = useMemo(() => {
     try {
-      return getSensorField(sensorType, baseMetricKey);
+      return getFieldDefinition(sensorType, baseMetricKey);
     } catch (error) {
       // Note: Error already logged by registry, no need to log again
       return null;

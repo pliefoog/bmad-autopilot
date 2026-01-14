@@ -167,9 +167,6 @@ getContextValues(sensorType: SensorType): string[]
 
 // Get field names for a sensor type
 getSensorFields(sensorType: SensorType): string[]
-
-// LEGACY: Backward compatibility wrapper for old getSensorField()
-getSensorField(sensorType: SensorType, fieldKey: string): FieldDefinition | undefined
 ```
 
 ### Global Cache (src/registry/globalSensorCache.ts)
@@ -306,15 +303,12 @@ const compass: CompassSensorData = {...};  // ✅ Still valid
 const heading: HeadingSensorData = {...};  // ✅ Preferred
 ```
 
-### API Compatibility
+### API Migration Complete ✅
 
-Old function still available (but deprecated):
+All code now uses the new API:
 
 ```typescript
-// Old API still works
-getSensorField('battery', 'voltage');
-
-// New API preferred
+// ✅ All components migrated to new API
 getFieldDefinition('battery', 'voltage');
 ```
 

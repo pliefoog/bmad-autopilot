@@ -22,15 +22,15 @@ export const NavigationWidget: React.FC<NavigationWidgetProps> = React.memo(({ i
   return (
     <TemplatedWidget
       template="4Rx2C-NONE"
-      sensorType="navigation"
+      sensorType="position"
       instanceNumber={0}
       testID={id}
     >
       {/* Primary Grid: Navigation metrics in 2x2 layout */}
-      <PrimaryMetricCell sensorType="navigation" instance={0} metricKey="bearingToWaypoint" />
-      <PrimaryMetricCell sensorType="navigation" instance={0} metricKey="distanceToWaypoint" />
-      <PrimaryMetricCell sensorType="navigation" instance={0} metricKey="crossTrackError" />
-      <PrimaryMetricCell sensorType="navigation" instance={0} metricKey="velocityMadeGood" />
+      <PrimaryMetricCell sensorType="position" instance={0} metricKey="bearingToWaypoint" />
+      <PrimaryMetricCell sensorType="position" instance={0} metricKey="distanceToWaypoint" />
+      <PrimaryMetricCell sensorType="position" instance={0} metricKey="crossTrackError" />
+      <PrimaryMetricCell sensorType="position" instance={0} metricKey="velocityMadeGood" />
     </TemplatedWidget>
   );
 });

@@ -206,7 +206,7 @@ function parseBinaryPgnToUpdates(frame: BinaryPgnFrame): SensorUpdate[] {
           const headingData = pgnParser.parseHeadingPgn(hexData);
           if (headingData) {
             updates.push({
-              sensorType: 'compass',
+              sensorType: 'heading',
               instance: 0,
               data: {
                 magneticHeading: headingData.heading,

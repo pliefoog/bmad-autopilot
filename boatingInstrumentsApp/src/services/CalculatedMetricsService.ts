@@ -111,7 +111,7 @@ export class DewPointCalculator implements MetricCalculator {
  */
 export class RateOfTurnCalculator implements MetricCalculator {
   canCalculate(sensorType: SensorType): boolean {
-    return sensorType === 'compass';
+    return sensorType === 'heading';
   }
 
   calculate(sensor: SensorInstance): Map<string, MetricValue> {
@@ -206,7 +206,7 @@ export class TrueWindCalculator implements MetricCalculator {
 
     // Get GPS and compass data
     const gpsInstance = registry.get('gps', 0);
-    const compassInstance = registry.get('compass', 0);
+    const compassInstance = registry.get('heading', 0);
 
     if (!gpsInstance || !compassInstance) {
       log.wind('Missing GPS or compass instance for true wind calculation');

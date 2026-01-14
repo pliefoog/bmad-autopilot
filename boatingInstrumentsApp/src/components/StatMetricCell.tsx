@@ -4,7 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useNmeaStore } from '../store/nmeaStore';
 import type { SensorMetricProps } from '../types/SensorData';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
-import { getSensorField } from '../../registry';
+import { getFieldDefinition } from '../registry';
 
 interface StatMetricCellProps extends SensorMetricProps {
   // SensorMetricProps provides: sensorType, instance, metricKey
@@ -58,7 +58,7 @@ export const StatMetricCell: React.FC<StatMetricCellProps> = ({
   // Auto-fetch field configuration from registry
   const fieldConfig = useMemo(() => {
     try {
-      return getSensorField(sensorType, metricKey);
+      return getFieldDefinition(sensorType, metricKey);
     } catch (error) {
       return null;
     }

@@ -137,21 +137,21 @@ export const COMPASS_WIDGET_REGISTRATION: WidgetRegistration = {
   priority: 80,
   requiredSensors: [
     {
-      sensorType: 'compass',
-      metricName: 'magneticHeading',
+      sensorType: 'heading',
+      metricName: 'magnetic',
       required: true,
       label: 'Heading',
     },
   ],
   optionalSensors: [
     {
-      sensorType: 'compass',
+      sensorType: 'heading',
       metricName: 'variation',
       required: false,
       label: 'Magnetic Variation',
     },
     {
-      sensorType: 'compass',
+      sensorType: 'heading',
       metricName: 'rateOfTurn',
       required: false,
       label: 'Rate of Turn',
@@ -224,30 +224,18 @@ export const NAVIGATION_WIDGET_REGISTRATION: WidgetRegistration = {
   priority: 70,
   requiredSensors: [
     {
-      sensorType: 'navigation',
-      metricName: 'bearingToWaypoint',
+      sensorType: 'position',
+      metricName: 'latitude',
       required: true,
-      label: 'Bearing to Waypoint',
+      label: 'Latitude',
     },
   ],
   optionalSensors: [
     {
-      sensorType: 'navigation',
-      metricName: 'distanceToWaypoint',
+      sensorType: 'position',
+      metricName: 'longitude',
       required: false,
-      label: 'Distance to Waypoint',
-    },
-    {
-      sensorType: 'navigation',
-      metricName: 'crossTrackError',
-      required: false,
-      label: 'Cross Track Error',
-    },
-    {
-      sensorType: 'navigation',
-      metricName: 'velocityMadeGood',
-      required: false,
-      label: 'VMG',
+      label: 'Longitude',
     },
   ],
   createWidget: (instance, sensorData) => {
@@ -268,10 +256,10 @@ export const AUTOPILOT_WIDGET_REGISTRATION: WidgetRegistration = {
   priority: 100,
   requiredSensors: [
     {
-      sensorType: 'compass',
-      metricName: 'magneticHeading',
+      sensorType: 'autopilot',
+      metricName: 'rudderAngle',
       required: true,
-      label: 'Compass Heading',
+      label: 'Rudder Angle',
     },
   ],
   optionalSensors: [
@@ -289,9 +277,21 @@ export const AUTOPILOT_WIDGET_REGISTRATION: WidgetRegistration = {
     },
     {
       sensorType: 'autopilot',
+      metricName: 'actualHeading',
+      required: false,
+      label: 'Actual Heading',
+    },
+    {
+      sensorType: 'autopilot',
       metricName: 'targetHeading',
       required: false,
       label: 'Target Heading',
+    },
+    {
+      sensorType: 'heading',
+      metricName: 'rateOfTurn',
+      required: false,
+      label: 'Rate of Turn',
     },
     {
       sensorType: 'autopilot',
@@ -480,7 +480,7 @@ export const TEMPERATURE_WIDGET_REGISTRATION: WidgetRegistration = {
   requiredSensors: [
     {
       sensorType: 'temperature',
-      metricName: 'value',
+      metricName: 'temperature',
       required: true,
       label: 'Temperature',
     },

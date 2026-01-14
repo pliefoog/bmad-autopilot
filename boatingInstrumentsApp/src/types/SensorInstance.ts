@@ -40,12 +40,13 @@ import { MetricValue } from './MetricValue';
 import { SensorType, SensorData, MetricThresholds } from './SensorData';
 import { DataCategory } from '../presentation/categories';
 import { AdaptiveHistoryBuffer, DataPoint } from '../utils/AdaptiveHistoryBuffer';
-import { getDataFields, getAlarmDefaults, getSensorConfig } from '../../registry';
+import { getSensorFields, getAlarmFields, getAlarmDefaults, getContextKey, getSensorSchema, getFieldDefinition } from '../registry';
 import { getUnitType, getMnemonic, isCacheInitialized } from '../registry/globalSensorCache';
 import { evaluateAlarm } from '../utils/alarmEvaluation';
 import { log } from '../utils/logging/logger';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
 import { useSensorConfigStore } from '../store/sensorConfigStore';
+import type { SensorConfiguration } from './SensorData';
 
 /**
  * Enriched metric data point (backward compatibility)
@@ -83,6 +84,12 @@ export class SensorInstance<T extends SensorData = SensorData> {
   name: string;
   timestamp: number;
   context?: any;
+
+  // Fix missing _forceTimezones property
+  private _forceTimezones: Map<string, any> = new Map();
+
+  // Fix missing _metricUnitTypes property
+  private _metricUnitTypes: Map<string, any> = new Map();
 
   /**
    * Create sensor instance
@@ -146,79 +153,49 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * - Jan 2026: Fixed priority to respect user settings over defaults
    */
   private _initializeDefaultThresholds(): void {
-    const sensorConfig = getSensorConfig(this.sensorType);
-    if (!sensorConfig || sensorConfig.alarmSupport === 'none') {
+    const sensorConfig = getSensorSchema(this.sensorType);
+    if (!sensorConfig) {
       return;
     }
 
-    // PRIORITY 1: Check for user-saved configuration in sensorConfigStore
-    const userConfig = useSensorConfigStore.getState().getConfig(this.sensorType, this.instance);
-    
-    if (userConfig) {
-      // Load user-saved thresholds
-      if (userConfig.metrics) {
-        // Multi-metric: load each metric's thresholds
-        for (const [metricKey, metricConfig] of Object.entries(userConfig.metrics)) {
-          this._thresholds.set(metricKey, metricConfig as MetricThresholds);
-        }
-        log.app('✅ Loaded user-saved thresholds (multi-metric)', () => ({
-          sensorType: this.sensorType,
-          instance: this.instance,
-          source: 'sensorConfigStore',
-          metrics: Object.keys(userConfig.metrics),
-        }));
-      } else if (userConfig.critical !== undefined || userConfig.warning !== undefined) {
-        // Single-metric: load critical/warning thresholds
-        const firstMetric = sensorConfig.alarmMetrics?.[0];
-        if (firstMetric) {
-          this._thresholds.set(firstMetric.key, {
-            critical: userConfig.critical,
-            warning: userConfig.warning,
-            direction: userConfig.direction,
-            staleThresholdMs: userConfig.staleThresholdMs,
-          } as MetricThresholds);
-          log.app('✅ Loaded user-saved thresholds (single-metric)', () => ({
-            sensorType: this.sensorType,
-            instance: this.instance,
-            source: 'sensorConfigStore',
-            metric: firstMetric.key,
-          }));
+    // Determine context value for alarms (if any)
+    let contextValue = undefined;
+    const contextKey = getContextKey(this.sensorType);
+    if (contextKey && this.context && this.context[contextKey]) {
+      contextValue = this.context[contextKey];
+    } else if (contextKey) {
+      // Fallback: use first available context value from schema
+      const fieldDef = sensorConfig.fields[contextKey];
+      if (fieldDef && fieldDef.options && fieldDef.options.length > 0) {
+        contextValue = fieldDef.options[0];
+      }
+    }
+
+    // Get all alarm-capable fields
+    const alarmFields = getAlarmFields(this.sensorType);
+    if (alarmFields.length > 0 && contextValue) {
+      for (const metricKey of alarmFields) {
+        const alarmDefaults = getAlarmDefaults(this.sensorType, metricKey, contextValue);
+        if (alarmDefaults) {
+          this._thresholds.set(metricKey, {
+            critical: alarmDefaults.critical,
+            warning: alarmDefaults.warning,
+            criticalSoundPattern: alarmDefaults.criticalSoundPattern,
+            warningSoundPattern: alarmDefaults.warningSoundPattern,
+            hysteresis: undefined,
+            staleThresholdMs: 60000,
+            enabled: true,
+          });
         }
       }
-      
-      // User config loaded successfully - don't load defaults
-      return;
-    }
-
-    // PRIORITY 2: No user config - fall back to registry defaults
-    const defaults = getAlarmDefaults(this.sensorType);
-    if (!defaults) {
-      return;
-    }
-
-    // Multi-metric sensors (battery, weather, engine)
-    if (defaults.metrics) {
-      for (const [metricKey, thresholds] of Object.entries(defaults.metrics)) {
-        this._thresholds.set(metricKey, thresholds as MetricThresholds);
-      }
-      log.app('📋 Loaded registry default thresholds (multi-metric)', () => ({
+      log.app('✅ Loaded registry alarm defaults (multi-metric)', () => ({
         sensorType: this.sensorType,
         instance: this.instance,
-        source: 'registry',
-        metrics: Object.keys(defaults.metrics),
+        source: 'schema',
+        metrics: alarmFields,
       }));
-    }
-    // Single-metric sensors (depth, wind, speed)
-    else if (sensorConfig.alarmMetrics && sensorConfig.alarmMetrics.length > 0) {
-      const firstMetric = sensorConfig.alarmMetrics[0];
-      this._thresholds.set(firstMetric.key, defaults as MetricThresholds);
-      log.app('📋 Loaded registry default thresholds (single-metric)', () => ({
-        sensorType: this.sensorType,
-        instance: this.instance,
-        source: 'registry',
-        metric: firstMetric.key,
-      }));
-    }
+      return;
+    } 
   }
 
   /**
@@ -229,13 +206,15 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * @returns true if any metric values changed
    */
   updateMetrics(data: Partial<T>): { changed: boolean; changedMetrics: Set<string> } {
-    const fields = getDataFields(this.sensorType);
+    const fieldNames = getSensorFields(this.sensorType);
     let hasChanges = false;
     const changedMetrics = new Set<string>();
     const now = Date.now();
 
-    for (const field of fields) {
-      const fieldName = field.key;
+    for (const fieldName of fieldNames) {
+      const field = getFieldDefinition(this.sensorType, fieldName);
+      if (!field) continue;
+      
       const fieldValue = (data as any)[fieldName];
 
       // Skip undefined/null values
@@ -243,8 +222,8 @@ export class SensorInstance<T extends SensorData = SensorData> {
         continue;
       }
 
-      // STRICT VALIDATION: Type checking based on field.valueType
-      if (field.valueType === 'number') {
+      // STRICT VALIDATION: Type checking based on field.type
+      if (field.type === 'number' || field.type === 'slider') {
         if (typeof fieldValue !== 'number') {
           throw new Error(
             `[PARSER BUG] Expected number for ${this.sensorType}[${
@@ -258,7 +237,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
             `[PARSER BUG] Numeric field ${this.sensorType}[${this.instance}].${fieldName} cannot be Infinity`,
           );
         }
-      } else if (field.valueType === 'string') {
+      } else if (field.type === 'text' || field.type === 'picker') {
         if (typeof fieldValue !== 'string') {
           throw new Error(
             `[PARSER BUG] Expected string for ${this.sensorType}[${
@@ -267,10 +246,8 @@ export class SensorInstance<T extends SensorData = SensorData> {
           );
         }
         // Enum validation for picker fields
-        if ('options' in field && field.options) {
-          const isValidEnum = field.options.some((opt) =>
-            typeof opt === 'string' ? opt === fieldValue : opt.value === fieldValue,
-          );
+        if (field.type === 'picker' && field.options) {
+          const isValidEnum = field.options.some((opt: string) => opt === fieldValue);
           if (!isValidEnum) {
             throw new Error(
               `[PARSER BUG] Invalid enum value '${fieldValue}' for ${this.sensorType}[${
@@ -279,7 +256,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
             );
           }
         }
-      } else if (field.valueType === 'boolean') {
+      } else if (field.type === 'toggle') {
         if (typeof fieldValue !== 'boolean') {
           throw new Error(
             `[PARSER BUG] Expected boolean for ${this.sensorType}[${
@@ -302,12 +279,12 @@ export class SensorInstance<T extends SensorData = SensorData> {
           hasChanges = true;
           changedMetrics.add(fieldName);
 
-          if (field.valueType === 'number') {
-            // Get unitType from global cache
-            const unitType = getUnitType(this.sensorType, fieldName);
+          if (field.type === 'number' || field.type === 'slider') {
+            // Get unitType from field definition (already in FieldDefinition.unitType)
+            const unitType = field.unitType;
 
             // Get forceTimezone from field config (for datetime fields)
-            const forceTimezone = 'forceTimezone' in field ? field.forceTimezone : undefined;
+            const forceTimezone = (field as any).forceTimezone;
 
             // Create minimal MetricValue with optional unitType and forceTimezone
             const metric = unitType
@@ -331,7 +308,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
             );
 
             this._alarmStates.set(fieldName, newState);
-          } else if (field.valueType === 'string') {
+          } else if (field.type === 'text' || field.type === 'picker') {
             // Store string values directly in history
             log.app('Storing string value', () => ({
               sensorType: this.sensorType,

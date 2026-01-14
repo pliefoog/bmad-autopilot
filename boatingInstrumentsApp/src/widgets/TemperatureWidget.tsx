@@ -27,13 +27,13 @@ export const TemperatureWidget: React.FC<TemperatureWidgetProps> = React.memo(({
       testID={id}
     >
       {/* Primary Grid: Current temperature + trend visualization */}
-      <PrimaryMetricCell sensorType="temperature" instance={instanceNumber} metricKey="value" />
+      <PrimaryMetricCell sensorType="temperature" instance={instanceNumber} metricKey="temperature" />
 
       {/* TrendLine: Explicit props pattern */}
       <TrendLine
         sensorType="temperature"
         instance={instanceNumber}
-        metricKey="value"
+        metricKey="temperature"
         timeWindowMs={5 * 60 * 1000}
         usePrimaryLine
         showXAxis

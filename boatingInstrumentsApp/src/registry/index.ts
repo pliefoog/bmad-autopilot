@@ -172,20 +172,3 @@ export function getContextValues(sensorType: SensorType): string[] {
   return Array.from(field.options ?? []);
 }
 
-/**
- * LEGACY COMPATIBILITY: getSensorField - Replaced by getFieldDefinition
- * 
- * Provides compatibility layer for code using old SensorConfigRegistry.getSensorField()
- * Returns a FieldDefinition wrapped in legacy SensorFieldConfig format
- * 
- * @deprecated Use getFieldDefinition(sensorType, fieldKey) instead
- * @param sensorType - Sensor type
- * @param fieldKey - Field key to look up
- * @returns Field configuration in legacy format or undefined
- */
-export function getSensorField(
-  sensorType: SensorType,
-  fieldKey: string,
-): any | undefined {
-  return getFieldDefinition(sensorType, fieldKey);
-}

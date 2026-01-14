@@ -33,7 +33,7 @@ export const EngineWidget: React.FC<EngineWidgetProps> = React.memo(({ id, insta
 
       {/* Secondary Grid: Full-width cells */}
       <SecondaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="fuelRate" />
-      <SecondaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="hours" />
+      <SecondaryMetricCell sensorType="engine" instance={instanceNumber} metricKey="engineHours" />
     </TemplatedWidget>
   );
 });

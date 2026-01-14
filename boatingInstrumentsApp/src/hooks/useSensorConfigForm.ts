@@ -35,7 +35,7 @@ import type { EnrichedThresholdInfo } from '../services/ThresholdPresentationSer
 import { ThresholdPresentationService } from '../services/ThresholdPresentationService';
 import { MarineAudioAlertManager } from '../services/alarms/MarineAudioAlertManager';
 import { CriticalAlarmType, AlarmEscalationLevel } from '../services/alarms/types';
-import { getSensorConfig, getAlarmDefaults } from '../../registry';
+import { getSensorSchema, getAlarmDefaults } from '../registry';
 import { sensorRegistry } from '../services/SensorDataRegistry';
 import { getAlarmDirection, getAlarmTriggerHint } from '../utils/sensorAlarmUtils';
 import { getSensorDisplayName } from '../utils/sensorDisplayName';
@@ -160,7 +160,7 @@ export const useSensorConfigForm = (
   const getSensorThresholds = useNmeaStore((state) => state.getSensorThresholds);
 
   // Get sensor config and derived values
-  const sensorConfig = sensorType ? getSensorConfig(sensorType) : null;
+  const sensorConfig = sensorType ? getSensorSchema(sensorType) : null;
   const requiresMetricSelection = sensorConfig?.alarmSupport === 'multi-metric';
   const supportsAlarms = sensorConfig?.alarmSupport !== 'none';
 

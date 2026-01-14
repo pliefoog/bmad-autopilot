@@ -276,7 +276,7 @@ export class AutopilotCommandManager {
   ): Promise<boolean> {
     // For Raymarine, engagement may use standard PGN 127237 or proprietary commands
     // This is a simplified implementation - actual protocol may vary
-    const compassInstance = useNmeaStore.getState().getSensorInstance('compass', 0);
+    const compassInstance = useNmeaStore.getState().getSensorInstance('heading', 0);
     const currentHeading = heading || compassInstance?.getMetric('magneticHeading')?.si_value || 0;
 
     // First set the target heading, then engage

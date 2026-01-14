@@ -285,20 +285,36 @@ function useMetric<S extends SensorType, F extends keyof typeof SENSOR_SCHEMAS[S
 }
 ```
 
+## Migration Status
+
+### ✅ Complete!
+
+**All components migrated to new API:**
+- PrimaryMetricCell.tsx
+- SecondaryMetricCell.tsx
+- StatMetricCell.tsx
+- TrendLine.tsx
+- SensorConfigDialog.tsx
+- All other registry consumers
+
+**Legacy wrapper removed:**
+- `getSensorField()` function removed from codebase
+- All code now uses `getFieldDefinition()`
+
 ## Breaking Changes
 
 ### None! 🎉
 
 **Backward Compatibility Features:**
 - Type aliases maintain old sensor names (`CompassSensorData`, `NavigationSensorData`)
-- `getSensorField()` wrapper supports old function name
 - All public APIs available with new names
-- No code changes required for existing widgets
+- No code changes required for external consumers
 
 **Timeline:**
-- Phase 2.5+: New schema available alongside old code
-- Phase 6+: Old registry archived, but compatibility layer in place
-- No deprecation period - can migrate at own pace
+- Phase 2.5: New schema available alongside old code
+- Phase 6: Old registry archived with compatibility layer
+- Phase 6+: All internal code migrated to new API ✅
+- Legacy wrapper removed - migration complete ✅
 
 ## Performance Notes
 

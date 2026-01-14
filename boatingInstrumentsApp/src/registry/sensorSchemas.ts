@@ -678,6 +678,8 @@ export const SENSOR_SCHEMAS = {
       fixType: { type: 'number' as const, label: 'Fix Type', mnemonic: 'FIX', iostate: 'readOnly' as const, helpText: 'GPS fix type (0=No fix, 1=GPS, 2=DGPS)' },
       satellites: { type: 'number' as const, label: 'Satellites', mnemonic: 'SAT', iostate: 'readOnly' as const },
       hdop: { type: 'number' as const, label: 'HDOP', mnemonic: 'HDOP', iostate: 'readOnly' as const },
+      utcTime: { type: 'number' as const, label: 'UTC Time', mnemonic: 'TIME', unitType: 'time' as const, iostate: 'readOnly' as const, helpText: 'UTC time as Unix timestamp (formatted as HH:MM:SS in widget)' },
+      utcDate: { type: 'number' as const, label: 'UTC Date', mnemonic: 'DATE', unitType: 'date' as const, iostate: 'readOnly' as const, helpText: 'UTC date as Unix timestamp (formatted as YYYY-MM-DD in widget)' },
     },
   } as const,
 
@@ -702,6 +704,10 @@ export const SENSOR_SCHEMAS = {
       name: { type: 'text' as const, label: 'Position Name', mnemonic: 'NAME', iostate: 'readWrite' as const, default: 'Position' },
       latitude: { type: 'number' as const, label: 'Latitude', mnemonic: 'LAT', unitType: 'coordinates' as const, iostate: 'readOnly' as const },
       longitude: { type: 'number' as const, label: 'Longitude', mnemonic: 'LON', unitType: 'coordinates' as const, iostate: 'readOnly' as const },
+      bearingToWaypoint: { type: 'number' as const, label: 'Bearing to Waypoint', mnemonic: 'BTW', unitType: 'angle' as const, iostate: 'readOnly' as const },
+      distanceToWaypoint: { type: 'number' as const, label: 'Distance to Waypoint', mnemonic: 'DTW', unitType: 'distance' as const, iostate: 'readOnly' as const },
+      crossTrackError: { type: 'number' as const, label: 'Cross Track Error', mnemonic: 'XTE', unitType: 'distance' as const, iostate: 'readOnly' as const },
+      velocityMadeGood: { type: 'number' as const, label: 'Velocity Made Good', mnemonic: 'VMG', unitType: 'speed' as const, iostate: 'readOnly' as const },
     },
   } as const,
 

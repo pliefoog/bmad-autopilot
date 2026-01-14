@@ -128,8 +128,8 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   const fieldConfig = useMemo(() => {
     if (!sensor || !baseMetric) return null;
     try {
-      const { getSensorField } = require('../registry/SensorConfigRegistry');
-      return getSensorField(sensor, baseMetric);
+      const { getFieldDefinition } = require('../registry');
+      return getFieldDefinition(sensor, baseMetric);
     } catch (error) {
       return null;
     }
@@ -448,8 +448,8 @@ export const TrendLine: React.FC<TrendLineProps> = ({
     // Get unitType from field config (single source of truth)
     let unitType;
     try {
-      const { getSensorField } = require('../registry/SensorConfigRegistry');
-      const fieldConfig = sensor && metric ? getSensorField(sensor, metric) : null;
+      const { getFieldDefinition } = require('../registry');
+      const fieldConfig = sensor && metric ? getFieldDefinition(sensor, metric) : null;
       unitType = fieldConfig?.unitType;
     } catch (error) {
       unitType = undefined;

@@ -301,3 +301,5 @@ export type SensorMetricProps<TMetricKey extends string = string> = {
    */
   metricKey: TMetricKey;
 };
+
+export type { SensorType };

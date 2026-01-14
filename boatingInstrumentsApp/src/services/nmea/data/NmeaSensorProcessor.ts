@@ -1196,7 +1196,7 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [
         {
-          sensorType: 'compass',
+          sensorType: 'heading',
           instance: instance,
           data: compassData,
         },
@@ -1464,7 +1464,7 @@ export class NmeaSensorProcessor {
     // Create temperature sensor update (sea water temperature = instance 0)
     const temperatureData: Partial<TemperatureSensorData> = {
       name: 'Sea Water Temp',
-      value: fields.temperature_celsius, // Temperature in Celsius (base unit)
+      temperature: fields.temperature_celsius, // Temperature in Celsius (base unit)
       location: 'seawater',
       units: 'C',
       timestamp: timestamp,
@@ -1895,7 +1895,7 @@ export class NmeaSensorProcessor {
 
           if (!isNaN(hours) && !isNaN(instance)) {
             const engineData: Partial<EngineSensorData> = {
-              hours: hours, // Stored in hours
+              engineHours: hours, // Stored in hours (field renamed to engineHours in schema)
               timestamp: timestamp,
             };
 
@@ -2056,7 +2056,7 @@ export class NmeaSensorProcessor {
 
           const temperatureData: Partial<TemperatureSensorData> = {
             name: locationInfo.name,
-            value: temperature,
+            temperature: temperature, // Field renamed from 'value' to 'temperature' in schema
             location: locationInfo.location,
             units: 'C',
             timestamp: timestamp,
@@ -3158,7 +3158,7 @@ export class NmeaSensorProcessor {
 
       const temperatureData: Partial<TemperatureSensorData> = {
         name,
-        value: tempData.temperature,
+        temperature: tempData.temperature,
         location,
         units: 'C',
         timestamp,
