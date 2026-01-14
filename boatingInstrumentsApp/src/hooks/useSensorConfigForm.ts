@@ -161,8 +161,18 @@ export const useSensorConfigForm = (
 
   // Get sensor config and derived values
   const sensorConfig = sensorType ? getSensorSchema(sensorType) : null;
-  const requiresMetricSelection = sensorConfig?.alarmSupport === 'multi-metric';
-  const supportsAlarms = sensorConfig?.alarmSupport !== 'none';
+  
+  // Compute alarm fields from schema (fields with alarm property)
+  const alarmFieldKeys = useMemo(() => {
+    if (!sensorConfig) return [];
+    return Object.entries(sensorConfig.fields)
+      .filter(([_, field]) => field.alarm !== undefined)
+      .map(([key, _]) => key);
+  }, [sensorConfig]);
+  
+  // Determine if sensor requires metric selection (multi-alarm)
+  const requiresMetricSelection = alarmFieldKeys.length > 1;
+  const supportsAlarms = alarmFieldKeys.length > 0;
 
   // Get current thresholds from store
   const currentThresholds = useMemo(
@@ -192,7 +202,7 @@ export const useSensorConfigForm = (
       ? getSensorDisplayName(sensorType, selectedInstance, savedConfig, sensorInstance?.name)
       : '';
 
-    const firstMetric = requiresMetricSelection ? sensorConfig?.alarmMetrics?.[0]?.key : undefined;
+    const firstMetric = requiresMetricSelection && alarmFieldKeys.length > 0 ? alarmFieldKeys[0] : undefined;
     let criticalValue: number | undefined;
     let warningValue: number | undefined;
     let criticalSoundPattern = 'rapid_pulse';
@@ -234,7 +244,7 @@ export const useSensorConfigForm = (
       criticalSoundPattern,
       warningSoundPattern,
     };
-  }, [sensorType, selectedInstance, currentThresholds, requiresMetricSelection, sensorConfig]);
+  }, [sensorType, selectedInstance, currentThresholds, requiresMetricSelection, sensorConfig, alarmFieldKeys]);
 
   // Initialize RHF with schema validation
   const form = useForm<SensorFormData>({
@@ -333,10 +343,10 @@ export const useSensorConfigForm = (
   // Compute display values
   const unitSymbol = useMemo(() => enrichedThresholds?.display.min.unit || '', [enrichedThresholds]);
   const metricLabel = useMemo(() => {
-    if (!requiresMetricSelection || !watchedMetric || !sensorConfig?.alarmMetrics) {
+    if (!requiresMetricSelection || !watchedMetric || !sensorConfig) {
       return sensorConfig?.displayName || sensorType || '';
     }
-    return sensorConfig.alarmMetrics.find((m) => m.key === watchedMetric)?.label || '';
+    return sensorConfig.fields[watchedMetric]?.label || '';
   }, [requiresMetricSelection, watchedMetric, sensorConfig, sensorType]);
 
   // Handler: Metric change
