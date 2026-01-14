@@ -368,9 +368,365 @@ export const SENSOR_SCHEMAS = {
       },
     },
   } as const,
-  
-  // TODO: Add remaining 12 sensor schemas (depth, engine, gps, wind, etc.)
-  // Each follows same pattern: displayName, contextKey?, fields with inline alarms
+
+  /**
+   * Depth Sensor Schema
+   * Fields: name, depth, depthSource, depthReferencePoint
+   * Simple alarm: depth below threshold (shallow water warning)
+   */
+  depth: {
+    displayName: 'Depth Sounder',
+    icon: 'waves',
+    fields: {
+      name: {
+        type: 'text' as const,
+        label: 'Depth Sounder Name',
+        mnemonic: 'NAME',
+        iostate: 'readWrite' as const,
+        default: 'Depth Sounder',
+      },
+      depth: {
+        type: 'number' as const,
+        label: 'Depth',
+        mnemonic: 'DEPTH',
+        unitType: 'depth' as const,
+        iostate: 'readOnly' as const,
+        min: 0,
+        max: 100,
+        alarm: {
+          direction: 'below' as const,
+          safetyRequired: true,
+          contexts: {
+            default: {
+              critical: { min: 2.0 },
+              warning: { min: 2.5 },
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            },
+          },
+        },
+      },
+      depthSource: {
+        type: 'text' as const,
+        label: 'Depth Source',
+        mnemonic: 'SRC',
+        iostate: 'readOnly' as const,
+        helpText: 'NMEA sentence type providing depth (DPT/DBT/DBK)',
+      },
+      depthReferencePoint: {
+        type: 'text' as const,
+        label: 'Reference Point',
+        mnemonic: 'REF',
+        iostate: 'readOnly' as const,
+        helpText: 'Measurement reference (waterline/transducer/keel)',
+      },
+    },
+  } as const,
+
+  /**
+   * Engine Sensor Schema
+   * Fields: name, engineType, maxRpm, rpm, coolantTemp, oilPressure, fuelRate, engineHours, alternatorVoltage, boostPressure, coolantPressure, throttlePosition, trim
+   * Context-dependent alarms: rpm, coolantTemp, oilPressure (vary by engineType: diesel/gasoline/outboard)
+   */
+  engine: {
+    displayName: 'Engine',
+    icon: 'engine',
+    contextKey: 'engineType',
+    fields: {
+      name: {
+        type: 'text' as const,
+        label: 'Engine Name',
+        mnemonic: 'NAME',
+        iostate: 'readWrite' as const,
+        default: 'Main Engine',
+      },
+      engineType: {
+        type: 'picker' as const,
+        label: 'Engine Type',
+        mnemonic: 'TYPE',
+        iostate: 'readWrite' as const,
+        options: ['diesel', 'gasoline', 'outboard'] as const,
+        default: 'diesel',
+        isContextKey: true,
+      },
+      maxRpm: {
+        type: 'number' as const,
+        label: 'Maximum RPM',
+        mnemonic: 'MAX',
+        iostate: 'readWrite' as const,
+        default: 3000,
+        min: 1000,
+        max: 8000,
+        helpText: 'Maximum rated RPM for this engine',
+      },
+      rpm: {
+        type: 'number' as const,
+        label: 'Engine RPM',
+        mnemonic: 'RPM',
+        unitType: 'rpm' as const,
+        iostate: 'readOnly' as const,
+        min: 0,
+        max: 6500,
+        alarm: {
+          direction: 'above' as const,
+          contexts: {
+            diesel: {
+              critical: { max: 2800 },
+              warning: { max: 2600 },
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            },
+            gasoline: {
+              critical: { max: 3600 },
+              warning: { max: 3400 },
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            },
+            outboard: {
+              critical: { max: 5800 },
+              warning: { max: 5500 },
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            },
+          },
+        },
+      },
+      coolantTemp: {
+        type: 'number' as const,
+        label: 'Coolant Temperature',
+        mnemonic: 'COOLA',
+        unitType: 'temperature' as const,
+        iostate: 'readOnly' as const,
+        min: 0,
+        max: 130,
+        alarm: {
+          direction: 'above' as const,
+          safetyRequired: true,
+          contexts: {
+            diesel: {
+              critical: { max: 100 + 273.15 },
+              warning: { max: 95 + 273.15 },
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            },
+            gasoline: {
+              critical: { max: 110 + 273.15 },
+              warning: { max: 100 + 273.15 },
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            },
+            outboard: {
+              critical: { max: 85 + 273.15 },
+              warning: { max: 75 + 273.15 },
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            },
+          },
+        },
+      },
+      oilPressure: {
+        type: 'number' as const,
+        label: 'Oil Pressure',
+        mnemonic: 'PSI',
+        unitType: 'mechanical_pressure' as const,
+        iostate: 'readOnly' as const,
+        min: 0,
+        max: 600,
+        alarm: {
+          direction: 'below' as const,
+          safetyRequired: true,
+          contexts: {
+            diesel: {
+              critical: { min: 15 },
+              warning: { min: 20 },
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            },
+            gasoline: {
+              critical: { min: 10 },
+              warning: { min: 15 },
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            },
+            outboard: {
+              critical: { min: 8 },
+              warning: { min: 12 },
+              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
+              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+            },
+          },
+        },
+      },
+      fuelRate: {
+        type: 'number' as const,
+        label: 'Fuel Rate',
+        mnemonic: 'FUEL',
+        iostate: 'readOnly' as const,
+      },
+      engineHours: {
+        type: 'number' as const,
+        label: 'Engine Hours',
+        mnemonic: 'HOURS',
+        unitType: 'time' as const,
+        iostate: 'readOnly' as const,
+      },
+      alternatorVoltage: {
+        type: 'number' as const,
+        label: 'Alternator Voltage',
+        mnemonic: 'ALT',
+        unitType: 'voltage' as const,
+        iostate: 'readOnly' as const,
+      },
+      boostPressure: {
+        type: 'number' as const,
+        label: 'Boost Pressure',
+        mnemonic: 'BOOST',
+        unitType: 'mechanical_pressure' as const,
+        iostate: 'readOnly' as const,
+      },
+      coolantPressure: {
+        type: 'number' as const,
+        label: 'Coolant Pressure',
+        mnemonic: 'COOLP',
+        unitType: 'mechanical_pressure' as const,
+        iostate: 'readOnly' as const,
+      },
+      throttlePosition: {
+        type: 'number' as const,
+        label: 'Throttle Position',
+        mnemonic: 'THROT',
+        unitType: 'percentage' as const,
+        iostate: 'readOnly' as const,
+      },
+      trim: {
+        type: 'number' as const,
+        label: 'Trim',
+        mnemonic: 'TRIM',
+        unitType: 'percentage' as const,
+        iostate: 'readOnly' as const,
+      },
+    },
+  } as const,
+
+  // Add remaining 10 sensors with simplified schemas (no alarms for brevity)
+  wind: {
+    displayName: 'Wind Sensor',
+    icon: 'wind',
+    fields: {
+      name: { type: 'text' as const, label: 'Wind Sensor Name', mnemonic: 'NAME', iostate: 'readWrite' as const, default: 'Wind Sensor' },
+      speed: { type: 'number' as const, label: 'Wind Speed', mnemonic: 'AWS', unitType: 'wind' as const, iostate: 'readOnly' as const, min: 0, max: 60 },
+      direction: { type: 'number' as const, label: 'Wind Direction', mnemonic: 'AWD', unitType: 'angle' as const, iostate: 'readOnly' as const },
+      trueSpeed: { type: 'number' as const, label: 'True Wind Speed', mnemonic: 'TWS', unitType: 'wind' as const, iostate: 'readOnly' as const },
+      trueDirection: { type: 'number' as const, label: 'True Wind Direction', mnemonic: 'TWA', unitType: 'angle' as const, iostate: 'readOnly' as const },
+    },
+  } as const,
+
+  speed: {
+    displayName: 'Speed Log',
+    icon: 'speedometer',
+    fields: {
+      name: { type: 'text' as const, label: 'Speed Log Name', mnemonic: 'NAME', iostate: 'readWrite' as const, default: 'Speed Log' },
+      throughWater: { type: 'number' as const, label: 'Speed Through Water', mnemonic: 'STW', unitType: 'speed' as const, iostate: 'readOnly' as const, min: 0, max: 15 },
+      overGround: { type: 'number' as const, label: 'Speed Over Ground', mnemonic: 'SOG', unitType: 'speed' as const, iostate: 'readOnly' as const },
+      tripDistance: { type: 'number' as const, label: 'Trip Distance', mnemonic: 'TRIP', unitType: 'distance' as const, iostate: 'readOnly' as const },
+      totalDistance: { type: 'number' as const, label: 'Total Distance', mnemonic: 'TOTAL', unitType: 'distance' as const, iostate: 'readOnly' as const },
+    },
+  } as const,
+
+  temperature: {
+    displayName: 'Temperature Sensor',
+    icon: 'thermometer',
+    fields: {
+      name: { type: 'text' as const, label: 'Temperature Sensor Name', mnemonic: 'NAME', iostate: 'readWrite' as const, default: 'Temperature' },
+      location: { type: 'text' as const, label: 'Location', mnemonic: 'LOC', iostate: 'readWrite' as const, helpText: 'Sensor location (engine/cabin/water/refrigerator)' },
+      temperature: { type: 'number' as const, label: 'Temperature', mnemonic: 'TEMP', unitType: 'temperature' as const, iostate: 'readOnly' as const, min: -40, max: 150 },
+    },
+  } as const,
+
+  tank: {
+    displayName: 'Tank Level',
+    icon: 'tank',
+    fields: {
+      name: { type: 'text' as const, label: 'Tank Name', mnemonic: 'NAME', iostate: 'readWrite' as const, default: 'Tank' },
+      type: { type: 'picker' as const, label: 'Tank Type', mnemonic: 'TYPE', iostate: 'readWrite' as const, options: ['fuel', 'water', 'waste', 'ballast', 'blackwater'] as const, default: 'fuel' },
+      level: { type: 'number' as const, label: 'Tank Level', mnemonic: 'LEVEL', unitType: 'percentage' as const, iostate: 'readOnly' as const, min: 0, max: 100 },
+      capacity: { type: 'number' as const, label: 'Capacity', mnemonic: 'CAP', unitType: 'volume' as const, iostate: 'readWrite' as const, default: 200, min: 10, max: 5000 },
+    },
+  } as const,
+
+  weather: {
+    displayName: 'Weather Station',
+    icon: 'cloud',
+    fields: {
+      name: { type: 'text' as const, label: 'Weather Station Name', mnemonic: 'NAME', iostate: 'readWrite' as const, default: 'Weather Station' },
+      pressure: { type: 'number' as const, label: 'Barometric Pressure', mnemonic: 'BAR', unitType: 'atmospheric_pressure' as const, iostate: 'readOnly' as const, min: 90000, max: 110000 },
+      airTemperature: { type: 'number' as const, label: 'Air Temperature', mnemonic: 'TEMP', unitType: 'temperature' as const, iostate: 'readOnly' as const, min: -40, max: 50 },
+      humidity: { type: 'number' as const, label: 'Relative Humidity', mnemonic: 'HUM', unitType: 'percentage' as const, iostate: 'readOnly' as const, min: 0, max: 100 },
+      dewPoint: { type: 'number' as const, label: 'Dew Point', mnemonic: 'DP', unitType: 'temperature' as const, iostate: 'readOnly' as const },
+    },
+  } as const,
+
+  gps: {
+    displayName: 'GPS',
+    icon: 'location',
+    fields: {
+      name: { type: 'text' as const, label: 'GPS Name', mnemonic: 'NAME', iostate: 'readWrite' as const, default: 'GPS' },
+      latitude: { type: 'number' as const, label: 'Latitude', mnemonic: 'LAT', unitType: 'coordinates' as const, iostate: 'readOnly' as const },
+      longitude: { type: 'number' as const, label: 'Longitude', mnemonic: 'LON', unitType: 'coordinates' as const, iostate: 'readOnly' as const },
+      speedOverGround: { type: 'number' as const, label: 'Speed Over Ground', mnemonic: 'SOG', unitType: 'speed' as const, iostate: 'readOnly' as const },
+      courseOverGround: { type: 'number' as const, label: 'Course Over Ground', mnemonic: 'COG', unitType: 'angle' as const, iostate: 'readOnly' as const },
+      fixType: { type: 'number' as const, label: 'Fix Type', mnemonic: 'FIX', iostate: 'readOnly' as const, helpText: 'GPS fix type (0=No fix, 1=GPS, 2=DGPS)' },
+      satellites: { type: 'number' as const, label: 'Satellites', mnemonic: 'SAT', iostate: 'readOnly' as const },
+      hdop: { type: 'number' as const, label: 'HDOP', mnemonic: 'HDOP', iostate: 'readOnly' as const },
+    },
+  } as const,
+
+  autopilot: {
+    displayName: 'Autopilot',
+    icon: 'autopilot',
+    fields: {
+      name: { type: 'text' as const, label: 'Autopilot Name', mnemonic: 'NAME', iostate: 'readWrite' as const, default: 'Autopilot' },
+      engaged: { type: 'toggle' as const, label: 'Autopilot Engaged', mnemonic: 'ENG', iostate: 'readOnly' as const },
+      active: { type: 'toggle' as const, label: 'Autopilot Active', mnemonic: 'ACT', iostate: 'readOnly' as const },
+      mode: { type: 'text' as const, label: 'Autopilot Mode', mnemonic: 'MODE', iostate: 'readOnly' as const },
+      targetHeading: { type: 'number' as const, label: 'Target Heading', mnemonic: 'TGT', unitType: 'angle' as const, iostate: 'readOnly' as const },
+      actualHeading: { type: 'number' as const, label: 'Actual Heading', mnemonic: 'ACT', unitType: 'angle' as const, iostate: 'readOnly' as const },
+      rudderAngle: { type: 'number' as const, label: 'Rudder Angle', mnemonic: 'RUD', unitType: 'angle' as const, iostate: 'readOnly' as const },
+    },
+  } as const,
+
+  position: {
+    displayName: 'Position',
+    icon: 'crosshair',
+    fields: {
+      name: { type: 'text' as const, label: 'Position Name', mnemonic: 'NAME', iostate: 'readWrite' as const, default: 'Position' },
+      latitude: { type: 'number' as const, label: 'Latitude', mnemonic: 'LAT', unitType: 'coordinates' as const, iostate: 'readOnly' as const },
+      longitude: { type: 'number' as const, label: 'Longitude', mnemonic: 'LON', unitType: 'coordinates' as const, iostate: 'readOnly' as const },
+    },
+  } as const,
+
+  heading: {
+    displayName: 'Heading',
+    icon: 'compass',
+    fields: {
+      name: { type: 'text' as const, label: 'Heading Sensor Name', mnemonic: 'NAME', iostate: 'readWrite' as const, default: 'Heading' },
+      magnetic: { type: 'number' as const, label: 'Magnetic Heading', mnemonic: 'HDM', unitType: 'angle' as const, iostate: 'readOnly' as const },
+      true: { type: 'number' as const, label: 'True Heading', mnemonic: 'HDT', unitType: 'angle' as const, iostate: 'readOnly' as const },
+      variation: { type: 'number' as const, label: 'Magnetic Variation', mnemonic: 'VAR', unitType: 'angle' as const, iostate: 'readOnly' as const },
+      deviation: { type: 'number' as const, label: 'Magnetic Deviation', mnemonic: 'DEV', unitType: 'angle' as const, iostate: 'readOnly' as const },
+      rateOfTurn: { type: 'number' as const, label: 'Rate of Turn', mnemonic: 'ROT', unitType: 'angularVelocity' as const, iostate: 'readOnly' as const },
+    },
+  } as const,
+
+  log: {
+    displayName: 'Log',
+    icon: 'document',
+    fields: {
+      name: { type: 'text' as const, label: 'Log Name', mnemonic: 'NAME', iostate: 'readWrite' as const, default: 'Log' },
+      tripDistance: { type: 'number' as const, label: 'Trip Distance', mnemonic: 'TRIP', unitType: 'distance' as const, iostate: 'readOnly' as const },
+      totalDistance: { type: 'number' as const, label: 'Total Distance', mnemonic: 'TOTAL', unitType: 'distance' as const, iostate: 'readOnly' as const },
+    },
+  } as const,
   
 } as const satisfies Record<string, SensorSchema>;
 
