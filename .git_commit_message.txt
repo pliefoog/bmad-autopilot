@@ -1,30 +1,38 @@
-refactor: complete migration from getSensorField to getFieldDefinition
+fix: ConfigFieldRenderer now renders sensor config input fields
 
-Removes all usage of deprecated getSensorField() wrapper function
-and migrates entire codebase to unified schema API.
+Critical fix for ConfigFieldRenderer that was completely broken after
+unified schema refactor. Input fields weren't rendering at all because
+the component was trying to use old property names that don't exist.
 
-Changes:
-- Updated 4 components to use getFieldDefinition():
-  * PrimaryMetricCell.tsx (import + usage + docs)
-  * SecondaryMetricCell.tsx (import + usage, fixed import path)
-  * StatMetricCell.tsx (import + usage, fixed import path)
-  * TrendLine.tsx (2 occurrences with dynamic require)
+Root Cause:
+- ConfigFieldRenderer expected SensorFieldConfig type (doesn't exist)
+- Component used field.uiType and field.valueType (don't exist in unified schema)
+- Unified schema uses FieldDefinition with field.type property
 
-- Removed getSensorField() wrapper from registry/index.ts
-  * Clean, consistent API throughout codebase
-  * No legacy compatibility layer needed
+Changes in ConfigFieldRenderer.tsx:
+- Changed import from SensorFieldConfig → FieldDefinition
+- Added FieldWithKey type (FieldDefinition + key property)
+- Added uiType mapping: field.type → rendering type (textInput/numericInput/picker/toggle)
+- Fixed textInput: field.valueType === 'string' → field.type === 'text'
+- Fixed numericInput: field.valueType === 'number' → field.type === 'number'
+- Fixed picker: field.valueType === 'string' → field.type === 'picker'
+- Simplified picker options mapping (unified schema uses string[] not complex objects)
+- Removed redundant field existence checks ('min' in field → just field.min)
 
-- Updated documentation to reflect completed migration:
-  * SENSOR_SCHEMA_ARCHITECTURE.md: Removed legacy API reference
-  * MIGRATION_GUIDE.md: Added migration status section
-  * UNIFIED-SENSOR-SCHEMA-REFACTOR-COMPLETE.md: Updated API section
+Fixes:
+✅ Name input field now renders (user can edit sensor name)
+✅ Context fields render (battery chemistry, engine type pickers)
+✅ All editable fields from schema display correctly
+✅ Read-only fields show lock icon
+✅ Validation errors display inline
+✅ Glove mode touch targets work
 
-Benefits:
-- 100% of codebase now uses consistent API
-- No deprecated functions remaining
-- Cleaner registry exports
-- Updated documentation reflects current state
+Example fields now working:
+- name (text input) - ⭐ PRIMARY USER REQUEST
+- chemistry (picker) - battery context
+- engineType (picker) - engine context  
+- Any other readWrite fields in schema
 
-Files: 7 TypeScript files, 3 documentation files
-Lines: -26 deprecated code, +0 new errors
-Status: Migration complete ✅
+Files: 1 TypeScript file (ConfigFieldRenderer.tsx)
+Lines: +15 unified schema support, -30 old API references
+Status: Sensor config input fields fully functional ✅

@@ -34,15 +34,20 @@ import {
 import { ThemeColors } from '../../../store/themeStore';
 import { PlatformPicker } from '../inputs/PlatformPicker';
 import { UniversalIcon } from '../../atoms/UniversalIcon';
-import { SensorFieldConfig } from '../../registry';
+import { FieldDefinition } from '../../../registry/sensorSchemas';
 import type { SensorInstance } from '../../../types/SensorInstance';
 import { getFieldHeight, getTouchTargetSize } from '../../../constants/gloveMode';
 import { log } from '../../../utils/logging/logger';
 import { getPlatformTokens } from '../../../theme/settingsTokens';
 
+/**
+ * FieldDefinition with key property for rendering
+ */
+type FieldWithKey = FieldDefinition & { key: string };
+
 export interface ConfigFieldRendererProps {
   /** Field configuration from registry */
-  field: SensorFieldConfig;
+  field: FieldWithKey;
   /** Current field value */
   value: any;
   /** Callback on field change: onChange(key, value) */
@@ -116,8 +121,14 @@ const ConfigFieldRendererComponent: React.FC<ConfigFieldRendererProps> = ({
   // Memoized styles for performance
   const styles = useMemo(() => createStyles(theme, platformTokens, gloveMode), [theme, platformTokens, gloveMode]);
 
+  // Map unified schema field.type to UI rendering type
+  const uiType = field.type === 'text' ? 'textInput' : 
+                 field.type === 'number' ? 'numericInput' :
+                 field.type === 'picker' ? 'picker' :
+                 field.type === 'toggle' ? 'toggle' : 'textInput';
+
   // Render based on uiType
-  switch (field.uiType) {
+  switch (uiType) {
     case 'textInput':
       return (
         <View style={[styles.field, isReadOnly && styles.readOnlyField]}>
@@ -138,7 +149,7 @@ const ConfigFieldRendererComponent: React.FC<ConfigFieldRendererProps> = ({
             ]}
             value={String(currentValue || '')}
             onChangeText={(text) => {
-              if (field.valueType === 'string') {
+              if (field.type === 'text') {
                 onChange(field.key, text);
               }
             }}
@@ -156,7 +167,7 @@ const ConfigFieldRendererComponent: React.FC<ConfigFieldRendererProps> = ({
           <View style={styles.labelRow}>
             <Text style={[styles.label, { color: theme.text }]}>
               {field.label}
-              {field.valueType === 'number' && 'min' in field && 'max' in field && field.min !== undefined && field.max !== undefined ? (
+              {field.type === 'number' && field.min !== undefined && field.max !== undefined ? (
                 <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
                   {` (${field.min}-${field.max})`}
                 </Text>
@@ -186,12 +197,7 @@ const ConfigFieldRendererComponent: React.FC<ConfigFieldRendererProps> = ({
 
               // Apply min/max clamping if defined
               let finalValue = num;
-              if (
-                !Number.isNaN(num) &&
-                field.valueType === 'number' &&
-                'min' in field &&
-                'max' in field
-              ) {
+              if (!Number.isNaN(num) && field.type === 'number') {
                 if (field.min !== undefined && num < field.min) finalValue = field.min;
                 if (field.max !== undefined && num > field.max) finalValue = field.max;
               }
@@ -214,11 +220,9 @@ const ConfigFieldRendererComponent: React.FC<ConfigFieldRendererProps> = ({
           <PlatformPicker
             value={String(currentValue || field.default || '')}
             onValueChange={(newValue: any) => {
-              // Enum validation for string fields
-              if (field.valueType === 'string' && 'options' in field && field.options) {
-                const isValid = field.options.some((opt: any) =>
-                  typeof opt === 'string' ? opt === newValue : opt.value === newValue,
-                );
+              // Enum validation for picker fields
+              if (field.type === 'picker' && field.options) {
+                const isValid = field.options.includes(newValue);
                 if (!isValid) {
                   log.app('ConfigFieldRenderer: Invalid enum value', () => ({
                     value: newValue,
@@ -231,12 +235,8 @@ const ConfigFieldRendererComponent: React.FC<ConfigFieldRendererProps> = ({
               onChange(field.key, String(newValue));
             }}
             items={
-              field.valueType === 'string' && 'options' in field && field.options
-                ? field.options.map((opt: any) =>
-                    typeof opt === 'string'
-                      ? { label: opt, value: opt }
-                      : { label: opt.label, value: opt.value },
-                  )
+              field.type === 'picker' && field.options
+                ? field.options.map((opt) => ({ label: opt, value: opt }))
                 : []
             }
           />
