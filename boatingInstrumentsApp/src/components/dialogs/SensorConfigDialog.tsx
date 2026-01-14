@@ -274,6 +274,20 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     },
   );
 
+  // Get glove mode setting (before useMemo that depends on sensorConfig)
+  const gloveMode = useSettingsStore((state) => state.themeSettings.gloveMode);
+
+  // Get sensor config EARLY - before useMemo that uses it
+  // Safe to call: selectedSensorType is guaranteed to exist by guard below
+  const sensorConfig = selectedSensorType ? getSensorConfig(selectedSensorType) : null;
+
+  // Cache filtered config fields to avoid calling filter twice
+  // Now safe: sensorConfig is defined above
+  const editableFields = useMemo(
+    () => sensorConfig?.fields.filter((field) => field.iostate !== 'readOnly') || [],
+    [sensorConfig],
+  );
+
   // Watch form fields for conditional rendering (performance optimized)
   const enabledValue = useWatch({ control: form.control, name: 'enabled' });
   const selectedMetricValue = useWatch({ control: form.control, name: 'selectedMetric' });
@@ -282,18 +296,10 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   const warningValueWatch = useWatch({ control: form.control, name: 'warningValue' });
   const criticalValueWatch = useWatch({ control: form.control, name: 'criticalValue' });
 
-  // Get glove mode setting
-  const gloveMode = useSettingsStore((state) => state.themeSettings.gloveMode);
-
-  // Cache filtered config fields to avoid calling filter twice
-  const editableFields = useMemo(
-    () => sensorConfig?.fields.filter((field) => field.iostate !== 'readOnly') || [],
-    [sensorConfig],
-  );
-
   // Track unsaved changes for UI feedback
   const hasUnsavedChanges = form.formState.isDirty && !form.formState.isSubmitting;
 
+  // Early guard: No sensor selected
   if (!selectedSensorType) {
     return (
       <BaseConfigDialog visible={visible} onClose={onClose} title="Sensor Configuration">
@@ -318,9 +324,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     );
   }
 
-  const sensorConfig = getSensorConfig(selectedSensorType);
-  
-  // Guard: If sensorConfig fails to load, show error state
+  // Guard: sensorConfig failed to load (after selectedSensorType guard)
   if (!sensorConfig) {
     return (
       <BaseConfigDialog visible={visible} onClose={onClose} title="Sensor Configuration">
@@ -345,7 +349,12 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   return (
     <BaseConfigDialog
       visible={visible}
-      onClose={() => handlers.handleClose()}
+      onClose={async () => {
+        const shouldClose = await handlers.handleClose();
+        if (shouldClose) {
+          onClose(); // Actually close the dialog
+        }
+      }}
       title="Sensor Configuration"
       headerRight={
         <View style={styles.headerStatus}>

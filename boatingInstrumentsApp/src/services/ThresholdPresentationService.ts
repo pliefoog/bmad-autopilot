@@ -53,6 +53,7 @@
 import { SensorType } from '../types/SensorData';
 import { log } from '../utils/logging/logger';
 import { useNmeaStore } from '../store/nmeaStore';
+import { useSensorConfigStore } from '../store/sensorConfigStore';
 import { sensorRegistry } from './SensorDataRegistry';
 import { usePresentationStore } from '../presentation/presentationStore';
 import { SENSOR_CONFIG_REGISTRY, getAlarmDefaults } from '../registry/SensorConfigRegistry';
@@ -149,8 +150,10 @@ class ThresholdPresentationServiceClass {
     const thresholds = nmeaStore.getSensorThresholds(sensorType, instance, metric);
 
     // Get defaults from registry for min/max
+    // Context must come from sensorConfigStore (persistent), not thresholds (MetricThresholds doesn't have context)
     const sensorInstance = sensorRegistry.get(sensorType, instance);
-    const context = thresholds?.context || {};
+    const savedConfig = useSensorConfigStore.getState().getConfig(sensorType, instance);
+    const context = savedConfig?.context || {};
     const defaults = getAlarmDefaults(sensorType, context);
 
     // For multi-metric sensors, extract metric-specific thresholds

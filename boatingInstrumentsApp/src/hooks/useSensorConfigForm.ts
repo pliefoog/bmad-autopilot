@@ -181,8 +181,15 @@ export const useSensorConfigForm = (
     const sensorInstance = sensorType
       ? sensorRegistry.get(sensorType, selectedInstance)
       : undefined;
+    
+    // Get saved config from sensorConfigStore (includes persisted name)
+    const savedConfig = sensorType
+      ? useSensorConfigStore.getState().getConfig(sensorType, selectedInstance)
+      : undefined;
+    
+    // Priority: savedConfig.name → sensorInstance.name → default format
     const displayName = sensorType
-      ? getSensorDisplayName(sensorType, selectedInstance, currentThresholds, sensorInstance?.name)
+      ? getSensorDisplayName(sensorType, selectedInstance, savedConfig, sensorInstance?.name)
       : '';
 
     const firstMetric = requiresMetricSelection ? sensorConfig?.alarmMetrics?.[0]?.key : undefined;
@@ -218,9 +225,9 @@ export const useSensorConfigForm = (
 
     return {
       name: displayName,
-      enabled: currentThresholds?.enabled || false,
-      batteryChemistry: (currentThresholds?.context?.batteryChemistry as 'lead-acid' | 'agm' | 'lifepo4') || 'lead-acid',
-      engineType: (currentThresholds?.context?.engineType as 'diesel' | 'gasoline' | 'outboard') || 'diesel',
+      enabled: savedConfig?.enabled ?? currentThresholds?.enabled ?? false,
+      batteryChemistry: (savedConfig?.context?.batteryChemistry as 'lead-acid' | 'agm' | 'lifepo4') || 'lead-acid',
+      engineType: (savedConfig?.context?.engineType as 'diesel' | 'gasoline' | 'outboard') || 'diesel',
       selectedMetric: firstMetric || '',
       criticalValue,
       warningValue,
@@ -273,7 +280,10 @@ export const useSensorConfigForm = (
     const metric = requiresMetricSelection ? watchedMetric : undefined;
     const direction = getAlarmDirection(sensorType, metric).direction;
     const triggerHint = getAlarmTriggerHint(sensorType);
-    const defaults = getAlarmDefaults(sensorType, currentThresholds?.context);
+    
+    // Get context from savedConfig (persistent) for correct defaults
+    const savedConfig = useSensorConfigStore.getState().getConfig(sensorType, selectedInstance);
+    const defaults = getAlarmDefaults(sensorType, savedConfig?.context);
     const metricKey = requiresMetricSelection ? watchedMetric : undefined;
     const metricDefaults = metricKey && defaults?.metrics?.[metricKey];
 
@@ -282,7 +292,7 @@ export const useSensorConfigForm = (
     const step = metricDefaults?.step ?? defaults?.step ?? 0.1;
 
     return { direction, triggerHint, min: baseMin, max: baseMax, step };
-  }, [sensorType, currentThresholds, requiresMetricSelection, watchedMetric]);
+  }, [sensorType, selectedInstance, requiresMetricSelection, watchedMetric]);
 
   // Slider ranges
   const criticalSliderRange = useMemo(
@@ -416,27 +426,45 @@ export const useSensorConfigForm = (
   );
 
   // Handler: Close with save and cleanup
-  const handleClose = useCallback(async () => {
+  const handleClose = useCallback(async (): Promise<boolean> => {
     if (form.formState.isDirty) {
-      if (!enrichedThresholds) {
+      // For name-only changes (no thresholds), enrichment isn't needed
+      const hasThresholdChanges = 
+        form.getValues('criticalValue') !== undefined || 
+        form.getValues('warningValue') !== undefined;
+      
+      if (hasThresholdChanges && !enrichedThresholds) {
         const shouldDiscard = await confirm(
           'Discard Changes?',
-          'Cannot save changes - unit conversion unavailable. Discard unsaved changes?',
+          'Cannot save threshold changes - unit conversion unavailable. Discard unsaved changes?',
         );
-        if (!shouldDiscard) return;
+        if (!shouldDiscard) return false; // User cancelled - don't close
+        form.reset(); // Reset to discard changes
       } else {
         try {
-          await form.handleSubmit(async (data) => {
-            if (sensorType) await onSave(sensorType, selectedInstance, data);
-          })();
+          await form.handleSubmit(
+            async (data) => {
+              if (sensorType) await onSave(sensorType, selectedInstance, data);
+            },
+            (errors) => {
+              // Log validation errors
+              log.app('Form validation failed', () => ({
+                errors,
+                values: form.getValues(),
+              }));
+            }
+          )();
+          // DON'T reset after successful save - it causes form to revert to old initialFormData
+          // The form will reset when dialog actually closes (component unmount or next open)
         } catch (error) {
           log.app('useSensorConfigForm: Close save failed', () => ({
             error: error instanceof Error ? error.message : String(error),
           }));
+          return false; // Save failed - don't close
         }
       }
     }
-    form.reset(); // Cleanup: Reset form state on close
+    return true; // Success - allow close
   }, [form, enrichedThresholds, sensorType, selectedInstance, onSave, confirm]);
 
   // Handler: Test sound

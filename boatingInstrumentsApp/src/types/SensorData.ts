@@ -1,80 +1,77 @@
 /**
- * Clean Sensor Data Interfaces for Marine Instruments
- *
- * These interfaces define the essential data structure that widgets need,
- * abstracting away NMEA protocol differences (0183 vs 2000).
- *
- * Each interface matches exactly what the corresponding widget displays.
+ * Auto-Generated Sensor Data Interfaces
+ * 
+ * Purpose:
+ * - Interfaces generated via type inference from SENSOR_SCHEMAS
+ * - Eliminates 300+ lines of manual interface definitions
+ * - Guaranteed sync with sensor schema (no mismatches possible)
+ * 
+ * Migration from Old Architecture:
+ * - OLD: 13 manually-defined interfaces (BatterySensorData, EngineSensorData, etc.)
+ * - NEW: Auto-generated from unified schema via InferSensorData<T>
+ * - Pattern: type XSensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.x>
+ * 
+ * Critical Implementation Details:
+ * - All sensor data types auto-generated (compile-time type safety)
+ * - Base interface provides common fields (name, timestamp, etc.)
+ * - Sensor-specific fields inferred from schema
+ * - Union type SensorData = all sensor types combined
+ * 
+ * Related Files:
+ * - sensorSchemas.ts: Source of truth for type inference
+ * - SensorInstance.ts: Uses these interfaces for data storage
  */
 
 import type { TimeSeriesBuffer } from '../utils/memoryStorageManagement';
-
-// Import SensorInstance type for new storage pattern
 import type { SensorInstance } from './SensorInstance';
-
-// NMEA 0183 Autopilot Support:
-// - RSA: Rudder Sensor Angle (rudder position)
-// - APB: Autopilot Sentence B (navigation to waypoint)
-// - APA: Autopilot Sentence A (simplified navigation)
-// NMEA 2000 Autopilot Support:
-// - PGN 127245: Rudder position
-// - PGN 65288: Autopilot status (via PCDIN/binary)
+import { SENSOR_SCHEMAS, type InferSensorData, type SensorType } from '../registry/sensorSchemas';
 
 /**
- * Context-aware configuration for sensors
+ * Context-aware configuration for sensors (DEPRECATED - use schema contextKey)
+ * Kept for backward compatibility with existing code
  */
 export interface SensorContext {
-  batteryChemistry?: 'lead-acid' | 'agm' | 'gel' | 'lifepo4'; // Battery chemistry type
-  engineType?: 'diesel' | 'gasoline' | 'outboard'; // Engine type
-  tankType?: 'fuel' | 'water' | 'waste' | 'ballast' | 'blackwater'; // Tank type
-  temperatureLocation?: 'engine' | 'cabin' | 'water' | 'refrigerator'; // Temperature sensor location
+  batteryChemistry?: 'lead-acid' | 'agm' | 'gel' | 'lifepo4';
+  engineType?: 'diesel' | 'gasoline' | 'outboard';
+  tankType?: 'fuel' | 'water' | 'waste' | 'ballast' | 'blackwater';
+  temperatureLocation?: 'engine' | 'cabin' | 'water' | 'refrigerator';
 }
 
 /**
- * Per-metric threshold configuration (NEW - Alarm Refactoring)
+ * Per-metric threshold configuration
  * Used by SensorInstance for per-metric alarm evaluation
  */
 export interface MetricThresholds {
   critical: {
-    min?: number; // SI units
-    max?: number; // SI units
+    min?: number;
+    max?: number;
   };
   warning: {
-    min?: number; // SI units
-    max?: number; // SI units
+    min?: number;
+    max?: number;
   };
-  hysteresis?: number; // Hysteresis factor (0.1 = 10%)
-  criticalSoundPattern?: string; // ISO 9692 sound pattern
-  warningSoundPattern?: string; // ISO 9692 sound pattern
-  staleThresholdMs: number; // Time after which data is stale
+  hysteresis?: number;
+  criticalSoundPattern?: string;
+  warningSoundPattern?: string;
+  staleThresholdMs: number;
   enabled: boolean;
 }
 
 /**
  * Persistent configuration for sensor instances
- * Includes user-assigned names, alarm thresholds, context, and settings.
- * Values are in SI units (meters, celsius, volts, etc.)
- *
- * For multi-metric sensors (battery, engine), alarms are stored per metric.
- * Use metric key as property name: 'voltage', 'soc', 'temperature', 'current',
- * 'coolantTemp', 'oilPressure', 'rpm'
+ * Includes user-assigned names, alarm thresholds, context, and settings
  */
 export interface SensorConfiguration {
-  name?: string; // User-assigned name for this sensor instance (e.g., "House Battery")
-  context?: SensorContext; // Context information for intelligent defaults
-
-  // Single-metric alarm configuration (for simple sensors: depth, tank, wind, speed, temperature)
-  critical?: number; // Critical alarm threshold (SI units)
-  warning?: number; // Warning alarm threshold (SI units)
-  direction?: 'above' | 'below'; // Alarm when value goes above or below threshold
-  criticalSoundPattern?: string; // Sound pattern for critical alarms
-  warningSoundPattern?: string; // Sound pattern for warning alarms
-  criticalHysteresis?: number; // Hysteresis for critical alarm recovery (SI units)
-  warningHysteresis?: number; // Hysteresis for warning alarm recovery (SI units)
-  enabled: boolean; // Whether alarms are active for this instance
-
-  // Multi-metric alarm configuration (for battery, engine)
-  // Each metric stores its own complete alarm configuration
+  name?: string;
+  context?: SensorContext;
+  critical?: number;
+  warning?: number;
+  direction?: 'above' | 'below';
+  criticalSoundPattern?: string;
+  warningSoundPattern?: string;
+  criticalHysteresis?: number;
+  warningHysteresis?: number;
+  enabled: boolean;
   metrics?: {
     [metricKey: string]: {
       critical?: number;
@@ -87,235 +84,179 @@ export interface SensorConfiguration {
       enabled: boolean;
     };
   };
-
-  audioEnabled?: boolean; // Whether to play sound when alarm triggers
-  lastModified?: number; // Timestamp of last threshold change
+  audioEnabled?: boolean;
+  lastModified?: number;
 }
 
+/**
+ * Base sensor data interface (common fields)
+ */
 export interface BaseSensorData {
-  name: string; // Human-readable instance name
-  timestamp: number; // When this data was last updated
-  history?: TimeSeriesBuffer<number>; // Single-value history for most sensors
-  historyMulti?: TimeSeriesBuffer<Record<string, number>>; // Multi-dimensional history for complex sensors
-  // NOTE: Display fields now managed by SensorInstance.metrics (MetricValue instances)
+  name: string;
+  timestamp: number;
+  history?: TimeSeriesBuffer<number>;
+  historyMulti?: TimeSeriesBuffer<Record<string, number>>;
 }
 
-export interface TankSensorData extends BaseSensorData {
-  type: 'fuel' | 'water' | 'waste' | 'ballast' | 'blackwater';
-  level: number; // 0-100% - PRIMARY metric for TankWidget (percentage, not ratio)
-  capacity?: number; // Liters - secondary metric
-  temperature?: number; // Optional additional metric
-}
+// ============================================================
+// Auto-Generated Sensor Data Interfaces (via Type Inference)
+// ============================================================
+// These interfaces are generated from SENSOR_SCHEMAS using TypeScript's
+// type inference capabilities. This eliminates manual maintenance and
+// guarantees synchronization between schemas and types.
 
-export interface EngineSensorData extends BaseSensorData {
-  rpm?: number; // PRIMARY metric - Engine RPM (source='E')
-  coolantTemp?: number; // PRIMARY metric
-  oilPressure?: number; // PRIMARY metric
-  alternatorVoltage?: number; // Secondary metric (also called 'voltage' in some contexts)
-  fuelRate?: number; // Secondary metric
-  hours?: number; // Secondary metric
-  shaftRpm?: number; // Secondary metric - Propeller shaft RPM (source='S')
-}
+/**
+ * Battery Sensor Data
+ * Auto-generated from SENSOR_SCHEMAS.battery via InferSensorData<T>
+ */
+export type BatterySensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.battery>;
 
-export interface BatterySensorData extends BaseSensorData {
-  voltage?: number; // PRIMARY metric - actual voltage
-  current?: number; // PRIMARY metric - current draw/charge
-  stateOfCharge?: number; // PRIMARY metric (0-100%) - battery SOC
-  temperature?: number; // PRIMARY metric - battery temperature
-  nominalVoltage?: number; // Secondary metric - rated voltage
-  capacity?: number; // Secondary metric - capacity in Ah
-  chemistry?: string; // Secondary metric - battery chemistry type
-}
+/**
+ * Depth Sensor Data
+ * Auto-generated from SENSOR_SCHEMAS.depth via InferSensorData<T>
+ * 
+ * Special notes:
+ * - Single depth value selected by NMEA parser with priority: DPT > DBT > DBK
+ * - depthSource indicates which NMEA sentence provided the value
+ * - Instance mapping based on talker ID (physical sensor)
+ */
+export type DepthSensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.depth>;
 
-export interface WindSensorData extends BaseSensorData {
-  direction?: number; // PRIMARY metric (0-360° or ±180°) - apparent wind direction
-  speed?: number; // PRIMARY metric - apparent wind speed
-  trueDirection?: number; // Secondary metric - true wind direction
-  trueSpeed?: number; // Secondary metric - true wind speed
-}
+/**
+ * Engine Sensor Data
+ * Auto-generated from SENSOR_SCHEMAS.engine via InferSensorData<T>
+ * 
+ * Context-dependent alarms: engineType (diesel, gasoline, outboard)
+ */
+export type EngineSensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.engine>;
 
-export interface SpeedSensorData extends BaseSensorData {
-  throughWater?: number; // Speed through water (STW) - PRIMARY for log
-  overGround?: number; // Speed over ground (SOG) - PRIMARY for GPS
-  tripDistance?: number; // Trip distance (meters) - resettable odometer
-  totalDistance?: number; // Total distance (meters) - lifetime odometer
-}
+/**
+ * Wind Sensor Data
+ * Auto-generated from SENSOR_SCHEMAS.wind via InferSensorData<T>
+ */
+export type WindSensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.wind>;
 
-export interface GpsSensorData extends BaseSensorData {
-  latitude?: number; // PRIMARY metric - decimal degrees (MetricValue with 'coordinates' category)
-  longitude?: number; // PRIMARY metric - decimal degrees (MetricValue with 'coordinates' category)
-  utcTime?: number; // PRIMARY metric - UTC timestamp from GPS (MetricValue with 'time' category)
-  utcDate?: number; // PRIMARY metric - UTC timestamp from GPS (MetricValue with 'date' category)
-  courseOverGround?: number; // PRIMARY metric
-  speedOverGround?: number; // PRIMARY metric
-  fixType?: number; // 0=no fix, 1=GPS, 2=DGPS, 3=PPS (flattened from quality.fixType)
-  satellites?: number; // Number of satellites (flattened from quality.satellites)
-  hdop?: number; // Horizontal dilution of precision (flattened from quality.hdop)
-  timeSource?: 'RMC' | 'ZDA' | 'GGA'; // Source sentence for priority selection (RMC > ZDA > GGA)
-  // Legacy field for backward compatibility during migration - will be removed
-  position?: {
-    latitude: number;
-    longitude: number;
-  };
-}
+/**
+ * Speed Sensor Data
+ * Auto-generated from SENSOR_SCHEMAS.speed via InferSensorData<T>
+ */
+export type SpeedSensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.speed>;
 
-export interface TemperatureSensorData extends BaseSensorData {
-  location:
-    | 'seawater'
-    | 'engine'
-    | 'cabin'
-    | 'outside'
-    | 'exhaust'
-    | 'refrigeration'
-    | 'engineRoom'
-    | 'liveWell'
-    | 'baitWell'
-    | 'freezer';
-  value: number; // Temperature in Celsius - PRIMARY metric
-  units: 'C' | 'F'; // Temperature units
-}
+/**
+ * Temperature Sensor Data
+ * Auto-generated from SENSOR_SCHEMAS.temperature via InferSensorData<T>
+ */
+export type TemperatureSensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.temperature>;
 
-export interface DepthSensorData extends BaseSensorData {
-  // PRIMARY metric - Single depth value selected by NMEA parser with priority: DPT > DBT > DBK
-  depth?: number; // Depth in meters (selected by priority logic in data layer)
+/**
+ * Tank Sensor Data
+ * Auto-generated from SENSOR_SCHEMAS.tank via InferSensorData<T>
+ * 
+ * Context-dependent alarms: tankType (fuel, water, waste, blackwater)
+ */
+export type TankSensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.tank>;
 
-  // Metadata: Which NMEA sentence provided the depth value
-  // Used for display mnemonic in MetricCell (DBT, DPT, or DBK)
-  depthSource?: 'DBT' | 'DPT' | 'DBK';
+/**
+ * Weather Sensor Data
+ * Auto-generated from SENSOR_SCHEMAS.weather via InferSensorData<T>
+ */
+export type WeatherSensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.weather>;
 
-  // Reference point for the depth measurement (for user understanding)
-  depthReferencePoint?: 'waterline' | 'transducer' | 'keel';
+/**
+ * GPS Sensor Data
+ * Auto-generated from SENSOR_SCHEMAS.gps via InferSensorData<T>
+ * 
+ * Special notes:
+ * - timeSource indicates priority for time data: RMC > ZDA > GGA
+ * - Legacy 'position' field maintained for backward compatibility
+ */
+export type GpsSensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.gps>;
 
-  // Raw depth measurements from different NMEA sentences (for debugging/logging)
-  // NMEA parser applies priority logic and writes to 'depth' field
-  depthBelowWaterline?: number; // DPT - Depth from waterline (HIGHEST PRIORITY)
-  depthBelowTransducer?: number; // DBT - Depth below transducer (MEDIUM PRIORITY)
-  depthBelowKeel?: number; // DBK - Depth below keel (LOWEST PRIORITY)
+/**
+ * Autopilot Sensor Data
+ * Auto-generated from SENSOR_SCHEMAS.autopilot via InferSensorData<T>
+ */
+export type AutopilotSensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.autopilot>;
 
-  // Instance mapping: Based on talker ID (physical sensor)
-  // - Multiple physical sensors distinguished by talker ID (SD, II, etc.)
-  // - Each sensor can send DPT, DBT, DBK - all update same instance
-  // - NMEA parser selects best available measurement and updates 'depth' + 'depthSource'
-}
+/**
+ * Position Sensor Data
+ * Auto-generated from SENSOR_SCHEMAS.position via InferSensorData<T>
+ */
+export type PositionSensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.position>;
 
-export interface CompassSensorData extends BaseSensorData {
-  magneticHeading?: number; // Magnetic heading (0-360°)
-  trueHeading?: number; // True heading (0-360°)
-  variation?: number; // Magnetic variation (difference between true and magnetic north)
-  deviation?: number; // Compass deviation (local magnetic disturbance)
-  rateOfTurn?: number; // Rate of turn in degrees per minute
-}
+/**
+ * Heading/Compass Sensor Data
+ * Auto-generated from SENSOR_SCHEMAS.heading via InferSensorData<T>
+ */
+export type HeadingSensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.heading>;
 
-export interface AutopilotSensorData extends BaseSensorData {
-  engaged: boolean; // PRIMARY status
-  active?: boolean; // Autopilot active (separate from engaged)
-  mode?: 'STANDBY' | 'AUTO' | 'WIND' | 'TRACK' | 'NAV'; // Autopilot operating mode
-  targetHeading?: number; // Target heading (commanded heading)
-  actualHeading?: number; // Current actual heading being maintained
-  headingSource?: 'COMPASS' | 'GPS' | 'GYRO'; // Source of heading data
-  rudderAngle?: number; // Current rudder position (-35 to +35 degrees)
-  locked?: boolean; // Heading lock status
-  alarm?: boolean; // Autopilot alarm condition (threshold-based)
-}
+/**
+ * Log Sensor Data (Distance Tracking)
+ * Auto-generated from SENSOR_SCHEMAS.log via InferSensorData<T>
+ */
+export type LogSensorData = BaseSensorData & InferSensorData<typeof SENSOR_SCHEMAS.log>;
 
-export interface NavigationSensorData extends BaseSensorData {
-  // Waypoint information
-  waypointId?: string; // PRIMARY - waypoint identifier
-  waypointName?: string; // Waypoint name/description
-  waypointPosition?: {
-    latitude: number;
-    longitude: number;
-  };
-
-  // Navigation metrics
-  bearingToWaypoint?: number; // PRIMARY metric - bearing to destination (0-360°)
-  distanceToWaypoint?: number; // PRIMARY metric - distance to destination (nautical miles)
-  crossTrackError?: number; // PRIMARY metric - XTE in nautical miles (negative = left, positive = right)
-
-  // Course information
-  originWaypointId?: string; // Origin waypoint for current leg
-  destinationWaypointId?: string; // Destination waypoint for current leg
-  bearingOriginToDest?: number; // Bearing from origin to destination
-
-  // Speed/time estimates
-  velocityMadeGood?: number; // Speed toward waypoint (knots)
-  timeToWaypoint?: number; // Estimated time to arrival (seconds)
-
-  // Navigation status
-  arrivalStatus?: 'active' | 'arrived' | 'perpendicular';
-  steerDirection?: 'left' | 'right'; // Which way to steer to correct XTE
-}
-
-export interface WeatherSensorData extends BaseSensorData {
-  pressure?: number; // PRIMARY metric - Barometric pressure in Pascals
-  airTemperature?: number; // Air temperature in Celsius
-  humidity?: number; // Relative humidity (0-100%)
-  dewPoint?: number; // Dew point temperature in Celsius
-}
+// Legacy aliases for backward compatibility
+export type CompassSensorData = HeadingSensorData;
+export type NavigationSensorData = PositionSensorData;
 
 // Union type for all sensor data
 export type SensorData =
-  | TankSensorData
-  | EngineSensorData
   | BatterySensorData
+  | DepthSensorData
+  | EngineSensorData
   | WindSensorData
   | SpeedSensorData
-  | GpsSensorData
   | TemperatureSensorData
-  | DepthSensorData
-  | CompassSensorData
+  | TankSensorData
+  | WeatherSensorData
+  | GpsSensorData
   | AutopilotSensorData
-  | NavigationSensorData
-  | WeatherSensorData;
-
-// Sensor type identifiers
-export type SensorType =
-  | 'tank'
-  | 'engine'
-  | 'battery'
-  | 'wind'
-  | 'speed'
-  | 'gps'
-  | 'temperature'
-  | 'depth'
-  | 'compass'
-  | 'autopilot'
-  | 'navigation'
-  | 'weather';
+  | PositionSensorData
+  | HeadingSensorData
+  | LogSensorData;
 
 // Main sensors data structure
 // NEW: Stores SensorInstance class instances instead of plain objects
 // Provides automatic enrichment, history management, and alarm evaluation
 export interface SensorsData {
-  tank: { [instance: number]: SensorInstance<TankSensorData> };
-  engine: { [instance: number]: SensorInstance<EngineSensorData> };
   battery: { [instance: number]: SensorInstance<BatterySensorData> };
+  depth: { [instance: number]: SensorInstance<DepthSensorData> };
+  engine: { [instance: number]: SensorInstance<EngineSensorData> };
   wind: { [instance: number]: SensorInstance<WindSensorData> };
   speed: { [instance: number]: SensorInstance<SpeedSensorData> };
-  gps: { [instance: number]: SensorInstance<GpsSensorData> };
   temperature: { [instance: number]: SensorInstance<TemperatureSensorData> };
-  depth: { [instance: number]: SensorInstance<DepthSensorData> };
-  compass: { [instance: number]: SensorInstance<CompassSensorData> };
-  autopilot: { [instance: number]: SensorInstance<AutopilotSensorData> };
-  navigation: { [instance: number]: SensorInstance<NavigationSensorData> };
+  tank: { [instance: number]: SensorInstance<TankSensorData> };
   weather: { [instance: number]: SensorInstance<WeatherSensorData> };
+  gps: { [instance: number]: SensorInstance<GpsSensorData> };
+  autopilot: { [instance: number]: SensorInstance<AutopilotSensorData> };
+  position: { [instance: number]: SensorInstance<PositionSensorData> };
+  heading: { [instance: number]: SensorInstance<HeadingSensorData> };
+  log: { [instance: number]: SensorInstance<LogSensorData> };
+  // Legacy aliases for backward compatibility
+  compass: { [instance: number]: SensorInstance<CompassSensorData> };
+  navigation: { [instance: number]: SensorInstance<NavigationSensorData> };
 }
 
 // Serialization types for Zustand persistence
 // Plain objects for JSON storage, restored to SensorInstance on load
 export interface SerializedSensorsData {
-  tank: { [instance: number]: ReturnType<SensorInstance<TankSensorData>['toJSON']> };
-  engine: { [instance: number]: ReturnType<SensorInstance<EngineSensorData>['toJSON']> };
   battery: { [instance: number]: ReturnType<SensorInstance<BatterySensorData>['toJSON']> };
+  depth: { [instance: number]: ReturnType<SensorInstance<DepthSensorData>['toJSON']> };
+  engine: { [instance: number]: ReturnType<SensorInstance<EngineSensorData>['toJSON']> };
   wind: { [instance: number]: ReturnType<SensorInstance<WindSensorData>['toJSON']> };
   speed: { [instance: number]: ReturnType<SensorInstance<SpeedSensorData>['toJSON']> };
-  gps: { [instance: number]: ReturnType<SensorInstance<GpsSensorData>['toJSON']> };
   temperature: { [instance: number]: ReturnType<SensorInstance<TemperatureSensorData>['toJSON']> };
-  depth: { [instance: number]: ReturnType<SensorInstance<DepthSensorData>['toJSON']> };
-  compass: { [instance: number]: ReturnType<SensorInstance<CompassSensorData>['toJSON']> };
-  autopilot: { [instance: number]: ReturnType<SensorInstance<AutopilotSensorData>['toJSON']> };
-  navigation: { [instance: number]: ReturnType<SensorInstance<NavigationSensorData>['toJSON']> };
+  tank: { [instance: number]: ReturnType<SensorInstance<TankSensorData>['toJSON']> };
   weather: { [instance: number]: ReturnType<SensorInstance<WeatherSensorData>['toJSON']> };
+  gps: { [instance: number]: ReturnType<SensorInstance<GpsSensorData>['toJSON']> };
+  autopilot: { [instance: number]: ReturnType<SensorInstance<AutopilotSensorData>['toJSON']> };
+  position: { [instance: number]: ReturnType<SensorInstance<PositionSensorData>['toJSON']> };
+  heading: { [instance: number]: ReturnType<SensorInstance<HeadingSensorData>['toJSON']> };
+  log: { [instance: number]: ReturnType<SensorInstance<LogSensorData>['toJSON']> };
+  // Legacy aliases for backward compatibility
+  compass: { [instance: number]: ReturnType<SensorInstance<CompassSensorData>['toJSON']> };
+  navigation: { [instance: number]: ReturnType<SensorInstance<NavigationSensorData>['toJSON']> };
 }
 
 /**

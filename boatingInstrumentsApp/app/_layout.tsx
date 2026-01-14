@@ -6,7 +6,24 @@ import LoadingOverlay from '../src/components/molecules/LoadingOverlay';
 import { useEffect } from 'react';
 import { AccessibilityService } from '../src/services/accessibility/AccessibilityService';
 import { Platform } from 'react-native';
+import { initializeGlobalCache } from '../src/registry/globalSensorCache';
+import { log } from '../src/utils/logging/logger';
+
 export default function RootLayout() {
+  // Initialize global sensor schema cache at startup
+  useEffect(() => {
+    try {
+      initializeGlobalCache();
+      log.app('✅ Global sensor cache initialized', () => ({ 
+        timestamp: new Date().toISOString() 
+      }));
+    } catch (error) {
+      log.app('❌ Failed to initialize global sensor cache', () => ({
+        error: error instanceof Error ? error.message : 'unknown error',
+      }));
+    }
+  }, []);
+
   // Initialize accessibility service on app mount
   useEffect(() => {
     AccessibilityService.initialize();

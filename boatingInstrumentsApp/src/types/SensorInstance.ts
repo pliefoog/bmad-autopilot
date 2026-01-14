@@ -40,10 +40,12 @@ import { MetricValue } from './MetricValue';
 import { SensorType, SensorData, MetricThresholds } from './SensorData';
 import { DataCategory } from '../presentation/categories';
 import { AdaptiveHistoryBuffer, DataPoint } from '../utils/AdaptiveHistoryBuffer';
-import { getDataFields } from '../registry/SensorConfigRegistry';
+import { getDataFields, getAlarmDefaults, getSensorConfig } from '../registry/SensorConfigRegistry';
+import { getUnitType, getMnemonic, isCacheInitialized } from '../registry/globalSensorCache';
 import { evaluateAlarm } from '../utils/alarmEvaluation';
 import { log } from '../utils/logging/logger';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
+import { useSensorConfigStore } from '../store/sensorConfigStore';
 
 /**
  * Enriched metric data point (backward compatibility)
@@ -69,9 +71,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
   readonly sensorType: SensorType;
   readonly instance: number;
 
-  // Cached lookups (built once, referenced by all metrics)
-  private _metricUnitTypes: Map<string, DataCategory> = new Map();
-  private _forceTimezones: Map<string, 'utc' | undefined> = new Map();
+  // Alarm evaluation (uses global cache for unitType lookups)
   private _alarmStates: Map<string, 0 | 1 | 2 | 3> = new Map();
   private _thresholds: Map<string, MetricThresholds> = new Map();
 
@@ -96,24 +96,129 @@ export class SensorInstance<T extends SensorData = SensorData> {
     this.name = `${sensorType}-${instance}`;
     this.timestamp = Date.now();
 
-    // Build unitType cache from registry
-    const fields = getDataFields(sensorType);
-    for (const field of fields) {
-      if (field.unitType) {
-        this._metricUnitTypes.set(field.key, field.unitType);
-      }
-      // Cache forceTimezone if present
-      if ('forceTimezone' in field) {
-        this._forceTimezones.set(field.key, field.forceTimezone);
-      }
+    // Use global cache for unitType lookups (eliminates per-instance cache building)
+    // Global cache is built once at startup in app/_layout.tsx
+    if (!isCacheInitialized()) {
+      log.app('⚠️ WARNING: Global sensor cache not initialized', () => ({
+        sensorType,
+        instance,
+        recommendation: 'Call initializeGlobalCache() in app/_layout.tsx startup',
+      }));
     }
+
+    // Initialize with registry default thresholds
+    // This ensures sliders show proper defaults when sensor is first detected
+    this._initializeDefaultThresholds();
 
     log.app('SensorInstance created', () => ({
       sensorType,
       instance,
       name: this.name,
-      unitTypes: Array.from(this._metricUnitTypes.keys()),
+      recommendedFields: ['depth', 'voltage', 'rpm', 'speedOverWater'].filter(f => {
+        const unitType = this.getUnitTypeFor(f);
+        return unitType !== undefined;
+      }),
+      defaultThresholdsLoaded: this._thresholds.size > 0,
     }));
+  }
+
+  /**
+   * Initialize sensor with thresholds (Priority: User Settings → Registry Defaults)
+   * 
+   * Purpose:
+   * - Load user-saved thresholds from sensorConfigStore (primary source)
+   * - Fall back to registry defaults if no user settings exist
+   * - Ensures configuration dialog shows proper values instead of empty/zero
+   * 
+   * Priority Hierarchy:
+   * 1. User-saved settings (from sensorConfigStore persistence)
+   * 2. Registry defaults (from SensorConfigRegistry)
+   * 
+   * Implementation Notes:
+   * - Checks sensorConfigStore.getConfig(sensorType, instance) first
+   * - If user config exists: loads critical/warning/metrics from stored config
+   * - If no user config: loads from getAlarmDefaults(sensorType)
+   * - Supports both single-metric and multi-metric sensors
+   * - Thresholds stored in SI units (ready for unit conversion)
+   * 
+   * Bug Fix History:
+   * - Jan 2026: Added initialization to fix empty slider values on sensor creation
+   * - Jan 2026: Fixed priority to respect user settings over defaults
+   */
+  private _initializeDefaultThresholds(): void {
+    const sensorConfig = getSensorConfig(this.sensorType);
+    if (!sensorConfig || sensorConfig.alarmSupport === 'none') {
+      return;
+    }
+
+    // PRIORITY 1: Check for user-saved configuration in sensorConfigStore
+    const userConfig = useSensorConfigStore.getState().getConfig(this.sensorType, this.instance);
+    
+    if (userConfig) {
+      // Load user-saved thresholds
+      if (userConfig.metrics) {
+        // Multi-metric: load each metric's thresholds
+        for (const [metricKey, metricConfig] of Object.entries(userConfig.metrics)) {
+          this._thresholds.set(metricKey, metricConfig as MetricThresholds);
+        }
+        log.app('✅ Loaded user-saved thresholds (multi-metric)', () => ({
+          sensorType: this.sensorType,
+          instance: this.instance,
+          source: 'sensorConfigStore',
+          metrics: Object.keys(userConfig.metrics),
+        }));
+      } else if (userConfig.critical !== undefined || userConfig.warning !== undefined) {
+        // Single-metric: load critical/warning thresholds
+        const firstMetric = sensorConfig.alarmMetrics?.[0];
+        if (firstMetric) {
+          this._thresholds.set(firstMetric.key, {
+            critical: userConfig.critical,
+            warning: userConfig.warning,
+            direction: userConfig.direction,
+            staleThresholdMs: userConfig.staleThresholdMs,
+          } as MetricThresholds);
+          log.app('✅ Loaded user-saved thresholds (single-metric)', () => ({
+            sensorType: this.sensorType,
+            instance: this.instance,
+            source: 'sensorConfigStore',
+            metric: firstMetric.key,
+          }));
+        }
+      }
+      
+      // User config loaded successfully - don't load defaults
+      return;
+    }
+
+    // PRIORITY 2: No user config - fall back to registry defaults
+    const defaults = getAlarmDefaults(this.sensorType);
+    if (!defaults) {
+      return;
+    }
+
+    // Multi-metric sensors (battery, weather, engine)
+    if (defaults.metrics) {
+      for (const [metricKey, thresholds] of Object.entries(defaults.metrics)) {
+        this._thresholds.set(metricKey, thresholds as MetricThresholds);
+      }
+      log.app('📋 Loaded registry default thresholds (multi-metric)', () => ({
+        sensorType: this.sensorType,
+        instance: this.instance,
+        source: 'registry',
+        metrics: Object.keys(defaults.metrics),
+      }));
+    }
+    // Single-metric sensors (depth, wind, speed)
+    else if (sensorConfig.alarmMetrics && sensorConfig.alarmMetrics.length > 0) {
+      const firstMetric = sensorConfig.alarmMetrics[0];
+      this._thresholds.set(firstMetric.key, defaults as MetricThresholds);
+      log.app('📋 Loaded registry default thresholds (single-metric)', () => ({
+        sensorType: this.sensorType,
+        instance: this.instance,
+        source: 'registry',
+        metric: firstMetric.key,
+      }));
+    }
   }
 
   /**
@@ -198,8 +303,8 @@ export class SensorInstance<T extends SensorData = SensorData> {
           changedMetrics.add(fieldName);
 
           if (field.valueType === 'number') {
-            // Get unitType for this field
-            const unitType = this._metricUnitTypes.get(fieldName);
+            // Get unitType from global cache
+            const unitType = getUnitType(this.sensorType, fieldName);
 
             // Get forceTimezone from field config (for datetime fields)
             const forceTimezone = 'forceTimezone' in field ? field.forceTimezone : undefined;
@@ -298,7 +403,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
       }
 
       // Create MetricValue for the stat (same unitType as base field)
-      const unitType = this._metricUnitTypes.get(baseField);
+      const unitType = getUnitType(this.sensorType, baseField);
       const now = Date.now();
       const metric = unitType
         ? new MetricValue(statValue, now, unitType)
@@ -339,7 +444,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
     if (!latest) return undefined;
 
     // Reconstruct enriched data from raw SI value
-    const unitType = this._metricUnitTypes.get(fieldName);
+    const unitType = getUnitType(this.sensorType, fieldName);
     
     // For string values, return as-is
     if (typeof latest.value === 'string') {
@@ -400,7 +505,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
       : buffer.getAll();
 
     // Convert SI → display units (same as MetricValue.enrich())
-    const unitType = this._metricUnitTypes.get(fieldName);
+    const unitType = getUnitType(this.sensorType, fieldName);
     if (!unitType) {
       // No unit conversion available, return raw SI values
       return rawPoints;
@@ -451,13 +556,13 @@ export class SensorInstance<T extends SensorData = SensorData> {
   }
 
   /**
-   * Get category for metric (from cache)
+   * Get unitType for metric (from global cache)
    *
    * @param metricKey - Metric field name
    * @returns DataCategory or undefined
    */
-  getUnitType(metricKey: string): DataCategory | undefined {
-    return this._metricUnitTypes.get(metricKey);
+  getUnitTypeFor(metricKey: string): DataCategory | undefined {
+    return getUnitType(this.sensorType, metricKey);
   }
 
   /**
