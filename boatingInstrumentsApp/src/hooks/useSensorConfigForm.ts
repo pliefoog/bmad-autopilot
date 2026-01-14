@@ -35,7 +35,7 @@ import type { EnrichedThresholdInfo } from '../services/ThresholdPresentationSer
 import { ThresholdPresentationService } from '../services/ThresholdPresentationService';
 import { MarineAudioAlertManager } from '../services/alarms/MarineAudioAlertManager';
 import { CriticalAlarmType, AlarmEscalationLevel } from '../services/alarms/types';
-import { getSensorConfig, getAlarmDefaults } from '../registry/SensorConfigRegistry';
+import { getSensorConfig, getAlarmDefaults } from '../../registry';
 import { sensorRegistry } from '../services/SensorDataRegistry';
 import { getAlarmDirection, getAlarmTriggerHint } from '../utils/sensorAlarmUtils';
 import { getSensorDisplayName } from '../utils/sensorDisplayName';

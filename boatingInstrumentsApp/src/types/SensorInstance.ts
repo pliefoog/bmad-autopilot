@@ -40,7 +40,7 @@ import { MetricValue } from './MetricValue';
 import { SensorType, SensorData, MetricThresholds } from './SensorData';
 import { DataCategory } from '../presentation/categories';
 import { AdaptiveHistoryBuffer, DataPoint } from '../utils/AdaptiveHistoryBuffer';
-import { getDataFields, getAlarmDefaults, getSensorConfig } from '../registry/SensorConfigRegistry';
+import { getDataFields, getAlarmDefaults, getSensorConfig } from '../../registry';
 import { getUnitType, getMnemonic, isCacheInitialized } from '../registry/globalSensorCache';
 import { evaluateAlarm } from '../utils/alarmEvaluation';
 import { log } from '../utils/logging/logger';

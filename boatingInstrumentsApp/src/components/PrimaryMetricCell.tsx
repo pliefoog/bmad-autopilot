@@ -5,7 +5,7 @@ import { FlashingText } from './FlashingText';
 import { ALARM_VISUAL_STATES } from '../types/AlarmTypes';
 import type { AlarmLevel } from '../types/AlarmTypes';
 import type { SensorType, SensorMetricProps } from '../types/SensorData';
-import { getSensorField } from '../registry/SensorConfigRegistry';
+import { getSensorField } from '../registry';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
 import { useMetricValue, useSensorInstance } from '../contexts/MetricContext';
 

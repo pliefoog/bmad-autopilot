@@ -4,7 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useNmeaStore } from '../store/nmeaStore';
 import type { SensorMetricProps } from '../types/SensorData';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
-import { getSensorField } from '../registry/SensorConfigRegistry';
+import { getSensorField } from '../../registry';
 
 interface StatMetricCellProps extends SensorMetricProps {
   // SensorMetricProps provides: sensorType, instance, metricKey

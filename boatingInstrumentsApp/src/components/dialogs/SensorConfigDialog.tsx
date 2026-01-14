@@ -44,7 +44,7 @@ import { UniversalIcon } from '../atoms/UniversalIcon';
 import { PlatformToggle } from './inputs/PlatformToggle';
 import { PlatformPicker } from './inputs/PlatformPicker';
 import { getPlatformTokens } from '../../theme/settingsTokens';
-import { getSensorConfig } from '../../registry/SensorConfigRegistry';
+import { getSensorConfig } from '../../registry';
 import { getAlarmDirection } from '../../utils/sensorAlarmUtils';
 import { sensorRegistry } from '../../services/SensorDataRegistry';
 import {

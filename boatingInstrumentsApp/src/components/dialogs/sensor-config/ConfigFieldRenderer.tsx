@@ -34,7 +34,7 @@ import {
 import { ThemeColors } from '../../../store/themeStore';
 import { PlatformPicker } from '../inputs/PlatformPicker';
 import { UniversalIcon } from '../../atoms/UniversalIcon';
-import { SensorFieldConfig } from '../../../registry/SensorConfigRegistry';
+import { SensorFieldConfig } from '../../registry';
 import type { SensorInstance } from '../../../types/SensorInstance';
 import { getFieldHeight, getTouchTargetSize } from '../../../constants/gloveMode';
 import { log } from '../../../utils/logging/logger';

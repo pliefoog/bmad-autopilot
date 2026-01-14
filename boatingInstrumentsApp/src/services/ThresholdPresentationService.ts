@@ -56,7 +56,7 @@ import { useNmeaStore } from '../store/nmeaStore';
 import { useSensorConfigStore } from '../store/sensorConfigStore';
 import { sensorRegistry } from './SensorDataRegistry';
 import { usePresentationStore } from '../presentation/presentationStore';
-import { SENSOR_CONFIG_REGISTRY, getAlarmDefaults } from '../registry/SensorConfigRegistry';
+import { getAlarmDefaults, getSensorSchema } from '../registry';
 import { DataCategory } from '../presentation/categories';
 import {
   findPresentation,
@@ -313,49 +313,42 @@ class ThresholdPresentationServiceClass {
    * Get the data category for a sensor field or metric
    *
    * @param sensorType - Type of sensor
-   * @param metric - Optional metric key for multi-metric sensors
+   * @param fieldKey - Optional field key for multi-field sensors
    * @returns Data category or null if not found
    */
-  private getCategoryForSensor(sensorType: SensorType, metric?: string): DataCategory | null {
-    const config = SENSOR_CONFIG_REGISTRY[sensorType];
-    if (!config) {
-      log.app('[ThresholdPresentationService] No config found for sensor type', () => ({
+  private getCategoryForSensor(sensorType: SensorType, fieldKey?: string): DataCategory | null {
+    const schema = getSensorSchema(sensorType);
+    if (!schema) {
+      log.app('[ThresholdPresentationService] No schema found for sensor type', () => ({
         sensorType,
       }));
       return null;
     }
 
-    // For multi-metric sensors, REQUIRE metric parameter
-    if (config.alarmSupport === 'multi-metric') {
-      if (!metric) {
-        log.app('[ThresholdPresentationService] Multi-metric sensor requires metric parameter', () => ({
+    // If fieldKey provided, get category from that specific field
+    if (fieldKey) {
+      const field = schema.fields[fieldKey as keyof typeof schema.fields];
+      if (!field || !field.unitType) {
+        log.app('[ThresholdPresentationService] No unitType found for field', () => ({
           sensorType,
+          fieldKey,
         }));
         return null;
       }
-      if (!config.alarmMetrics) {
-        log.app('[ThresholdPresentationService] Multi-metric sensor has no alarmMetrics defined', () => ({
-          sensorType,
-        }));
-        return null;
-      }
-      const metricConfig = config.alarmMetrics.find((m) => m.key === metric);
-      if (!metricConfig?.unitType) {
-        log.app('[ThresholdPresentationService] No unitType found for metric', () => ({
-          sensorType,
-          metric,
-        }));
-      }
-      return metricConfig?.unitType || null;
+      return (field.unitType as DataCategory) || null;
     }
 
-    // For single-metric sensors, find the data field with a unitType
-    // Priority: field that appears in defaults.threshold (indicates primary alarm field)
-    const fieldWithUnit = config.fields.find((f) => f.unitType);
-    if (!fieldWithUnit?.unitType) {
+    // Find first field with unitType (for single-metric or default lookup)
+    const fieldWithUnit = Object.entries(schema.fields).find(
+      ([_, field]) => field && 'unitType' in field && field.unitType
+    );
+
+    if (!fieldWithUnit) {
       log.app(`No field with unitType found for ${sensorType}`, () => ({}));
+      return null;
     }
-    return (fieldWithUnit?.unitType as DataCategory) || null;
+
+    return (fieldWithUnit[1] as any)?.unitType || null;
   }
 
   /**
