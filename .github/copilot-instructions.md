@@ -1,5 +1,9 @@
 # GitHub Copilot Instructions - BMad Autopilot
 
+## Testing Policy
+
+**NEVER generate automated test scripts** (Jest/unit/integration tests). This project uses manual testing only.
+
 ## 🔴 MANDATORY DOCUMENTATION REQUIREMENT (NON-NEGOTIABLE)
 
 **Every source file that is touched MUST be updated with comprehensive documentation.**
