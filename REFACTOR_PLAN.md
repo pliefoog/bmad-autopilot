@@ -20,11 +20,11 @@
 - [x] Document baseline metrics (TypeScript errors, bundle size)
 - [x] Commit: "chore: initialize unified sensor schema refactor"
 
-### Phase 0.5: Documentation Infrastructure (0.5 days)
-- [ ] Audit existing documentation
-- [ ] Create cleanup infrastructure scripts
-- [ ] Create cleanup checklist template
-- [ ] Commit: "docs: prepare refactor infrastructure"
+### Phase 0.5: Documentation Infrastructure (0.5 days) ✅ COMPLETE
+- [x] Audit existing documentation
+- [x] Create cleanup infrastructure scripts
+- [x] Create cleanup checklist template
+- [x] Commit: "docs: prepare refactor infrastructure"
 
 ### Phase 1: Archive Old Documentation (0.5 days)
 - [ ] Create `docs/archive/` directory
@@ -37,14 +37,16 @@
 - [ ] Create `docs/architecture/DATA_FLOW.md`
 - [ ] Commit: "docs: add core architecture documentation"
 
-### Phase 2.5: Registry Schema Migration (3-4 days) 🎯 CRITICAL
-- [ ] Create `src/registry/sensorSchemas.ts` (~1500 lines)
-- [ ] Create `src/registry/globalSensorCache.ts` (~120 lines)
+### Phase 2.5: Registry Schema Migration (3-4 days) 🎯 CRITICAL - IN PROGRESS
+- [x] Create `src/registry/sensorSchemas.ts` (~1500 lines) - Battery complete, 12 sensors remaining
+- [x] Create `src/registry/globalSensorCache.ts` (~120 lines)
+- [x] Create `src/registry/index.ts` with helper functions
+- [ ] Complete remaining sensor schemas (depth, engine, gps, wind, speed, temperature, tank, weather, autopilot, position, heading, log)
 - [ ] Replace `src/types/SensorData.ts` (363 → ~100 lines)
-- [ ] Update `src/registry/index.ts` with helper functions
 - [ ] Update `src/types/SensorInstance.ts` to use global cache
 - [ ] Create runtime schema validation
-- [ ] Run verification: `npm run type-check`
+- [ ] Initialize cache in app/_layout.tsx
+- [ ] Run verification: `npx tsc --noEmit`
 - [ ] Commit: "refactor: create unified sensor schema"
 - [ ] Create rollback tag: `rollback/phase-2.5-complete`
 
@@ -104,9 +106,9 @@
 
 ## Next Step
 
-**Begin Phase 0.5: Documentation Infrastructure**
+**Continue Phase 2.5: Complete Remaining Sensor Schemas**
 
-Audit existing documentation and create cleanup infrastructure.
+Add depth, engine, gps, wind, speed, temperature, tank, weather, autopilot schemas (~1000 lines remaining).
 
 ---
 
