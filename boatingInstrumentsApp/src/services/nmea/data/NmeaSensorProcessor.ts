@@ -813,28 +813,28 @@ export class NmeaSensorProcessor {
 
     // Heading (true or magnetic)
     if (fields.heading_true !== null && !isNaN(fields.heading_true)) {
-      const compassData: Partial<CompassSensorData> = {
-        name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
+      const headingData: Partial<HeadingSensorData> = {
+        name: `Heading ${instance > 0 ? `#${instance}` : ''}`.trim(),
         trueHeading: fields.heading_true, // True heading in degrees (base unit)
         timestamp: timestamp,
       };
 
       updates.push({
-        sensorType: 'compass',
+        sensorType: 'heading',
         instance: instance,
-        data: compassData,
+        data: headingData,
       });
     } else if (fields.heading_magnetic !== null && !isNaN(fields.heading_magnetic)) {
-      const compassData: Partial<CompassSensorData> = {
-        name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
+      const headingData: Partial<HeadingSensorData> = {
+        name: `Heading ${instance > 0 ? `#${instance}` : ''}`.trim(),
         magneticHeading: fields.heading_magnetic, // Magnetic heading in degrees (base unit)
         timestamp: timestamp,
       };
 
       updates.push({
-        sensorType: 'compass',
+        sensorType: 'heading',
         instance: instance,
-        data: compassData,
+        data: headingData,
       });
     }
 
@@ -1088,10 +1088,10 @@ export class NmeaSensorProcessor {
       };
     }
 
-    // Create compass sensor update
+    // Create heading sensor update
     const instance = this.extractInstanceId(message);
-    const compassData: Partial<CompassSensorData> = {
-      name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
+    const headingData: Partial<HeadingSensorData> = {
+      name: `Heading ${instance > 0 ? `#${instance}` : ''}`.trim(),
       magneticHeading: fields.magnetic_heading, // Magnetic heading in degrees (base unit)
       timestamp: timestamp,
     };
@@ -1110,8 +1110,8 @@ export class NmeaSensorProcessor {
       if (trueHeading < 0) trueHeading += 360;
       if (trueHeading >= 360) trueHeading -= 360;
       
-      compassData.trueHeading = trueHeading;
-      compassData.variation = variation; // Store signed variation
+      headingData.trueHeading = trueHeading;
+      headingData.variation = variation; // Store signed variation
     }
 
     // Store deviation if provided
@@ -1119,16 +1119,16 @@ export class NmeaSensorProcessor {
       const deviation = fields.deviation_dir === 'W'
         ? -fields.magnetic_deviation
         : fields.magnetic_deviation;
-      compassData.deviation = deviation;
+      headingData.deviation = deviation;
     }
 
     return {
       success: true,
       updates: [
         {
-          sensorType: 'compass',
+          sensorType: 'heading',
           instance: instance,
-          data: compassData,
+          data: headingData,
         },
       ],
       messageType: 'HDG',
@@ -1151,8 +1151,8 @@ export class NmeaSensorProcessor {
     }
 
     const instance = this.extractInstanceId(message);
-    const compassData: Partial<CompassSensorData> = {
-      name: `Compass ${instance > 0 ? `#${instance}` : ''}`.trim(),
+    const headingData: Partial<HeadingSensorData> = {
+      name: `Heading ${instance > 0 ? `#${instance}` : ''}`.trim(),
       magneticHeading: fields.magnetic_heading, // Magnetic heading
       timestamp: timestamp,
     };
@@ -1161,7 +1161,7 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [
         {
-          sensorType: 'compass',
+          sensorType: 'heading',
           instance: instance,
           data: compassData,
         },
@@ -1229,8 +1229,8 @@ export class NmeaSensorProcessor {
       }
     }
 
-    const navData: Partial<NavigationSensorData> = {
-      name: 'Navigation',
+    const posData: Partial<PositionSensorData> = {
+      name: 'Position',
       waypointId: fields.waypoint_id,
       waypointPosition: waypointPosition,
       bearingToWaypoint: fields.bearing_true,
@@ -1244,9 +1244,9 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [
         {
-          sensorType: 'navigation',
+          sensorType: 'position',
           instance,
-          data: navData,
+          data: posData,
         },
       ],
       messageType: 'BWC',
@@ -1284,8 +1284,8 @@ export class NmeaSensorProcessor {
       xte = -xte;
     }
 
-    const navData: Partial<NavigationSensorData> = {
-      name: 'Navigation',
+    const posData: Partial<PositionSensorData> = {
+      name: 'Position',
       originWaypointId: fields.origin_waypoint,
       destinationWaypointId: fields.dest_waypoint,
       waypointId: fields.dest_waypoint,
@@ -1305,9 +1305,9 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [
         {
-          sensorType: 'navigation',
+          sensorType: 'position',
           instance,
-          data: navData,
+          data: posData,
         },
       ],
       messageType: 'RMB',
@@ -1335,8 +1335,8 @@ export class NmeaSensorProcessor {
       xte = -xte;
     }
 
-    const navData: Partial<NavigationSensorData> = {
-      name: 'Navigation',
+    const posData: Partial<PositionSensorData> = {
+      name: 'Position',
       crossTrackError: xte,
       steerDirection: fields.steer_direction === 'L' ? 'left' : 'right',
       timestamp: timestamp,
@@ -1348,9 +1348,9 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [
         {
-          sensorType: 'navigation',
+          sensorType: 'position',
           instance,
-          data: navData,
+          data: posData,
         },
       ],
       messageType: 'XTE',
@@ -1372,8 +1372,8 @@ export class NmeaSensorProcessor {
       };
     }
 
-    const navData: Partial<NavigationSensorData> = {
-      name: 'Navigation',
+    const posData: Partial<PositionSensorData> = {
+      name: 'Position',
       originWaypointId: fields.origin_waypoint,
       destinationWaypointId: fields.dest_waypoint,
       bearingOriginToDest: fields.bearing_true,
@@ -1386,9 +1386,9 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [
         {
-          sensorType: 'navigation',
+          sensorType: 'position',
           instance,
-          data: navData,
+          data: posData,
         },
       ],
       messageType: 'BOD',
@@ -1421,8 +1421,8 @@ export class NmeaSensorProcessor {
       };
     }
 
-    const navData: Partial<NavigationSensorData> = {
-      name: 'Navigation',
+    const posData: Partial<PositionSensorData> = {
+      name: 'Position',
       waypointId: fields.waypoint_id,
       waypointPosition: {
         latitude: lat,
@@ -1437,9 +1437,9 @@ export class NmeaSensorProcessor {
       success: true,
       updates: [
         {
-          sensorType: 'navigation',
+          sensorType: 'position',
           instance,
-          data: navData,
+          data: posData,
         },
       ],
       messageType: 'WPL',
@@ -2726,7 +2726,7 @@ export class NmeaSensorProcessor {
 
       const updates: SensorUpdate[] = [
         {
-          sensorType: 'navigation',
+          sensorType: 'position',
           instance,
           data: navigationUpdate,
         },
