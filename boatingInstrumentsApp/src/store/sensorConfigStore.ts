@@ -89,6 +89,70 @@ const generateKey = (sensorType: SensorType, instance: number): string => {
 };
 
 /**
+ * Type guard for old context format
+ * Old: { batteryChemistry: 'agm' } or { engineType: 'diesel' }
+ * New: 'agm' or 'diesel'
+ */
+const isOldContextFormat = (context: any): context is Record<string, string> => {
+  return (
+    typeof context === 'object' &&
+    context !== null &&
+    !Array.isArray(context) &&
+    Object.keys(context).length > 0 &&
+    typeof Object.values(context)[0] === 'string'
+  );
+};
+
+/**
+ * Migrate old context format (object) to new format (string)
+ * Silent migration during store initialization
+ * 
+ * Old format: { batteryChemistry: 'agm' }
+ * New format: 'agm'
+ * 
+ * Extracts first property value from object context
+ */
+const migrateOldContextFormat = (configs: SensorConfigMap): {
+  configs: SensorConfigMap;
+  migrationCount: number;
+} => {
+  let migrationCount = 0;
+  const migratedConfigs: SensorConfigMap = {};
+
+  for (const [key, config] of Object.entries(configs)) {
+    if (config.context && isOldContextFormat(config.context)) {
+      // Extract first property value as new context string
+      const contextValue = Object.values(config.context)[0];
+      
+      migratedConfigs[key] = {
+        ...config,
+        context: contextValue,
+      };
+      
+      migrationCount++;
+      
+      log.app('[SensorConfigStore] Migrated context format', () => ({
+        key,
+        oldContext: config.context,
+        newContext: contextValue,
+      }));
+    } else {
+      // No migration needed
+      migratedConfigs[key] = config;
+    }
+  }
+
+  if (migrationCount > 0) {
+    log.app('[SensorConfigStore] Context format migration complete', () => ({
+      total: Object.keys(configs).length,
+      migrated: migrationCount,
+    }));
+  }
+
+  return { configs: migratedConfigs, migrationCount };
+};
+
+/**
  * Sensor Configuration Store with AsyncStorage persistence
  */
 export const useSensorConfigStore = create<SensorConfigStoreState>()(
@@ -230,8 +294,19 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
               // Set hydrated even on error to prevent infinite waiting
               useSensorConfigStore.setState({ _hydrated: true });
             } else {
-              const configCount = Object.keys(state?.configs || {}).length;
-              log.app('[SensorConfigStore] Hydration complete', () => ({ configCount }));
+              // Migrate old context format if needed
+              const { configs, migrationCount } = migrateOldContextFormat(state?.configs || {});
+              
+              if (migrationCount > 0) {
+                // Update store with migrated configs
+                useSensorConfigStore.setState({ configs });
+              }
+              
+              const configCount = Object.keys(configs).length;
+              log.app('[SensorConfigStore] Hydration complete', () => ({ 
+                configCount,
+                contextMigrations: migrationCount,
+              }));
               
               // CRITICAL: Mark store as hydrated
               useSensorConfigStore.setState({ _hydrated: true });

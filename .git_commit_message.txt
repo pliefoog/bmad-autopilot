@@ -1,17 +1,18 @@
-feat: add mobile breakpoint and responsive spacing tokens
+feat: add silent context format migration
 
-Step 1 of threshold slider refactor.
+Step 2 of threshold slider refactor.
 
-Added MOBILE_BREAKPOINT constant (400px) based on mobile research:
-- Most common mobile widths: 360px-430px
-- 360px most popular at 10.56%
-- 400px chosen for responsive breakpoint
-- Distinct from tablet breakpoint (768px)
+Added migrateOldContextFormat() utility function:
+- Detects old object format: { batteryChemistry: 'agm' }
+- Converts to new string format: 'agm'
+- Type-safe with isOldContextFormat() type guard
+- Extracts first property value from object
 
-Added flattened responsive spacing tokens for threshold slider:
-- thresholdHintMobile/Desktop: 12/16px
-- thresholdLegendGapMobile/Desktop: 8/12px
-- rangeLabelMobile/Desktop: 9/11px
+Integrated into store hydration:
+- Runs automatically during AsyncStorage hydration
+- Silent migration with no user notification
+- Logs migration count for debugging
+- Prevents data corruption from deprecated format
 
-Tokens follow 4pt grid system, will be used in AlarmThresholdSlider
-for responsive layout switching at 400px breakpoint.
+This ensures backward compatibility during transition while
+maintaining clean architecture going forward.
