@@ -250,11 +250,30 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
             : undefined;
       }
 
-      if (data.batteryChemistry) {
-        updates.context = { ...updates.context, batteryChemistry: data.batteryChemistry };
-      }
-      if (data.engineType) {
-        updates.context = { ...updates.context, engineType: data.engineType };
+      // Generic context handling (schema-driven)
+      // Context field determined by schema.contextKey (e.g., 'chemistry', 'engineType')
+      // Value stored as string (e.g., 'agm', 'diesel')
+      if (data.context) {
+        const schema = getSensorSchema(sensorType);
+        const contextField = schema.contextKey ? schema.fields[schema.contextKey] : null;
+        
+        // Validate context value against schema options
+        if (contextField?.options) {
+          const isValid = contextField.options.includes(data.context);
+          if (isValid) {
+            updates.context = data.context;
+          } else {
+            log.app('SensorConfigDialog: Invalid context value', () => ({
+              sensorType,
+              contextKey: schema.contextKey,
+              value: data.context,
+              allowedValues: contextField.options,
+            }));
+          }
+        } else {
+          // No context validation defined - allow any string
+          updates.context = data.context;
+        }
       }
 
       try {
