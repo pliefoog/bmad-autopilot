@@ -24,7 +24,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { ThemeColors } from '../../../store/themeStore';
 import { SensorType } from '../../../types/SensorData';
 import { useSensorConfigStore } from '../../../store/sensorConfigStore';
-import { getSensorSchema } from '../../../registry/sensorSchemas';
+import { getSensorSchema } from '../../../registry';
 import { ThresholdPresentationService } from '../../../services/ThresholdPresentationService';
 import { evaluateThresholdFormula } from '../../../utils/formulaEvaluator';
 import { useNmeaStore } from '../../../store/nmeaStore';
