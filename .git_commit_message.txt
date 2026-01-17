@@ -1,18 +1,13 @@
-feat: add silent context format migration
+chore: install error handling and debounce dependencies
 
-Step 2 of threshold slider refactor.
+Step 3 of threshold slider refactor.
 
-Added migrateOldContextFormat() utility function:
-- Detects old object format: { batteryChemistry: 'agm' }
-- Converts to new string format: 'agm'
-- Type-safe with isOldContextFormat() type guard
-- Extracts first property value from object
+Installed packages:
+- react-error-boundary: Generic ErrorBoundary for React Native
+  Used to wrap AlarmThresholdSlider with graceful error handling
+  
+- use-debounce: React hook for debounced callbacks
+  Used for 150ms debounced formula evaluation during slider drag
+  Prevents performance issues with high-frequency updates
 
-Integrated into store hydration:
-- Runs automatically during AsyncStorage hydration
-- Silent migration with no user notification
-- Logs migration count for debugging
-- Prevents data corruption from deprecated format
-
-This ensures backward compatibility during transition while
-maintaining clean architecture going forward.
+Both packages support React Native and follow React hook patterns.
