@@ -20,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SensorType, SensorConfiguration } from '../types/SensorData';
 import { useToastStore } from './toastStore';
 import { log } from '../utils/logging/logger';
+import { getSensorSchema } from '../registry';
 
 /**
  * Unique sensor configuration key
@@ -105,30 +106,33 @@ const isOldContextFormat = (context: any): context is Record<string, string> => 
 
 /**
  * Migrate old context format (object) to new format (string)
+ * Also validates context values against schema and clears invalid ones
  * Silent migration during store initialization
  * 
  * Old format: { batteryChemistry: 'agm' }
  * New format: 'agm'
  * 
  * Extracts first property value from object context
+ * Validates against schema.contextKey field options
+ * Clears context if invalid (e.g., battery chemistry on engine sensor)
  */
 const migrateOldContextFormat = (configs: SensorConfigMap): {
   configs: SensorConfigMap;
   migrationCount: number;
 } => {
   let migrationCount = 0;
+  let invalidContextCount = 0;
   const migratedConfigs: SensorConfigMap = {};
 
   for (const [key, config] of Object.entries(configs)) {
+    let newConfig = { ...config };
+    let contextMigrated = false;
+    
+    // Step 1: Migrate object→string format
     if (config.context && isOldContextFormat(config.context)) {
-      // Extract first property value as new context string
       const contextValue = Object.values(config.context)[0];
-      
-      migratedConfigs[key] = {
-        ...config,
-        context: contextValue,
-      };
-      
+      newConfig.context = contextValue;
+      contextMigrated = true;
       migrationCount++;
       
       log.app('[SensorConfigStore] Migrated context format', () => ({
@@ -136,16 +140,51 @@ const migrateOldContextFormat = (configs: SensorConfigMap): {
         oldContext: config.context,
         newContext: contextValue,
       }));
-    } else {
-      // No migration needed
-      migratedConfigs[key] = config;
     }
+    
+    // Step 2: Validate context against schema
+    if (newConfig.context && typeof newConfig.context === 'string') {
+      try {
+        // Parse sensorType from key (format: "sensorType-instance")
+        const [sensorType] = key.split('-');
+        const schema = getSensorSchema(sensorType as SensorType);
+        
+        if (schema.contextKey) {
+          const contextField = schema.fields[schema.contextKey];
+          const isValid = contextField?.options?.includes(newConfig.context);
+          
+          if (!isValid) {
+            // Invalid context - clear it
+            log.app('[SensorConfigStore] Clearing invalid context', () => ({
+              key,
+              sensorType,
+              contextKey: schema.contextKey,
+              invalidValue: newConfig.context,
+              allowedValues: contextField?.options || [],
+            }));
+            
+            delete newConfig.context;
+            invalidContextCount++;
+            contextMigrated = true; // Mark as migrated to trigger save
+          }
+        }
+      } catch (error) {
+        // Schema lookup failed - keep context as-is
+        log.app('[SensorConfigStore] Could not validate context (schema unavailable)', () => ({
+          key,
+          context: newConfig.context,
+        }));
+      }
+    }
+    
+    migratedConfigs[key] = newConfig;
   }
 
-  if (migrationCount > 0) {
-    log.app('[SensorConfigStore] Context format migration complete', () => ({
+  if (migrationCount > 0 || invalidContextCount > 0) {
+    log.app('[SensorConfigStore] Context migration complete', () => ({
       total: Object.keys(configs).length,
-      migrated: migrationCount,
+      formatMigrated: migrationCount,
+      invalidCleared: invalidContextCount,
     }));
   }
 
