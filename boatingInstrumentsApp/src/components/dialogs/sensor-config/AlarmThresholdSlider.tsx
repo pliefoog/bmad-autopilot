@@ -131,7 +131,7 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   }, [schema, metric]);
 
   const savedConfig = useSensorConfigStore((state) => state.getConfig(sensorType, instance));
-  const sensorInstance = useNmeaStore((state) => state.nmeaData.sensors[sensorType]?.[instance]);
+  const sensorInstance = useNmeaStore((state) => state.nmeaData?.sensors?.[sensorType]?.[instance]);
 
   // Get context for formula evaluation
   const context = typeof savedConfig?.context === 'string' ? savedConfig.context : undefined;
