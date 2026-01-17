@@ -11,6 +11,13 @@ import { Platform } from 'react-native';
 import { getPlatformVariant, getViewingDistanceScale } from '../utils/platformDetection';
 
 /**
+ * Responsive breakpoints
+ * Mobile: 360px-430px (most common range, 400px chosen)
+ * Tablet: 768px standard (existing in codebase)
+ */
+export const MOBILE_BREAKPOINT = 400;
+
+/**
  * Modal dimension configuration
  * Platform-responsive sizing for optimal layout
  */
@@ -48,6 +55,14 @@ export const settingsTokens = {
     lg: 16, // Large - section separation
     xl: 24, // Extra large - major sections
     xxl: 32, // Extra extra large - modal padding
+    
+    // Threshold slider responsive spacing (mobile/desktop)
+    thresholdHintMobile: 12,
+    thresholdHintDesktop: 16,
+    thresholdLegendGapMobile: 8,
+    thresholdLegendGapDesktop: 12,
+    rangeLabelMobile: 9,
+    rangeLabelDesktop: 11,
   },
 
   /**

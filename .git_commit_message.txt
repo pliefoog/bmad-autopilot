@@ -1,38 +1,17 @@
-fix: ConfigFieldRenderer now renders sensor config input fields
+feat: add mobile breakpoint and responsive spacing tokens
 
-Critical fix for ConfigFieldRenderer that was completely broken after
-unified schema refactor. Input fields weren't rendering at all because
-the component was trying to use old property names that don't exist.
+Step 1 of threshold slider refactor.
 
-Root Cause:
-- ConfigFieldRenderer expected SensorFieldConfig type (doesn't exist)
-- Component used field.uiType and field.valueType (don't exist in unified schema)
-- Unified schema uses FieldDefinition with field.type property
+Added MOBILE_BREAKPOINT constant (400px) based on mobile research:
+- Most common mobile widths: 360px-430px
+- 360px most popular at 10.56%
+- 400px chosen for responsive breakpoint
+- Distinct from tablet breakpoint (768px)
 
-Changes in ConfigFieldRenderer.tsx:
-- Changed import from SensorFieldConfig → FieldDefinition
-- Added FieldWithKey type (FieldDefinition + key property)
-- Added uiType mapping: field.type → rendering type (textInput/numericInput/picker/toggle)
-- Fixed textInput: field.valueType === 'string' → field.type === 'text'
-- Fixed numericInput: field.valueType === 'number' → field.type === 'number'
-- Fixed picker: field.valueType === 'string' → field.type === 'picker'
-- Simplified picker options mapping (unified schema uses string[] not complex objects)
-- Removed redundant field existence checks ('min' in field → just field.min)
+Added flattened responsive spacing tokens for threshold slider:
+- thresholdHintMobile/Desktop: 12/16px
+- thresholdLegendGapMobile/Desktop: 8/12px
+- rangeLabelMobile/Desktop: 9/11px
 
-Fixes:
-✅ Name input field now renders (user can edit sensor name)
-✅ Context fields render (battery chemistry, engine type pickers)
-✅ All editable fields from schema display correctly
-✅ Read-only fields show lock icon
-✅ Validation errors display inline
-✅ Glove mode touch targets work
-
-Example fields now working:
-- name (text input) - ⭐ PRIMARY USER REQUEST
-- chemistry (picker) - battery context
-- engineType (picker) - engine context  
-- Any other readWrite fields in schema
-
-Files: 1 TypeScript file (ConfigFieldRenderer.tsx)
-Lines: +15 unified schema support, -30 old API references
-Status: Sensor config input fields fully functional ✅
+Tokens follow 4pt grid system, will be used in AlarmThresholdSlider
+for responsive layout switching at 400px breakpoint.
