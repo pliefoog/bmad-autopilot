@@ -142,6 +142,80 @@ export class SensorDataRegistry {
     let sensor = this.sensors.get(key);
     if (!sensor) {
       sensor = new SensorInstance(sensorType, instance);
+      
+      // CRITICAL: Single-phase initialization with hydration safety
+      // 1. Check if AsyncStorage has been hydrated (prevents race condition)
+      // 2. If hydrated: Read persisted config and apply if exists
+      // 3. If NOT hydrated yet: Apply schema defaults, listen for hydration event
+      // 4. If corrupted: Gracefully fall back to schema defaults
+      try {
+        // Dynamic require() to avoid circular dependency: store → registry → SensorInstance → store
+        const { useSensorConfigStore } = require('../store/sensorConfigStore');
+        const store = useSensorConfigStore.getState();
+        
+        if (store._hydrated) {
+          // Safe to read - hydration complete
+          const persistedConfig = store.getConfig(sensorType, instance);
+          
+          if (persistedConfig) {
+            try {
+              // User has saved config - apply it directly to sensor instance
+              sensor.updateThresholdsFromConfig(persistedConfig);
+              log.storeInit(`📦 Loaded persisted config for ${sensorType}[${instance}]`, () => ({
+                name: persistedConfig.name,
+                hasCritical: persistedConfig.critical !== undefined,
+                hasWarning: persistedConfig.warning !== undefined,
+              }));
+            } catch (configError) {
+              // Config exists but is corrupted - fall back to schema defaults
+              log.app(`⚠️ Corrupted persisted config for ${sensorType}[${instance}], using schema defaults`, () => ({
+                error: configError instanceof Error ? configError.message : String(configError),
+                config: persistedConfig,
+              }));
+              // Dynamic require() to break circular dependency with registry
+              const { applySchemaDefaults } = require('../registry');
+              applySchemaDefaults(sensor);
+            }
+          } else {
+            // No persisted config - apply schema defaults
+            // Dynamic require() to break circular dependency with registry
+            const { applySchemaDefaults } = require('../registry');
+            applySchemaDefaults(sensor);
+            log.storeInit(`🎯 Applied schema defaults for ${sensorType}[${instance}]`, () => ({}));
+          }
+        } else {
+          // NOT YET HYDRATED - race condition scenario
+          // Apply schema defaults temporarily, listen for hydration event
+          log.app(`⏳ Config store not hydrated yet for ${sensorType}[${instance}], applying schema defaults temporarily`, () => ({}));
+          
+          const { applySchemaDefaults } = require('../registry');
+          applySchemaDefaults(sensor);
+          
+          // Listen for hydration completion (only in browser/web environment)
+          if (typeof window !== 'undefined') {
+            const handleHydration = () => {
+              const persistedConfig = useSensorConfigStore.getState().getConfig(sensorType, instance);
+              if (persistedConfig) {
+                log.app(`🔄 Hydration complete, reapplying persisted config for ${sensorType}[${instance}]`, () => ({
+                  name: persistedConfig.name,
+                }));
+                sensor.updateThresholdsFromConfig(persistedConfig);
+              }
+              window.removeEventListener('sensorConfigStoreHydrated', handleHydration);
+            };
+            window.addEventListener('sensorConfigStoreHydrated', handleHydration, { once: true });
+          }
+        }
+      } catch (storageError) {
+        // AsyncStorage read failed - fall back to schema defaults
+        log.app(`❌ AsyncStorage read failed for ${sensorType}[${instance}], using schema defaults`, () => ({
+          error: storageError instanceof Error ? storageError.message : String(storageError),
+        }));
+        // Dynamic require() to break circular dependency with registry
+        const { applySchemaDefaults } = require('../registry');
+        applySchemaDefaults(sensor);
+      }
+      
       this.sensors.set(key, sensor);
 
       log.storeInit(`🆕 NEW SENSOR: ${sensorType}[${instance}]`, () => ({

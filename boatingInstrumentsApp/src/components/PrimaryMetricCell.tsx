@@ -132,20 +132,26 @@ const PrimaryMetricCellComponent: React.FC<PrimaryMetricCellProps> = ({
 
   // Handle string fields (name, type, chemistry, etc.) vs numeric fields
   const value = useMemo(() => {
-    if (fieldConfig?.valueType === 'string') {
-      // String fields: retrieve from history via getMetric()
+    if (fieldConfig?.type === 'text' || fieldConfig?.type === 'picker') {
+      // String/picker fields: retrieve from history via getMetric()
       // SensorInstance stores strings in _history Map, not as direct properties
       const stringMetric = sensorInstance?.getMetric(metricKey);
       return stringMetric?.formattedValue ?? '---';
     }
+    if (fieldConfig?.type === 'toggle') {
+      // Toggle fields: retrieve boolean and display as ON/OFF
+      const toggleMetric = sensorInstance?.getMetric(metricKey);
+      const boolValue = toggleMetric?.si_value;
+      return boolValue === true ? 'ON' : boolValue === false ? 'OFF' : '---';
+    }
     // Numeric fields: use pre-enriched formattedValue from MetricValue
     return metricValue?.formattedValue ?? '---';
-  }, [fieldConfig?.valueType, sensorInstance, metricKey, metricValue?.formattedValue]);
+  }, [fieldConfig?.type, sensorInstance, metricKey, metricValue?.formattedValue]);
 
   // Get unit: prefer from MetricValue (when data exists), fallback to registry category
   const unit = useMemo(() => {
-    // String fields don't have units
-    if (fieldConfig?.valueType === 'string') {
+    // String/picker/toggle fields don't have units
+    if (fieldConfig?.type === 'text' || fieldConfig?.type === 'picker' || fieldConfig?.type === 'toggle') {
       return '';
     }
 
@@ -165,7 +171,7 @@ const PrimaryMetricCellComponent: React.FC<PrimaryMetricCellProps> = ({
     }
 
     return '';
-  }, [fieldConfig?.valueType, fieldConfig?.unitType, metricValue?.unit]);
+  }, [fieldConfig?.type, fieldConfig?.unitType, metricValue?.unit]);
 
   // Get alarm state from subscription (includes alarmState in EnrichedMetric)
   const alarmLevel: AlarmLevel = metricValue?.alarmState ?? 0;

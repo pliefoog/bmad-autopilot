@@ -31,6 +31,10 @@ export interface AlarmThresholdSliderProps {
   formatValue: (value: number) => string;
   unitSymbol: string;
 
+  /* Optional: Computed absolute threshold values (for ratio mode) */
+  computedWarning?: string;
+  computedCritical?: string;
+
   /* Callbacks */
   onWarningChange: (value: number) => void;
   onCriticalChange: (value: number) => void;
@@ -48,6 +52,8 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   alarmDirection,
   formatValue,
   unitSymbol,
+  computedWarning,
+  computedCritical,
   onWarningChange,
   onCriticalChange,
   theme,
@@ -92,9 +98,17 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
         />
 
         {/* Threshold value below thumb */}
-        <Text style={[styles.thumbLabel, styles.thumbLabelBottom, { color: thumbColor }]}>
-          {thresholdValue !== undefined ? formatValue(thresholdValue) : ''} {unitSymbol}
-        </Text>
+        <View style={styles.thumbValueContainer}>
+          <Text style={[styles.thumbLabel, styles.thumbLabelBottom, { color: thumbColor }]}>
+            {thresholdValue !== undefined ? formatValue(thresholdValue) : ''} {unitSymbol}
+          </Text>
+          {/* Show computed absolute value if provided (ratio mode) */}
+          {(isWarning ? computedWarning : computedCritical) && (
+            <Text style={[styles.thumbLabel, styles.thumbLabelComputed, { color: theme.textSecondary }]}>
+              → {isWarning ? computedWarning : computedCritical}
+            </Text>
+          )}
+        </View>
       </View>
     );
   };
@@ -213,39 +227,53 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
 const styles = StyleSheet.create({
   thumbLabel: {
     position: 'absolute',
-    left: -20,
-    right: -20,
+    left: -30,
+    right: -30,
     textAlign: 'center',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
+    letterSpacing: 0.3,
   },
   thumbLabelTop: {
-    bottom: 26,
+    bottom: 28,
   },
   thumbLabelBottom: {
-    top: 24,
+    top: 28,
+  },
+  thumbValueContainer: {
+    position: 'absolute',
+    top: 28,
+    left: -40,
+    right: -40,
+    alignItems: 'center',
+  },
+  thumbLabelComputed: {
+    fontSize: 11,
+    fontWeight: '400',
+    marginTop: 2,
   },
   thumbCircle: {
-    height: 18,
-    width: 18,
-    borderRadius: 14,
+    height: 20,
+    width: 20,
+    borderRadius: 10,
     borderWidth: 3,
+    backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
   },
   railContainer: {
     flex: 1,
-    height: 6,
-    borderRadius: 3,
+    height: 8,
+    borderRadius: 4,
     overflow: 'hidden',
     position: 'relative',
   },
   railSegment: {
     position: 'absolute',
-    height: 6,
+    height: 8,
   },
   railSelectedTransparent: {
     flex: 1,

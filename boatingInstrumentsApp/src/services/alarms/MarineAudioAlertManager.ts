@@ -265,6 +265,22 @@ export class MarineAudioAlertManager {
       // Get user-configured audio pattern from sensor-instance alarm configuration
       const configuredPattern = overridePattern;
 
+      // Validate sound pattern exists
+      if (configuredPattern) {
+        const validPatterns = SOUND_PATTERNS.map(p => p.value);
+        if (!validPatterns.includes(configuredPattern)) {
+          const errorMsg = `Invalid alarm sound pattern "${configuredPattern}" for alarm type "${alarmType}". ` +
+            `Valid patterns: ${validPatterns.join(', ')}. ` +
+            `This indicates a misconfiguration in the sensor schema.`;
+          log.app('MarineAudioAlertManager: Invalid sound pattern', () => ({ 
+            pattern: configuredPattern,
+            alarmType,
+            validPatterns 
+          }));
+          throw new Error(errorMsg);
+        }
+      }
+
       // Get sound configuration for this alarm type with user preference
       const soundConfig = this.getAlarmSoundConfig(alarmType, escalationLevel, configuredPattern);
 

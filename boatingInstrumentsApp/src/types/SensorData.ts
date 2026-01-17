@@ -63,7 +63,7 @@ export interface MetricThresholds {
  */
 export interface SensorConfiguration {
   name?: string;
-  context?: SensorContext;
+  context?: string; // Generic context value (e.g., 'agm', 'diesel', 'fuel') - schema-driven
   critical?: number;
   warning?: number;
   direction?: 'above' | 'below';

@@ -45,20 +45,13 @@
  */
 
 import { DataCategory } from '../presentation/categories';
+import type { SOUND_PATTERNS } from '../services/alarms/MarineAudioAlertManager';
 
 /**
- * ISO 9692 Maritime Alarm Sound Patterns
+ * Alarm sound pattern type (references runtime SOUND_PATTERNS from MarineAudioAlertManager)
+ * Single source of truth for valid alarm audio patterns
  */
-export const ALARM_SOUND_PATTERNS = {
-  critical: 'rapid_pulse',       // Critical alarms (shallow water, engine failure)
-  warning: 'morse_u',             // Warning alarms
-  engine_critical: 'warble',      // Engine alarms (overheat, low pressure)
-  battery_critical: 'triple_blast', // Electrical alarms
-  info: 'intermittent',           // General warnings
-  none: 'none',
-} as const;
-
-export type AlarmSoundPattern = (typeof ALARM_SOUND_PATTERNS)[keyof typeof ALARM_SOUND_PATTERNS];
+export type AlarmSoundPattern = typeof SOUND_PATTERNS[number]['value'];
 
 /**
  * Alarm direction (which boundary triggers alarm)
@@ -76,21 +69,34 @@ export type IOState = 'readOnly' | 'readWrite' | 'readOnlyIfValue';
 export type FieldType = 'text' | 'number' | 'picker' | 'toggle' | 'slider';
 
 /**
+ * Threshold configuration (critical or warning level)
+ * New unified structure with explicit value, hysteresis, and sound pattern
+ */
+export interface ThresholdConfig {
+  value?: number;  // Static threshold value in SI units (e.g., 2.0 for depth)
+  formula?: string;  // Dynamic threshold formula (e.g., "nominalVoltage * 0.985 + (temperature - 25) * -0.04")
+  indirectThreshold?: number;  // User-adjustable ratio/multiplier for formula (e.g., 0.985 for voltage, 1.4 for C-rate)
+  indirectThresholdUnit?: string;  // Semantic unit for indirect threshold (e.g., '× Vnom', 'C-rate', '% RPM')
+  hysteresis?: number;  // Percentage-based hysteresis (e.g., 0.05 = 5%)
+  sound: AlarmSoundPattern;  // Audio pattern for this threshold level
+}
+
+/**
  * Context-dependent alarm definition
  * Used for sensors where alarm thresholds vary by configuration
  * (e.g., battery chemistry, engine type, tank type)
+ * 
+ * Structure:
+ * - critical/warning: Threshold config with value/hysteresis/sound
+ * - thresholdRange: UI slider bounds for users to adjust thresholds
  */
 export interface ContextAlarmDefinition {
-  critical: {
-    min?: number;  // SI units
-    max?: number;  // SI units
+  critical: ThresholdConfig;
+  warning: ThresholdConfig;
+  thresholdRange: {
+    min: number;  // UI slider minimum (SI units)
+    max: number;  // UI slider maximum (SI units)
   };
-  warning: {
-    min?: number;  // SI units
-    max?: number;  // SI units
-  };
-  criticalSoundPattern: AlarmSoundPattern;
-  warningSoundPattern: AlarmSoundPattern;
 }
 
 /**
@@ -207,7 +213,7 @@ export const SENSOR_SCHEMAS = {
       voltage: {
         type: 'number' as const,
         label: 'Voltage',
-        mnemonic: 'V',
+        mnemonic: 'VOLT',
         unitType: 'voltage' as const,
         iostate: 'readOnly' as const,
         min: 10.5,
@@ -217,28 +223,29 @@ export const SENSOR_SCHEMAS = {
           safetyRequired: true,
           contexts: {
             'lead-acid': {
-              critical: { min: 11.8 },  // 50% SOC
-              warning: { min: 12.0 },   // 60% SOC
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.05', indirectThreshold: 0.985, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'triple_blast' },
+              warning: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.05', indirectThreshold: 0.99, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'morse_u' },
+              thresholdRange: { min: 0.90, max: 1.15 },
             },
             'agm': {
-              critical: { min: 12.0 },  // 50% SOC
-              warning: { min: 12.2 },   // 60% SOC
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.04', indirectThreshold: 1.0, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'triple_blast' },
+              warning: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.04', indirectThreshold: 1.015, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'morse_u' },
+              thresholdRange: { min: 0.90, max: 1.15 },
             },
             'gel': {
-              critical: { min: 12.0 },  // 50% SOC
-              warning: { min: 12.2 },   // 60% SOC
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.045', indirectThreshold: 1.002, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'triple_blast' },
+              warning: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.045', indirectThreshold: 1.018, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'morse_u' },
+              thresholdRange: { min: 0.90, max: 1.15 },
             },
             'lifepo4': {
-              critical: { min: 12.8 },  // 20% SOC
-              warning: { min: 13.0 },   // 40% SOC
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.03', indirectThreshold: 1.067, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'triple_blast' },
+              warning: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.03', indirectThreshold: 1.083, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'morse_u' },
+              thresholdRange: { min: 0.90, max: 1.15 },
+            },
+            'unknown': {
+              critical: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.05', indirectThreshold: 0.975, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'triple_blast' },
+              warning: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.05', indirectThreshold: 0.983, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'morse_u' },
+              thresholdRange: { min: 0.90, max: 1.15 },
             },
           },
         },
@@ -263,28 +270,29 @@ export const SENSOR_SCHEMAS = {
           direction: 'above' as const,
           contexts: {
             'lead-acid': {
-              critical: { max: 150 },  // C/2 rate
-              warning: { max: 100 },   // C/3 rate
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { formula: 'capacity * indirectThreshold', indirectThreshold: 0.5, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'triple_blast' },  // 0.5C for lead-acid
+              warning: { formula: 'capacity * indirectThreshold', indirectThreshold: 0.33, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'morse_u' },   // 0.33C for lead-acid
+              thresholdRange: { min: 0, max: 0.6 },
             },
             'agm': {
-              critical: { max: 200 },  // Higher charge rate
-              warning: { max: 150 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { formula: 'capacity * indirectThreshold', indirectThreshold: 1.0, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'triple_blast' },    // 1C for AGM
+              warning: { formula: 'capacity * indirectThreshold', indirectThreshold: 0.75, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'morse_u' },    // 0.75C for AGM
+              thresholdRange: { min: 0, max: 1.2 },
             },
             'gel': {
-              critical: { max: 100 },  // Lower charge rate
-              warning: { max: 70 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { formula: 'capacity * indirectThreshold', indirectThreshold: 0.5, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'triple_blast' },     // 0.5C for gel
+              warning: { formula: 'capacity * indirectThreshold', indirectThreshold: 0.35, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'morse_u' },     // 0.35C for gel
+              thresholdRange: { min: 0, max: 0.6 },
             },
             'lifepo4': {
-              critical: { max: 280 },  // 1C rate
-              warning: { max: 200 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { formula: 'capacity * indirectThreshold', indirectThreshold: 1.4, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'triple_blast' },      // 1.4C for LiFePO4
+              warning: { formula: 'capacity * indirectThreshold', indirectThreshold: 1.0, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'morse_u' },       // 1C for LiFePO4
+              thresholdRange: { min: 0, max: 2.0 },
+            },
+            'unknown': {
+              critical: { formula: 'capacity * indirectThreshold', indirectThreshold: 0.45, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'triple_blast' },  // Conservative 0.45C rate
+              warning: { formula: 'capacity * indirectThreshold', indirectThreshold: 0.3, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'morse_u' },      // Conservative 0.3C rate
+              thresholdRange: { min: 0, max: 0.6 },
             },
           },
         },
@@ -301,28 +309,29 @@ export const SENSOR_SCHEMAS = {
           direction: 'above' as const,
           contexts: {
             'lead-acid': {
-              critical: { max: 55 + 273.15 },  // 55°C in Kelvin
-              warning: { max: 50 + 273.15 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 55, hysteresis: 0.05, sound: 'triple_blast' },  // 55°C
+              warning: { value: 50, hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: -20, max: 80 },
             },
             'agm': {
-              critical: { max: 50 + 273.15 },
-              warning: { max: 45 + 273.15 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 50, hysteresis: 0.05, sound: 'triple_blast' },
+              warning: { value: 45, hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: -20, max: 80 },
             },
             'gel': {
-              critical: { max: 45 + 273.15 },
-              warning: { max: 40 + 273.15 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 45, hysteresis: 0.05, sound: 'triple_blast' },
+              warning: { value: 40, hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: -20, max: 80 },
             },
             'lifepo4': {
-              critical: { max: 60 + 273.15 },
-              warning: { max: 55 + 273.15 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 60, hysteresis: 0.05, sound: 'triple_blast' },
+              warning: { value: 55, hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: -20, max: 80 },
+            },
+            'unknown': {
+              critical: { value: 50, hysteresis: 0.05, sound: 'triple_blast' },  // Conservative universal safe limit
+              warning: { value: 45, hysteresis: 0.05, sound: 'morse_u' },       // Conservative warning
+              thresholdRange: { min: -10, max: 60 },  // Narrower safe range for unknown chemistry
             },
           },
         },
@@ -340,28 +349,29 @@ export const SENSOR_SCHEMAS = {
           safetyRequired: true,
           contexts: {
             'lead-acid': {
-              critical: { min: 30 },  // 30% SOC
-              warning: { min: 50 },   // 50% SOC
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 30, hysteresis: 0.05, sound: 'triple_blast' },  // 30% SOC
+              warning: { value: 50, hysteresis: 0.05, sound: 'morse_u' },   // 50% SOC
+              thresholdRange: { min: 0, max: 100 },
             },
             'agm': {
-              critical: { min: 30 },
-              warning: { min: 50 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 30, hysteresis: 0.05, sound: 'triple_blast' },
+              warning: { value: 50, hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: 0, max: 100 },
             },
             'gel': {
-              critical: { min: 30 },
-              warning: { min: 50 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 30, hysteresis: 0.05, sound: 'triple_blast' },
+              warning: { value: 50, hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: 0, max: 100 },
             },
             'lifepo4': {
-              critical: { min: 20 },  // LiFePO4 safe to 20%
-              warning: { min: 40 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.battery_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 20, hysteresis: 0.05, sound: 'triple_blast' },  // LiFePO4 safe to 20%
+              warning: { value: 40, hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: 0, max: 100 },
+            },
+            'unknown': {
+              critical: { value: 30, hysteresis: 0.05, sound: 'triple_blast' },  // Conservative safe limit
+              warning: { value: 50, hysteresis: 0.05, sound: 'morse_u' },       // Higher warning for unknown chemistry
+              thresholdRange: { min: 0, max: 100 },
             },
           },
         },
@@ -398,10 +408,9 @@ export const SENSOR_SCHEMAS = {
           safetyRequired: true,
           contexts: {
             default: {
-              critical: { min: 2.0 },
-              warning: { min: 2.5 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 2.0, hysteresis: 0.02, sound: 'rapid_pulse' },
+              warning: { value: 2.5, hysteresis: 0.02, sound: 'morse_u' },
+              thresholdRange: { min: 0, max: 100 },
             },
           },
         },
@@ -471,22 +480,24 @@ export const SENSOR_SCHEMAS = {
           direction: 'above' as const,
           contexts: {
             diesel: {
-              critical: { max: 2800 },
-              warning: { max: 2600 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { formula: 'maxRpm * indirectThreshold', indirectThreshold: 0.93, indirectThresholdUnit: '% RPM', hysteresis: 0.05, sound: 'warble' },
+              warning: { formula: 'maxRpm * indirectThreshold', indirectThreshold: 0.87, indirectThresholdUnit: '% RPM', hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: 0.70, max: 1.00 },
             },
             gasoline: {
-              critical: { max: 3600 },
-              warning: { max: 3400 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { formula: 'maxRpm * indirectThreshold', indirectThreshold: 0.93, indirectThresholdUnit: '% RPM', hysteresis: 0.05, sound: 'warble' },
+              warning: { formula: 'maxRpm * indirectThreshold', indirectThreshold: 0.87, indirectThresholdUnit: '% RPM', hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: 0.70, max: 1.00 },
             },
             outboard: {
-              critical: { max: 5800 },
-              warning: { max: 5500 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { formula: 'maxRpm * indirectThreshold', indirectThreshold: 0.93, indirectThresholdUnit: '% RPM', hysteresis: 0.05, sound: 'warble' },
+              warning: { formula: 'maxRpm * indirectThreshold', indirectThreshold: 0.87, indirectThresholdUnit: '% RPM', hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: 0.70, max: 1.00 },
+            },
+            'unknown': {
+              critical: { formula: 'maxRpm * indirectThreshold', indirectThreshold: 0.90, indirectThresholdUnit: '% RPM', hysteresis: 0.05, sound: 'warble' },  // Conservative lower multiplier
+              warning: { formula: 'maxRpm * indirectThreshold', indirectThreshold: 0.83, indirectThresholdUnit: '% RPM', hysteresis: 0.05, sound: 'morse_u' },  // Conservative warning
+              thresholdRange: { min: 0.70, max: 1.00 },
             },
           },
         },
@@ -504,22 +515,24 @@ export const SENSOR_SCHEMAS = {
           safetyRequired: true,
           contexts: {
             diesel: {
-              critical: { max: 100 + 273.15 },
-              warning: { max: 95 + 273.15 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 100, hysteresis: 0.05, sound: 'warble' },
+              warning: { value: 95, hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: 0, max: 130 },
             },
             gasoline: {
-              critical: { max: 110 + 273.15 },
-              warning: { max: 100 + 273.15 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 110, hysteresis: 0.05, sound: 'warble' },
+              warning: { value: 100, hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: 0, max: 130 },
             },
             outboard: {
-              critical: { max: 85 + 273.15 },
-              warning: { max: 75 + 273.15 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 85, hysteresis: 0.05, sound: 'warble' },
+              warning: { value: 75, hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: 0, max: 130 },
+            },
+            'unknown': {
+              critical: { value: 90, hysteresis: 0.05, sound: 'warble' },  // Conservative universal safe temp (Celsius)
+              warning: { value: 80, hysteresis: 0.05, sound: 'morse_u' },  // Conservative warning
+              thresholdRange: { min: 0, max: 130 },
             },
           },
         },
@@ -537,22 +550,24 @@ export const SENSOR_SCHEMAS = {
           safetyRequired: true,
           contexts: {
             diesel: {
-              critical: { min: 15 },
-              warning: { min: 20 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 15, hysteresis: 0.05, sound: 'warble' },
+              warning: { value: 20, hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: 0, max: 600 },
             },
             gasoline: {
-              critical: { min: 10 },
-              warning: { min: 15 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 10, hysteresis: 0.05, sound: 'warble' },
+              warning: { value: 15, hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: 0, max: 600 },
             },
             outboard: {
-              critical: { min: 8 },
-              warning: { min: 12 },
-              criticalSoundPattern: ALARM_SOUND_PATTERNS.engine_critical,
-              warningSoundPattern: ALARM_SOUND_PATTERNS.warning,
+              critical: { value: 8, hysteresis: 0.05, sound: 'warble' },
+              warning: { value: 12, hysteresis: 0.05, sound: 'morse_u' },
+              thresholdRange: { min: 0, max: 600 },
+            },
+            'unknown': {
+              critical: { value: 15, hysteresis: 0.05, sound: 'warble' },  // Conservative highest minimum pressure
+              warning: { value: 20, hysteresis: 0.05, sound: 'morse_u' },  // Conservative warning
+              thresholdRange: { min: 0, max: 600 },
             },
           },
         },
@@ -716,8 +731,8 @@ export const SENSOR_SCHEMAS = {
     icon: 'compass',
     fields: {
       name: { type: 'text' as const, label: 'Heading Sensor Name', mnemonic: 'NAME', iostate: 'readWrite' as const, default: 'Heading' },
-      magnetic: { type: 'number' as const, label: 'Magnetic Heading', mnemonic: 'HDM', unitType: 'angle' as const, iostate: 'readOnly' as const },
-      true: { type: 'number' as const, label: 'True Heading', mnemonic: 'HDT', unitType: 'angle' as const, iostate: 'readOnly' as const },
+      magneticHeading: { type: 'number' as const, label: 'Magnetic Heading', mnemonic: 'HDM', unitType: 'angle' as const, iostate: 'readOnly' as const },
+      trueHeading: { type: 'number' as const, label: 'True Heading', mnemonic: 'HDT', unitType: 'angle' as const, iostate: 'readOnly' as const },
       variation: { type: 'number' as const, label: 'Magnetic Variation', mnemonic: 'VAR', unitType: 'angle' as const, iostate: 'readOnly' as const },
       deviation: { type: 'number' as const, label: 'Magnetic Deviation', mnemonic: 'DEV', unitType: 'angle' as const, iostate: 'readOnly' as const },
       rateOfTurn: { type: 'number' as const, label: 'Rate of Turn', mnemonic: 'ROT', unitType: 'angularVelocity' as const, iostate: 'readOnly' as const },

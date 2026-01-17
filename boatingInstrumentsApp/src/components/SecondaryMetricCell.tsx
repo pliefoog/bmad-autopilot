@@ -114,11 +114,17 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = React.mem
 
   // Handle string fields (name, type, chemistry, etc.) vs numeric fields
   const value = useMemo(() => {
-    if (fieldConfig?.valueType === 'string') {
-      // String fields: retrieve from history via getMetric()
-      // SensorInstance stores strings in _history Map, not as direct properties
+    if (fieldConfig?.type === 'text' || fieldConfig?.type === 'picker') {
+      // String/picker fields: retrieve from sensor instance
+      // These are stored as raw values, not MetricValues
       const stringMetric = sensorInstance?.getMetric(metricKey);
       return stringMetric?.formattedValue ?? '---';
+    }
+    if (fieldConfig?.type === 'toggle') {
+      // Toggle fields: retrieve boolean and display as ON/OFF
+      const toggleMetric = sensorInstance?.getMetric(metricKey);
+      const boolValue = toggleMetric?.si_value;
+      return boolValue === true ? 'ON' : boolValue === false ? 'OFF' : '---';
     }
     // Numeric fields: use pre-enriched formattedValue from MetricValue
     // This includes virtual stat metrics (depth_min, depth_max, etc.)
@@ -127,8 +133,8 @@ export const SecondaryMetricCell: React.FC<SecondaryMetricCellProps> = React.mem
 
   // Get unit: prefer from MetricValue (when data exists), fallback to registry category
   const unit = useMemo(() => {
-    // String fields don't have units
-    if (fieldConfig?.valueType === 'string') {
+    // String/picker fields don't have units
+    if (fieldConfig?.type === 'text' || fieldConfig?.type === 'picker' || fieldConfig?.type === 'toggle') {
       return '';
     }
 

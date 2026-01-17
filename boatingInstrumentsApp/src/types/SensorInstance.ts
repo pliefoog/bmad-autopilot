@@ -46,6 +46,7 @@ import { evaluateAlarm } from '../utils/alarmEvaluation';
 import { log } from '../utils/logging/logger';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
 import { useSensorConfigStore } from '../store/sensorConfigStore';
+import { resolveThreshold } from '../utils/thresholdResolver';
 import type { SensorConfiguration } from './SensorData';
 
 /**
@@ -147,10 +148,12 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * - If no user config: loads from getAlarmDefaults(sensorType)
    * - Supports both single-metric and multi-metric sensors
    * - Thresholds stored in SI units (ready for unit conversion)
+   * - CALCULATED THRESHOLDS: Registry defaults may be calculated formulas; resolver converts to numeric values
    * 
    * Bug Fix History:
    * - Jan 2026: Added initialization to fix empty slider values on sensor creation
    * - Jan 2026: Fixed priority to respect user settings over defaults
+   * - Jan 2026: Added resolver to support calculated thresholds (C-rate, nominalVoltage, RPM-based)
    */
   private _initializeDefaultThresholds(): void {
     const sensorConfig = getSensorSchema(this.sensorType);
@@ -174,18 +177,73 @@ export class SensorInstance<T extends SensorData = SensorData> {
     // Get all alarm-capable fields
     const alarmFields = getAlarmFields(this.sensorType);
     if (alarmFields.length > 0 && contextValue) {
+      // Dynamic require to avoid circular dependency for utility functions
+      const { getAlarmDirection } = require('../utils/sensorAlarmUtils');
+      
       for (const metricKey of alarmFields) {
         const alarmDefaults = getAlarmDefaults(this.sensorType, metricKey, contextValue);
         if (alarmDefaults) {
-          this._thresholds.set(metricKey, {
-            critical: alarmDefaults.critical,
-            warning: alarmDefaults.warning,
-            criticalSoundPattern: alarmDefaults.criticalSoundPattern,
-            warningSoundPattern: alarmDefaults.warningSoundPattern,
+          // CRITICAL: Resolve calculated thresholds from schema to numeric values
+          // Registry defaults may be calculated (e.g., capacity-based, voltage-based)
+          // Need to resolve them using SensorConfiguration context
+          
+          // For initialization, we need a minimal SensorConfiguration with context
+          // Use empty config as fallback for calculated thresholds (they'll resolve if fields present)
+          const configForResolving: any = {
+            context: this.context || (contextKey ? { [contextKey as string]: contextValue } : {}),
+          };
+          
+          // Critical and warning thresholds are now ThresholdConfig with value/calculated/hysteresis/sound
+          const criticalThreshold = (alarmDefaults as any).critical as any;
+          const warningThreshold = (alarmDefaults as any).warning as any;
+          
+          // Resolve critical threshold (handles both static value and calculated)
+          const resolvedCritical = resolveThreshold(criticalThreshold, configForResolving);
+          
+          // Resolve warning threshold (handles both static value and calculated)
+          const resolvedWarning = resolveThreshold(warningThreshold, configForResolving);
+          
+          // Get direction to determine min vs max placement
+          const { direction } = getAlarmDirection(this.sensorType, metricKey);
+          const isBelow = direction === 'below';
+          
+          const thresholds: MetricThresholds = {
+            critical: {},
+            warning: {},
             hysteresis: undefined,
             staleThresholdMs: 60000,
             enabled: true,
-          });
+          };
+          
+          // Place resolved thresholds in correct min/max fields based on direction
+          if (resolvedCritical !== undefined) {
+            if (isBelow) {
+              thresholds.critical.min = resolvedCritical;
+            } else {
+              thresholds.critical.max = resolvedCritical;
+            }
+          }
+          
+          if (resolvedWarning !== undefined) {
+            if (isBelow) {
+              thresholds.warning.min = resolvedWarning;
+            } else {
+              thresholds.warning.max = resolvedWarning;
+            }
+          }
+          
+          // Extract sound patterns from thresholds (now per-threshold, not per-context)
+          thresholds.criticalSoundPattern = criticalThreshold?.sound;
+          thresholds.warningSoundPattern = warningThreshold?.sound;
+          
+          // Extract hysteresis if present
+          if (criticalThreshold?.hysteresis !== undefined) {
+            thresholds.hysteresis = criticalThreshold.hysteresis;
+          } else if (warningThreshold?.hysteresis !== undefined) {
+            thresholds.hysteresis = warningThreshold.hysteresis;
+          }
+          
+          this._thresholds.set(metricKey, thresholds);
         }
       }
       log.app('✅ Loaded registry alarm defaults (multi-metric)', () => ({
@@ -195,7 +253,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
         metrics: alarmFields,
       }));
       return;
-    } 
+    }
   }
 
   /**
@@ -529,6 +587,107 @@ export class SensorInstance<T extends SensorData = SensorData> {
       sensorType: this.sensorType,
       instance: this.instance,
       metricKey,
+    }));
+  }
+
+  /**
+   * Apply persisted SensorConfiguration to runtime thresholds
+   * 
+   * Called when sensor is first created and AsyncStorage has saved user config.
+   * Applies user's customized threshold values (in SI units) to sensor instance.
+   * 
+   * @param config - Persisted SensorConfiguration from AsyncStorage
+   */
+  updateThresholdsFromConfig(config: SensorConfiguration): void {
+    // Apply name if present (user-customized sensor name)
+    if (config.name !== undefined) {
+      this.name = config.name;
+    }
+    
+    // Apply context if present (battery chemistry, engine type, etc.)
+    if (config.context !== undefined) {
+      this.context = config.context;
+    }
+    
+    // Helper to convert SensorConfiguration threshold format to MetricThresholds format
+    // CRITICAL: Detects and resolves calculated thresholds (e.g., C-rate current, nominalVoltage scaling)
+    const convertToMetricThresholds = (cfg: any, direction?: 'above' | 'below'): MetricThresholds => {
+      const thresholds: MetricThresholds = {
+        critical: {},
+        warning: {},
+        enabled: cfg.enabled ?? true,
+        criticalSoundPattern: cfg.criticalSoundPattern,
+        warningSoundPattern: cfg.warningSoundPattern,
+        staleThresholdMs: 5000,
+      };
+
+      // CALCULATED THRESHOLD DETECTION AND RESOLUTION
+      // Jan 2026: Support calculated thresholds (capacity-based, voltage-based, RPM-based)
+      // Schema defines formulas; resolver converts them to numeric values at runtime
+      
+      // Resolve critical threshold (calculated or static value field)
+      if (cfg.critical !== undefined) {
+        const resolvedCritical = resolveThreshold(cfg.critical, config);
+        
+        if (resolvedCritical !== undefined) {
+          if (direction === 'below') {
+            thresholds.critical.min = resolvedCritical;
+          } else {
+            thresholds.critical.max = resolvedCritical;
+          }
+        }
+      }
+      
+      // Resolve warning threshold (calculated or static value field)
+      if (cfg.warning !== undefined) {
+        const resolvedWarning = resolveThreshold(cfg.warning, config);
+        
+        if (resolvedWarning !== undefined) {
+          if (direction === 'below') {
+            thresholds.warning.min = resolvedWarning;
+          } else {
+            thresholds.warning.max = resolvedWarning;
+          }
+        }
+      }
+
+      if (cfg.criticalHysteresis !== undefined || cfg.warningHysteresis !== undefined) {
+        thresholds.hysteresis = cfg.criticalHysteresis ?? cfg.warningHysteresis;
+      }
+
+      return thresholds;
+    };
+
+    // Apply single-metric thresholds
+    if (config.critical !== undefined || config.warning !== undefined) {
+      // Get first alarm-capable metric for single-metric sensors
+      // Dynamic require to avoid circular dependency: registry → SensorInstance → registry
+      const { getSensorSchema } = require('../registry');
+      const schema = getSensorSchema(this.sensorType);
+      const alarmFields = Object.entries(schema?.fields || {})
+        .filter(([_, field]: [string, any]) => field.alarm !== undefined)
+        .map(([key, _]) => key);
+      
+      if (alarmFields.length > 0) {
+        const metricKey = alarmFields[0]; // First alarm field
+        const thresholds = convertToMetricThresholds(config, config.direction);
+        this.updateThresholds(metricKey, thresholds);
+      }
+    }
+
+    // Apply multi-metric thresholds
+    if (config.metrics) {
+      Object.entries(config.metrics).forEach(([metricKey, metricConfig]: [string, any]) => {
+        const thresholds = convertToMetricThresholds(metricConfig, metricConfig.direction);
+        this.updateThresholds(metricKey, thresholds);
+      });
+    }
+
+    log.app('Applied persisted config to sensor instance', () => ({
+      sensorType: this.sensorType,
+      instance: this.instance,
+      name: this.name, // Now actually applied
+      context: this.context,
     }));
   }
 

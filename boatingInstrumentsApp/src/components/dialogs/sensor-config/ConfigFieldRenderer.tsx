@@ -150,6 +150,7 @@ const ConfigFieldRendererComponent: React.FC<ConfigFieldRendererProps> = ({
             value={String(currentValue || '')}
             onChangeText={(text) => {
               if (field.type === 'text') {
+                console.log(`[ConfigFieldRenderer] onChangeText: field=${field.key}, text="${text}", currentValue="${currentValue}"`);
                 onChange(field.key, text);
               }
             }}

@@ -45,6 +45,9 @@ export * from './sensorSchemas';
 // Re-export global cache functions
 export * from './globalSensorCache';
 
+// Re-export schema defaults helper
+export * from './schemaDefaults';
+
 /**
  * Get complete sensor schema
  * @param sensorType - Sensor type (e.g., 'battery', 'depth')

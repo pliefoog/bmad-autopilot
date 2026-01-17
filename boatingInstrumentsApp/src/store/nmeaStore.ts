@@ -199,8 +199,15 @@ export const useNmeaStore = create<NmeaStore>()(
           return;
         }
 
-        // Update sensor name if provided in thresholds configuration
-        if (thresholds.name) {
+        // Update sensor name if provided (custom user-assigned name from config)
+        // This syncs the persistent config name to the working sensor instance
+        if (thresholds.name !== undefined) {
+          log.storeInit('nmeaStore: Updating sensor name', () => ({
+            sensorType,
+            instance,
+            oldName: sensorInstance.name,
+            newName: thresholds.name,
+          }));
           sensorInstance.name = thresholds.name;
         }
 

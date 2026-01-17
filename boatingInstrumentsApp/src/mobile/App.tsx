@@ -374,25 +374,10 @@ const App = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Sync sensor configurations from persistent storage to volatile cache on app startup
-  useEffect(() => {
-    const syncPersistentConfigs = async () => {
-      try {
-        // Dynamic import to avoid circular dependencies
-        const { syncConfigsToNmeaStore } = await import('../store/sensorConfigStore');
-
-        // Sync all stored configurations to nmeaStore cache
-        const updateSensorThresholds = useNmeaStore.getState().updateSensorThresholds;
-        syncConfigsToNmeaStore(updateSensorThresholds);
-      } catch (error) {
-        log.app('[App] Failed to sync sensor configurations', () => ({
-          error: error instanceof Error ? error.message : String(error),
-        }));
-      }
-    };
-
-    syncPersistentConfigs();
-  }, []);
+  // NOTE: Sensor config persistence is now handled in SensorDataRegistry.update()
+  // When a sensor is created, it automatically checks AsyncStorage and loads
+  // persisted config if available, or applies schema defaults if not.
+  // This eliminates the race condition and two-phase initialization pattern.
 
   // Connection handlers
   const handleConnectionConnect = async (config: {

@@ -58,6 +58,7 @@ import { sensorRegistry } from './SensorDataRegistry';
 import { usePresentationStore } from '../presentation/presentationStore';
 import { getAlarmDefaults, getSensorSchema } from '../registry';
 import { DataCategory } from '../presentation/categories';
+import { evaluateFormula } from '../utils/formulaEvaluator';
 import {
   findPresentation,
   getConvertFunction,
@@ -78,6 +79,18 @@ export interface EnrichedThresholdInfo {
 
   // Metadata
   unitType: DataCategory;
+
+  // IndirectThreshold support (Jan 2025) - for formula-based ratio editing
+  ratioMode?: boolean;  // True if threshold uses indirectThreshold
+  ratioValue?: {
+    critical?: number;   // User-adjustable ratio for critical (e.g., 0.985 for voltage, 1.4 for C-rate)
+    warning?: number;    // User-adjustable ratio for warning
+  };
+  ratioUnit?: string;    // Semantic unit for ratio (e.g., '× Vnom', 'C-rate', '% RPM')
+  absoluteValue?: {
+    critical?: string;   // Computed absolute value with formula fallbacks (e.g., "11.8 V" when nominalVoltage missing)
+    warning?: string;    // Computed absolute value with formula fallbacks
+  };
 
   // Display information (formatted with user's preferred units)
   display: {
@@ -149,12 +162,40 @@ class ThresholdPresentationServiceClass {
     const nmeaStore = useNmeaStore.getState();
     const thresholds = nmeaStore.getSensorThresholds(sensorType, instance, metric);
 
-    // Get defaults from registry for min/max
+    // Get defaults from schema for this sensor/metric
     // Context must come from sensorConfigStore (persistent), not thresholds (MetricThresholds doesn't have context)
     const sensorInstance = sensorRegistry.get(sensorType, instance);
     const savedConfig = useSensorConfigStore.getState().getConfig(sensorType, instance);
     const context = savedConfig?.context || {};
-    const defaults = getAlarmDefaults(sensorType, context);
+    
+    // Get the field key for alarm defaults lookup
+    const schema = getSensorSchema(sensorType);
+    const fieldKey = metric || Object.keys(schema.fields).find(key => schema.fields[key as keyof typeof schema.fields].alarm);
+    
+    // Get context value for schema lookup (e.g., 'lifepo4', 'diesel', or 'default')
+    const contextKey = schema.contextKey;
+    const contextValue = contextKey ? (context[contextKey] || 'default') : 'default';
+    
+    // Get schema defaults for this field and context
+    const schemaDefaults = fieldKey ? getAlarmDefaults(sensorType, fieldKey, contextValue) : undefined;
+
+    // Detect indirectThreshold mode (Jan 2025) - check if schema has indirectThreshold
+    let ratioMode = false;
+    let ratioUnit: string | undefined;
+    let ratioCritical: number | undefined;
+    let ratioWarning: number | undefined;
+
+    if (schemaDefaults) {
+      // Check if critical or warning threshold has indirectThreshold field
+      ratioMode = schemaDefaults.critical.indirectThreshold !== undefined || 
+                  schemaDefaults.warning.indirectThreshold !== undefined;
+      
+      if (ratioMode) {
+        ratioUnit = schemaDefaults.critical.indirectThresholdUnit || schemaDefaults.warning.indirectThresholdUnit;
+        ratioCritical = schemaDefaults.critical.indirectThreshold;
+        ratioWarning = schemaDefaults.warning.indirectThreshold;
+      }
+    }
 
     // For multi-metric sensors, extract metric-specific thresholds
     let critical: number | undefined;
@@ -168,9 +209,9 @@ class ThresholdPresentationServiceClass {
 
     if (metric) {
       // Multi-metric sensor: thresholds are per-metric from SensorInstance
-      // Determine alarm direction from registry defaults
-      const defaultsMetric = defaults?.metrics?.[metric];
-      direction = defaultsMetric?.direction;
+      // Determine alarm direction from schema field's alarm definition
+      const field = schema.fields[metric as keyof typeof schema.fields];
+      direction = field?.alarm?.direction;
 
       // Derive numeric thresholds from MetricThresholds structure
       // For 'below' alarms, use .min; for 'above' alarms, use .max
@@ -184,11 +225,23 @@ class ThresholdPresentationServiceClass {
           warning = t.warning?.max;
         }
       }
+      
+      // If no user thresholds, use schema defaults
+      if (critical === undefined && schemaDefaults) {
+        critical = direction === 'below' ? schemaDefaults.critical.min : schemaDefaults.critical.max;
+      }
+      if (warning === undefined && schemaDefaults) {
+        warning = direction === 'below' ? schemaDefaults.warning.min : schemaDefaults.warning.max;
+      }
 
-      // Get min/max display range from defaults
-      if (defaultsMetric) {
-        minSI = defaultsMetric.min;
-        maxSI = defaultsMetric.max;
+      // Get min/max display range from schema
+      // In ratio mode, use thresholdRange (ratio min/max), not field min/max (physical value range)
+      if (ratioMode && schemaDefaults?.thresholdRange) {
+        minSI = schemaDefaults.thresholdRange.min;
+        maxSI = schemaDefaults.thresholdRange.max;
+      } else if (field && field.min !== undefined && field.max !== undefined) {
+        minSI = field.min;
+        maxSI = field.max;
       } else {
         // Fallback to reasonable defaults based on category
         log.app('[ThresholdPresentationService] No defaults found for metric, using fallback', () => ({
@@ -202,8 +255,9 @@ class ThresholdPresentationServiceClass {
       }
     } else {
       // Single-metric sensor: thresholds reflect overall sensor configuration
-      // Determine alarm direction from defaults
-      direction = defaults?.direction;
+      // Determine alarm direction from schema field's alarm definition
+      const field = fieldKey ? schema.fields[fieldKey as keyof typeof schema.fields] : undefined;
+      direction = field?.alarm?.direction;
 
       // Derive numeric thresholds from MetricThresholds structure
       const t = thresholds as any;
@@ -216,11 +270,23 @@ class ThresholdPresentationServiceClass {
           warning = t.warning?.max;
         }
       }
+      
+      // If no user thresholds, use schema defaults
+      if (critical === undefined && schemaDefaults) {
+        critical = direction === 'below' ? schemaDefaults.critical.min : schemaDefaults.critical.max;
+      }
+      if (warning === undefined && schemaDefaults) {
+        warning = direction === 'below' ? schemaDefaults.warning.min : schemaDefaults.warning.max;
+      }
 
-      // Get min/max from defaults
-      if (defaults?.min !== undefined && defaults?.max !== undefined) {
-        minSI = defaults.min;
-        maxSI = defaults.max;
+      // Get min/max from schema
+      // In ratio mode, use thresholdRange (ratio min/max), not field min/max (physical value range)
+      if (ratioMode && schemaDefaults?.thresholdRange) {
+        minSI = schemaDefaults.thresholdRange.min;
+        maxSI = schemaDefaults.thresholdRange.max;
+      } else if (field && field.min !== undefined && field.max !== undefined) {
+        minSI = field.min;
+        maxSI = field.max;
       } else {
         // Fallback to reasonable defaults based on category
         log.app('[ThresholdPresentationService] No defaults found for sensor, using fallback', () => ({
@@ -238,14 +304,17 @@ class ThresholdPresentationServiceClass {
     const formatFn = ensureFormatFunction(presentation);
 
     // Convert all values to display units (with safety checks)
+    // CRITICAL: In ratio mode, threshold values are ratios (not SI units) - don't convert!
     const criticalDisplay =
       critical !== undefined
         ? (() => {
-            const converted = convertFn(critical);
+            const converted = ratioMode ? critical : convertFn(critical);
             return {
               value: converted,
-              unit: presentation.symbol,
-              formattedValue: `${formatFn(converted)} ${presentation.symbol}`,
+              unit: ratioMode ? (ratioUnit || '') : presentation.symbol,
+              formattedValue: ratioMode 
+                ? `${formatFn(converted)} ${ratioUnit || ''}`
+                : `${formatFn(converted)} ${presentation.symbol}`,
             };
           })()
         : undefined;
@@ -253,11 +322,13 @@ class ThresholdPresentationServiceClass {
     const warningDisplay =
       warning !== undefined
         ? (() => {
-            const converted = convertFn(warning);
+            const converted = ratioMode ? warning : convertFn(warning);
             return {
               value: converted,
-              unit: presentation.symbol,
-              formattedValue: `${formatFn(converted)} ${presentation.symbol}`,
+              unit: ratioMode ? (ratioUnit || '') : presentation.symbol,
+              formattedValue: ratioMode 
+                ? `${formatFn(converted)} ${ratioUnit || ''}`
+                : `${formatFn(converted)} ${presentation.symbol}`,
             };
           })()
         : undefined;
@@ -275,20 +346,89 @@ class ThresholdPresentationServiceClass {
       maxSI = maxSI ?? fallback.max;
     }
 
-    const minConverted = convertFn(minSI);
-    const maxConverted = convertFn(maxSI);
+    // In ratio mode, min/max are ratio values (dimensionless), not SI physical values
+    // Don't convert them - they represent the thresholdRange (e.g., 0.9-1.15)
+    const minConverted = ratioMode ? minSI : convertFn(minSI);
+    const maxConverted = ratioMode ? maxSI : convertFn(maxSI);
 
     const minDisplay = {
       value: minConverted,
-      unit: presentation.symbol,
-      formattedValue: `${formatFn(minConverted)} ${presentation.symbol}`,
+      unit: ratioMode ? (ratioUnit || '') : presentation.symbol,
+      formattedValue: ratioMode
+        ? `${formatFn(minConverted)} ${ratioUnit || ''}`
+        : `${formatFn(minConverted)} ${presentation.symbol}`,
     };
 
     const maxDisplay = {
       value: maxConverted,
-      unit: presentation.symbol,
-      formattedValue: `${formatFn(maxConverted)} ${presentation.symbol}`,
+      unit: ratioMode ? (ratioUnit || '') : presentation.symbol,
+      formattedValue: ratioMode
+        ? `${formatFn(maxConverted)} ${ratioUnit || ''}`
+        : `${formatFn(maxConverted)} ${presentation.symbol}`,
     };
+
+    // Build absolute value strings for ratio mode (show computed value with fallback indicators)
+    let absoluteCritical: string | undefined;
+    let absoluteWarning: string | undefined;
+
+    if (ratioMode && schemaDefaults) {
+      // Compute absolute values by resolving formulas with current sensor data
+      // Build formula context from sensor instance's current values
+      const formulaContext: Record<string, number> = {};
+      
+      // Extract current sensor values from history buffers
+      if (sensorInstance) {
+        const fields = ['nominalVoltage', 'capacity', 'maxRpm', 'temperature'];
+        for (const field of fields) {
+          const metricData = sensorInstance.getMetric(field);
+          if (metricData && typeof metricData.si_value === 'number') {
+            formulaContext[field] = metricData.si_value;
+          }
+        }
+      }
+      
+      // Apply fallback defaults for missing base parameters
+      formulaContext.nominalVoltage = formulaContext.nominalVoltage ?? 12;
+      formulaContext.capacity = formulaContext.capacity ?? 140;
+      formulaContext.maxRpm = formulaContext.maxRpm ?? 3000;
+      formulaContext.temperature = formulaContext.temperature ?? 25;
+      
+      // Evaluate critical threshold formula if it exists
+      if (schemaDefaults.critical.formula && critical !== undefined) {
+        try {
+          const resolvedCritical = evaluateFormula(schemaDefaults.critical.formula, {
+            ...formulaContext,
+            indirectThreshold: critical,  // Use saved ratio value
+          });
+          const convertedCritical = convertFn(resolvedCritical);
+          absoluteCritical = `${formatFn(convertedCritical)} ${presentation.symbol}`;
+        } catch (err) {
+          log.app('[ThresholdPresentationService] Failed to evaluate critical formula', () => ({
+            sensorType,
+            metric,
+            error: err instanceof Error ? err.message : String(err),
+          }));
+        }
+      }
+      
+      // Evaluate warning threshold formula if it exists
+      if (schemaDefaults.warning.formula && warning !== undefined) {
+        try {
+          const resolvedWarning = evaluateFormula(schemaDefaults.warning.formula, {
+            ...formulaContext,
+            indirectThreshold: warning,  // Use saved ratio value
+          });
+          const convertedWarning = convertFn(resolvedWarning);
+          absoluteWarning = `${formatFn(convertedWarning)} ${presentation.symbol}`;
+        } catch (err) {
+          log.app('[ThresholdPresentationService] Failed to evaluate warning formula', () => ({
+            sensorType,
+            metric,
+            error: err instanceof Error ? err.message : String(err),
+          }));
+        }
+      }
+    }
 
     return {
       critical,
@@ -297,15 +437,28 @@ class ThresholdPresentationServiceClass {
       max: maxSI,
       direction,
       unitType: category,
+      ratioMode,
+      ratioValue: ratioMode ? {
+        critical: ratioCritical,
+        warning: ratioWarning,
+      } : undefined,
+      ratioUnit,
+      absoluteValue: ratioMode ? {
+        critical: absoluteCritical,
+        warning: absoluteWarning,
+      } : undefined,
       display: {
         critical: criticalDisplay,
         warning: warningDisplay,
         min: minDisplay,
         max: maxDisplay,
       },
-      convertToSI: getConvertBackFunction(presentation),
-      convertFromSI: getConvertFunction(presentation),
-      formatValue: (displayValue: number) => `${formatFn(displayValue)} ${presentation.symbol}`,
+      // In ratio mode, values are already ratios (dimensionless) - no conversion needed
+      convertToSI: ratioMode ? (v: number) => v : getConvertBackFunction(presentation),
+      convertFromSI: ratioMode ? (v: number) => v : getConvertFunction(presentation),
+      formatValue: ratioMode
+        ? (displayValue: number) => `${formatFn(displayValue)} ${ratioUnit || ''}`
+        : (displayValue: number) => `${formatFn(displayValue)} ${presentation.symbol}`,
     };
   }
 

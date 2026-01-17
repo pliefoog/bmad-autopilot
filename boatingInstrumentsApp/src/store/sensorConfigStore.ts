@@ -59,6 +59,7 @@ interface SensorConfigStoreState {
   // Store metadata
   version: number; // Schema version for migrations
   lastSyncTimestamp?: number; // Last sync with nmeaStore
+  _hydrated: boolean; // Hydration completion flag (prevents race conditions)
 
   // Actions
   getConfig: (sensorType: SensorType, instance: number) => StoredSensorConfig | undefined;
@@ -98,6 +99,7 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
         configs: {},
         version: 3, // Schema version (category→unitType refactor) // v2: MetricValue/SensorInstance refactor - clean slate
         lastSyncTimestamp: undefined,
+        _hydrated: false, // Set to true after AsyncStorage hydration completes
 
         // Generate storage key
         generateKey,
@@ -118,6 +120,8 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
           const now = Date.now();
           const existingConfig = get().configs[key];
 
+          console.log(`[sensorConfigStore] setConfig: key=${key}, config.name="${config.name}", existingConfig.name="${existingConfig?.name}"`);
+
           const updatedConfig: StoredSensorConfig = {
             ...existingConfig,
             ...config,
@@ -126,12 +130,16 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
             lastModified: now,
           };
 
+          console.log(`[sensorConfigStore] updatedConfig: name="${updatedConfig.name}"`);
+
           set((state) => ({
             configs: {
               ...state.configs,
               [key]: updatedConfig,
             },
           }));
+          
+          console.log(`[sensorConfigStore] After set, stored config name="${get().configs[key]?.name}"`);
         },
 
         // Delete configuration for sensor instance
@@ -219,8 +227,19 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
               log.app('[SensorConfigStore] Hydration error', () => ({
                 error: error instanceof Error ? error.message : String(error),
               }));
+              // Set hydrated even on error to prevent infinite waiting
+              useSensorConfigStore.setState({ _hydrated: true });
             } else {
               const configCount = Object.keys(state?.configs || {}).length;
+              log.app('[SensorConfigStore] Hydration complete', () => ({ configCount }));
+              
+              // CRITICAL: Mark store as hydrated
+              useSensorConfigStore.setState({ _hydrated: true });
+              
+              // Emit global event for waiting sensors
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('sensorConfigStoreHydrated'));
+              }
             }
           };
         },
@@ -231,31 +250,5 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
 );
 
 /**
- * Export utility function to sync configurations from sensorConfigStore to nmeaStore
- * Call this on app startup to populate nmeaStore cache from persistent storage
+ * Export store and utility functions
  */
-export const syncConfigsToNmeaStore = (
-  nmeaStoreUpdateFn: (
-    sensorType: SensorType,
-    instance: number,
-    config: SensorConfiguration,
-  ) => void,
-) => {
-  const allConfigs = useSensorConfigStore.getState().getAllConfigs();
-  let syncCount = 0;
-
-  Object.entries(allConfigs).forEach(([key, config]) => {
-    const [sensorType, instanceStr] = key.split(':');
-    const instance = parseInt(instanceStr, 10);
-
-    if (sensorType && !isNaN(instance)) {
-      nmeaStoreUpdateFn(sensorType as SensorType, instance, config);
-      syncCount++;
-    }
-  });
-
-  // Update sync timestamp
-  useSensorConfigStore.setState({ lastSyncTimestamp: Date.now() });
-
-  return syncCount;
-};
