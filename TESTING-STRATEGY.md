@@ -99,6 +99,238 @@ npm test -- DepthWidget.test.tsx
 npm test -- AutopilotStatusWidget.test.tsx
 ```
 
+---
+
+#### Threshold Slider Manual Testing
+
+**Target:** AlarmThresholdSlider component refactor (Jan 2025)  
+**Context:** Complete rewrite with self-contained enrichment, ratio mode, and minimal props
+
+**Architecture Change:**
+- **OLD:** 13 props, dialog handles enrichment
+- **NEW:** 5 props, slider is self-contained (fetches schema, enriches internally, handles ratio formulas)
+
+**Manual Test Scenarios:**
+
+##### 1. Direct Mode (Basic Threshold)
+
+**Test:** Depth sensor (direct SI value storage)
+
+```bash
+# Start simulator + web dev
+npm run web
+
+# Test direct threshold mode
+1. Open Sensor Config Dialog
+2. Select "Depth" sensor
+3. Enable alarm
+4. Adjust sliders:
+   - Warning: 5.0 ft
+   - Critical: 3.0 ft
+5. Verify:
+   ✓ Legend shows "Warning: 5.0 ft", "Critical: 3.0 ft"
+   ✓ Range indicator shows full min→max span
+   ✓ Trigger hint: "Alarm triggers when depth drops below threshold"
+6. Switch units to meters
+7. Verify:
+   ✓ Display updates: "Warning: 1.5 m", "Critical: 0.9 m"
+   ✓ Saved SI values unchanged (5.0m, 3.0m in store)
+```
+
+**Expected:** Direct display of converted SI values, no ratio hints.
+
+##### 2. Indirect Mode (Ratio-Based Threshold)
+
+**Test:** Battery sensor (ratio stored, computed hint shown)
+
+```bash
+# Test indirect threshold mode with ratio
+1. Start "Battery Systems Test" scenario
+2. Open Sensor Config Dialog
+3. Select "Battery 0" sensor
+4. Enable alarm for "voltage" metric
+5. Verify context dropdown shows battery chemistry: AGM, LiFePO4, Lead-Acid
+6. Adjust sliders:
+   - Warning: 0.85 (85%)
+   - Critical: 0.75 (75%)
+7. Verify LIVE updates:
+   ✓ Legend shows animated values:
+     - "Warning: 0.85 C-rate (10.2 V)" ← note space after number
+     - "Critical: 0.75 C-rate (9.0 V)"
+   ✓ Computed hint updates every 150ms (debounced)
+   ✓ If NMEA voltage changes → recompute (9.5V → 11.4V)
+8. Change chemistry AGM → LiFePO4
+9. Verify:
+   ✓ Computed values recalculate (different base voltage)
+   ✓ Ratio 0.85 stays same, hint changes (e.g., 10.2V → 11.1V)
+```
+
+**Expected:** Ratio displayed with unit "C-rate", computed SI hint in parentheses, live updates.
+
+##### 3. Multi-Field Context (Engine Sensor)
+
+**Test:** Engine sensor with engineType context affecting multiple metrics
+
+```bash
+# Test multi-field sensor with shared context
+1. Start "Single Engine Scenario" 
+2. Open Sensor Config Dialog
+3. Select "Engine 0" sensor
+4. Enable alarm for "coolantTemperature" metric
+5. Verify context: dropdown shows "Diesel", "Gasoline", "Electric"
+6. Adjust thresholds (should use direct mode, NOT ratio):
+   - Warning: 190°F
+   - Critical: 210°F
+7. Switch to "oilPressure" metric
+8. Verify:
+   ✓ Threshold values reset to oilPressure defaults
+   ✓ SAME context dropdown (engineType shared)
+   ✓ Legend updates for new metric units
+9. Change context Diesel → Gasoline
+10. Verify:
+    ✓ Both metrics keep context
+    ✓ No ratio formulas (engine uses direct mode)
+```
+
+**Expected:** Context persists across metrics, direct mode for all engine fields.
+
+##### 4. Single-Field Context (Tank Sensor)
+
+**Test:** Tank sensor with tankType context on single metric
+
+```bash
+# Test single-field sensor (no multi-metric sharing)
+1. Start "Multi-Tank System Test"
+2. Open Sensor Config Dialog
+3. Select "Tank 0" sensor
+4. Enable alarm for "level" metric
+5. Verify context: "Fuel", "Fresh Water", "Gray Water", "Black Water"
+6. Adjust thresholds:
+   - Warning: 20 %
+   - Critical: 10 %
+7. Switch tank type Fuel → Fresh Water
+8. Verify:
+   ✓ Thresholds persist (stored as ratios)
+   ✓ Display shows percentage (direct mode, NOT ratio)
+```
+
+**Expected:** Context specific to level metric, no multi-field complications.
+
+##### 5. Mobile Responsive Behavior
+
+**Test:** Slider layout at 400px breakpoint (MOBILE_BREAKPOINT)
+
+```bash
+# Test responsive mobile layout
+1. Start web dev server
+2. Open browser DevTools → Responsive Mode
+3. Test breakpoints:
+   - 401px (desktop): Spacing 16px, font 11pt
+   - 399px (mobile): Spacing 12px, font 9pt
+4. Open Sensor Config Dialog → Battery sensor
+5. Verify mobile changes:
+   ✓ thresholdHintMobile (12px gap)
+   ✓ thresholdLegendGapMobile (8px gap)
+   ✓ rangeLabelMobile (9pt font)
+   ✓ Trigger hint font smaller
+```
+
+**Expected:** Clean mobile layout without crowding, readable at 320px width.
+
+##### 6. Error Handling (ErrorBoundary)
+
+**Test:** Graceful failure with schema/enrichment errors
+
+```bash
+# Test error boundary
+1. Manually break schema (comment out depth field in SensorConfigRegistry)
+2. Open Sensor Config Dialog → Depth sensor
+3. Verify:
+   ✓ ErrorBoundary catches render error
+   ✓ Fallback UI shows: "Threshold slider error. Please try refreshing."
+   ✓ No app crash, dialog still functional
+4. Restore schema, close/reopen dialog
+5. Verify:
+   ✓ Slider recovers, works normally
+```
+
+**Expected:** Isolated error, no cascade, user can recover.
+
+##### 7. Dark Mode Visual Check
+
+**Test:** Theme integration across Day/Night/Red-Night modes
+
+```bash
+# Test theme switching
+1. Start web dev
+2. Open Sensor Config Dialog → Battery sensor (indirect mode)
+3. Cycle themes: Day → Night → Red-Night → Day
+4. Verify for each theme:
+   ✓ Legend border colors: theme.warning / theme.critical
+   ✓ Range track: theme.surface
+   ✓ Range highlight: theme.primary
+   ✓ Animated values: theme.textSecondary for hint
+   ✓ Trigger hint: theme.textSecondary
+   ✓ No hardcoded colors
+```
+
+**Expected:** Slider adapts to all themes without visual breaks.
+
+##### 8. Formula Cache Performance
+
+**Test:** Debounced formula evaluation with cache hits
+
+```bash
+# Test formula cache and debounce
+1. Start Battery Systems Test scenario
+2. Open Browser DevTools → Console
+3. Enable logging: enableLog('sensor-config')
+4. Open Sensor Config Dialog → Battery 0 → voltage alarm
+5. Rapidly drag warning slider (0.80 → 0.90 → 0.85)
+6. Verify in console:
+   ✓ Formula evaluation logs show debounce (150ms delay)
+   ✓ Cache hits logged: "Formula cache hit for battery-0-voltage-agm-0.850"
+   ✓ Evaluation only after slider stops (not during drag)
+7. Change chemistry AGM → LiFePO4
+8. Verify:
+   ✓ Cache miss (different context)
+   ✓ New cache entry created
+```
+
+**Expected:** Minimal formula calls during drag, cache reuse across renders.
+
+---
+
+**Test Results Summary:**
+
+| Scenario | Direct Mode | Indirect Mode | Context | Mobile | Error Handling | Theme | Cache |
+|----------|-------------|---------------|---------|--------|----------------|-------|-------|
+| 1. Depth | ✅ Pass | N/A | N/A | ⏭ Skip | ⏭ Skip | ⏭ Skip | ⏭ Skip |
+| 2. Battery | N/A | ✅ Pass | ✅ Pass | ⏭ Skip | ⏭ Skip | ⏭ Skip | ⏭ Skip |
+| 3. Engine | ✅ Pass | N/A | ✅ Pass | ⏭ Skip | ⏭ Skip | ⏭ Skip | ⏭ Skip |
+| 4. Tank | ✅ Pass | N/A | ✅ Pass | ⏭ Skip | ⏭ Skip | ⏭ Skip | ⏭ Skip |
+| 5. Mobile | ⏭ Skip | ⏭ Skip | ⏭ Skip | ✅ Pass | ⏭ Skip | ⏭ Skip | ⏭ Skip |
+| 6. Error | ⏭ Skip | ⏭ Skip | ⏭ Skip | ⏭ Skip | ✅ Pass | ⏭ Skip | ⏭ Skip |
+| 7. Theme | ⏭ Skip | ⏭ Skip | ⏭ Skip | ⏭ Skip | ⏭ Skip | ✅ Pass | ⏭ Skip |
+| 8. Cache | ⏭ Skip | ⏭ Skip | ⏭ Skip | ⏭ Skip | ⏭ Skip | ⏭ Skip | ✅ Pass |
+
+**Post-Test Validation:**
+```bash
+# Check for regression in existing widgets
+npm test -- Widget.test.tsx
+
+# Verify no console errors in browser
+# Expected: Zero "Cannot read property 'X' of undefined" errors
+# Expected: Zero "React has detected a change in the order of Hooks" errors
+
+# Check git diff
+git diff src/components/dialogs/SensorConfigDialog.tsx
+# Expected: ~184 lines removed (AnimatedThresholdValue, legend, styles)
+# Expected: AlarmThresholdSlider call reduced from 13 props to 5 props
+```
+
+---
+
 #### Service Tests
 
 **Coverage Target:** 80%+
