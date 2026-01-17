@@ -98,7 +98,7 @@ export interface UseSensorConfigFormReturn {
     handleEnabledChange: (value: boolean) => void;
     handleInstanceSwitch: (newInstance: number) => Promise<void>;
     handleSensorTypeSwitch: (newType: SensorType) => Promise<void>;
-    handleClose: () => Promise<void>;
+    handleClose: () => Promise<boolean>;
     handleTestSound: (soundPattern: string) => Promise<void>;
   };
   computed: {

@@ -31,7 +31,6 @@ import {
   Alert,
   useWindowDimensions,
   ActivityIndicator,
-  Animated,
 } from 'react-native';
 import { useWatch } from 'react-hook-form';
 import { useTheme, ThemeColors } from '../../store/themeStore';
@@ -79,50 +78,6 @@ interface SensorInstance {
   location?: string;
   lastUpdate?: number;
 }
-
-/**
- * AnimatedThresholdValue - Smooth value updates with pulse feedback
- *
- * Animates opacity when threshold value changes, providing visual
- * feedback that the value has been updated. Helps user follow slider
- * interactions with visual confirmation.
- */
-interface AnimatedThresholdValueProps {
-  label: string;
-  value: string;
-  color: string;
-}
-
-const AnimatedThresholdValue: React.FC<AnimatedThresholdValueProps> = ({
-  label,
-  value,
-  color,
-}) => {
-  const opacityAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    // Pulse animation when value changes
-    Animated.sequence([
-      Animated.timing(opacityAnim, {
-        toValue: 0.6,
-        duration: 100,
-        useNativeDriver: false,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: false,
-      }),
-    ]).start();
-  }, [value, opacityAnim]);
-
-  return (
-    <Animated.View style={[{ opacity: opacityAnim }]}>
-      <Text style={[styles.legendLabel, { color: '#666' }]}>{label}</Text>
-      <Text style={[styles.legendValue, { color }]}>{value}</Text>
-    </Animated.View>
-  );
-};
 
 /**
  * SensorConfigDialog Component
@@ -203,51 +158,20 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         warningSoundPattern: data.warningSoundPattern,
       };
 
-      // Check if we're saving threshold values
-      const isSavingThresholds =
-        data.criticalValue !== undefined || data.warningValue !== undefined;
-
-      // Validate enrichment if saving thresholds
-      if (isSavingThresholds && !enrichedThresholds) {
-        const errorMsg =
-          'Cannot save thresholds - unit conversion unavailable. This would corrupt data.';
-        log.app('SensorConfigDialog: Cannot save - enrichment unavailable', () => ({
-          message: errorMsg,
-        }));
-        if (Platform.OS === 'web') {
-          alert(errorMsg);
-        } else {
-          Alert.alert('Configuration Error', errorMsg);
-        }
-        throw new Error(errorMsg);
-      }
-
-      // Build threshold updates with SI conversion
-      if (computed.requiresMetricSelection && data.selectedMetric && enrichedThresholds) {
+      // Build threshold updates (slider returns SI values directly)
+      if (computed.requiresMetricSelection && data.selectedMetric) {
         updates.metrics = {
           [data.selectedMetric]: {
-            critical:
-              data.criticalValue !== undefined
-                ? enrichedThresholds.convertToSI(data.criticalValue)
-                : undefined,
-            warning:
-              data.warningValue !== undefined
-                ? enrichedThresholds.convertToSI(data.warningValue)
-                : undefined,
+            critical: data.criticalValue,
+            warning: data.warningValue,
             criticalSoundPattern: data.criticalSoundPattern,
             warningSoundPattern: data.warningSoundPattern,
             enabled: data.enabled,
           },
         };
-      } else if (enrichedThresholds) {
-        updates.critical =
-          data.criticalValue !== undefined
-            ? enrichedThresholds.convertToSI(data.criticalValue)
-            : undefined;
-        updates.warning =
-          data.warningValue !== undefined
-            ? enrichedThresholds.convertToSI(data.warningValue)
-            : undefined;
+      } else {
+        updates.critical = data.criticalValue;
+        updates.warning = data.warningValue;
       }
 
       // Generic context handling (schema-driven)
@@ -327,8 +251,6 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   const selectedMetricValue = useWatch({ control: form.control, name: 'selectedMetric' });
   const criticalPatternValue = useWatch({ control: form.control, name: 'criticalSoundPattern' });
   const warningPatternValue = useWatch({ control: form.control, name: 'warningSoundPattern' });
-  const warningValueWatch = useWatch({ control: form.control, name: 'warningValue' });
-  const criticalValueWatch = useWatch({ control: form.control, name: 'criticalValue' });
 
   // Track unsaved changes for UI feedback
   const hasUnsavedChanges = form.formState.isDirty && !form.formState.isSubmitting;
@@ -498,69 +420,20 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                   </>
                 ) : null}
 
-                {/* Threshold Sliders */}
-                {computed.alarmConfig && enrichedThresholds && (
+                {/* Threshold Slider - Self-contained with minimal props */}
+                {computed.alarmConfig && selectedMetricValue && (
                   <View style={styles.sliderSection}>
                     <Text style={styles.groupLabel}>Threshold values</Text>
-                    
-                    {/* Color-coded threshold legend with animated values */}
-                    <View style={styles.thresholdLegend}>
-                      <View style={[styles.legendItem, { borderLeftColor: theme.warning, borderLeftWidth: 4 }]}>
-                        <AnimatedThresholdValue
-                          label="Warning"
-                          value={enrichedThresholds?.formatValue(warningValueWatch ?? 0) || '—'}
-                          color={theme.warning}
-                        />
-                      </View>
-                      
-                      <View style={[styles.legendItem, { borderLeftColor: theme.critical, borderLeftWidth: 4 }]}>
-                        <AnimatedThresholdValue
-                          label="Critical"
-                          value={enrichedThresholds?.formatValue(criticalValueWatch ?? 0) || '—'}
-                          color={theme.critical}
-                        />
-                      </View>
-                    </View>
-                    
-                    {/* Horizontal range indicator above slider */}
-                    <View style={styles.rangeIndicator}>
-                      <View style={styles.rangeLabels}>
-                        <Text style={[styles.rangeLabel, styles.rangeMin]}>Min</Text>
-                        <Text style={[styles.rangeLabel, styles.rangeMid]}>Range</Text>
-                        <Text style={[styles.rangeLabel, styles.rangeMax]}>Max</Text>
-                      </View>
-                      <View style={[styles.rangeTrack, { backgroundColor: theme.surface }]}>
-                        <View style={[styles.rangeHighlight, { backgroundColor: theme.primary }]} />
-                      </View>
-                    </View>
-                    
-                    <View style={styles.sliderRow}>
-                      <View style={styles.sliderContainer}>
-                        <AlarmThresholdSlider
-                          min={computed.alarmConfig.min}
-                          max={computed.alarmConfig.max}
-                          step={computed.alarmConfig.step}
-                          warningValue={warningValueWatch}
-                          criticalValue={criticalValueWatch}
-                          alarmDirection={computed.alarmConfig.direction}
-                          formatValue={(si) =>
-                            enrichedThresholds?.formatValue(
-                              enrichedThresholds.convertFromSI(si),
-                            ) || si.toFixed(1)
-                          }
-                          unitSymbol={enrichedThresholds?.display.min.unit || ''}
-                          onWarningChange={(value) => form.setValue('warningValue', value)}
-                          onCriticalChange={(value) => form.setValue('criticalValue', value)}
-                          theme={theme}
-                        />
-                      </View>
-                    </View>
-
-                    {computed.alarmConfig.triggerHint && (
-                      <Text style={[styles.helpText, { color: theme.textSecondary }]}>
-                        {computed.alarmConfig.triggerHint}
-                      </Text>
-                    )}
+                    <AlarmThresholdSlider
+                      sensorType={selectedSensorType}
+                      instance={selectedInstance}
+                      metric={selectedMetricValue}
+                      onThresholdsChange={(critical, warning) => {
+                        form.setValue('criticalValue', critical);
+                        form.setValue('warningValue', warning);
+                      }}
+                      theme={theme}
+                    />
                   </View>
                 )}
 
@@ -717,62 +590,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: 'white',
-  },
-
-  // NEW: Threshold legend with color coding
-  thresholdLegend: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-    paddingVertical: 12,
-  },
-  legendItem: {
-    flex: 1,
-    paddingLeft: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  legendLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  legendValue: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-
-  // NEW: Horizontal range indicator
-  rangeIndicator: {
-    marginBottom: 12,
-  },
-  rangeLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    marginBottom: 4,
-  },
-  rangeLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    textTransform: 'uppercase',
-  },
-  rangeMin: {
-    textAlign: 'left',
-  },
-  rangeMid: {
-    textAlign: 'center',
-  },
-  rangeMax: {
-    textAlign: 'right',
-  },
-  rangeTrack: {
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  rangeHighlight: {
-    height: '100%',
-    borderRadius: 2,
   },
 });
