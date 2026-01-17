@@ -1,13 +1,20 @@
-chore: install error handling and debounce dependencies
+refactor: remove SensorContext interface and backward compatibility
 
-Step 3 of threshold slider refactor.
+Step 4 of threshold slider refactor.
 
-Installed packages:
-- react-error-boundary: Generic ErrorBoundary for React Native
-  Used to wrap AlarmThresholdSlider with graceful error handling
-  
-- use-debounce: React hook for debounced callbacks
-  Used for 150ms debounced formula evaluation during slider drag
-  Prevents performance issues with high-frequency updates
+Deleted deprecated SensorContext interface from SensorData.ts:
+- Interface defined battery/engineType specific context fields
+- Replaced with generic string context pattern
+- Schema-driven contextKey field determines context type
 
-Both packages support React Native and follow React hook patterns.
+Removed backward compatibility code from useSensorConfigForm.ts:
+- Deleted object→string context conversion in form initialization
+- Deleted object→string context normalization in enrichedThresholds
+- Context is now always a string ('agm', 'diesel', etc.)
+- Migration happens automatically in store hydration (Step 2)
+
+Clean architecture enforced:
+- No sensor-specific hardcoded logic
+- Schema contextKey determines context field name
+- Single string value for all context types
+- Type safety maintained with schema validation

@@ -27,17 +27,6 @@ import type { SensorInstance } from './SensorInstance';
 import { SENSOR_SCHEMAS, type InferSensorData, type SensorType } from '../registry/sensorSchemas';
 
 /**
- * Context-aware configuration for sensors (DEPRECATED - use schema contextKey)
- * Kept for backward compatibility with existing code
- */
-export interface SensorContext {
-  batteryChemistry?: 'lead-acid' | 'agm' | 'gel' | 'lifepo4';
-  engineType?: 'diesel' | 'gasoline' | 'outboard';
-  tankType?: 'fuel' | 'water' | 'waste' | 'ballast' | 'blackwater';
-  temperatureLocation?: 'engine' | 'cabin' | 'water' | 'refrigerator';
-}
-
-/**
  * Per-metric threshold configuration
  * Used by SensorInstance for per-metric alarm evaluation
  */

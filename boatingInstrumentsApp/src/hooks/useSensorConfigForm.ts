@@ -269,17 +269,8 @@ export const useSensorConfigForm = (
 
     // Extract context from saved config (user-selected, e.g., 'agm', 'diesel')
     // Context is a configuration choice, not a sensor reading
-    // Handle backward compatibility: old configs stored context as object { batteryChemistry: 'agm' }
-    let contextValue: string | undefined;
-    if (savedConfig?.context) {
-      if (typeof savedConfig.context === 'string') {
-        contextValue = savedConfig.context;
-      } else if (typeof savedConfig.context === 'object') {
-        // Old format: extract first value from object
-        const contextObj = savedConfig.context as any;
-        contextValue = contextObj.batteryChemistry || contextObj.engineType || contextObj.tankType || contextObj.temperatureLocation;
-      }
-    }
+    // Context is now always a string (e.g., 'agm', 'diesel')
+    const contextValue = typeof savedConfig?.context === 'string' ? savedConfig.context : undefined;
 
     return {
       name: displayName,
@@ -358,17 +349,8 @@ export const useSensorConfigForm = (
     // watchedContext contains the value of the field specified by schema.contextKey
     // e.g., for battery: 'agm', 'lifepo4', etc.
     // e.g., for engine: 'diesel', 'gasoline', 'outboard'
-    // Handle backward compatibility: old data may have object format
-    let contextValue = 'unknown';
-    if (watchedContext) {
-      if (typeof watchedContext === 'string') {
-        contextValue = watchedContext;
-      } else if (typeof watchedContext === 'object') {
-        // Old format: extract first value from object
-        const contextObj = watchedContext as any;
-        contextValue = contextObj.batteryChemistry || contextObj.engineType || contextObj.tankType || contextObj.temperatureLocation || 'unknown';
-      }
-    }
+    // Context is now always a string (e.g., 'agm', 'diesel')
+    const contextValue = typeof watchedContext === 'string' ? watchedContext : 'unknown';
 
     // Get first alarm field for sensors without metric selection
     const fieldKey = metric || alarmFieldKeys[0];
