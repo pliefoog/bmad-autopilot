@@ -1,43 +1,37 @@
-fix(sensor-config): show correct field label and live value for single-metric sensors
+feat(sensors): unified metrics schema V4 migration
 
-Problem:
-1. Metric label showing sensor name "Depth Sounder" instead of field name "Depth"
-2. Current value not displayed (always undefined)
+Phase 1: Data Structure Unification - Step 1-2 Complete
 
-Root Cause:
-1. metricLabel logic:
-   - Single-metric path returned sensorConfig.displayName (wrong)
-   - Should return field label from first alarm field
+BREAKING CHANGE: SensorConfiguration now requires metrics object for all sensors
 
-2. currentMetricValue logic:
-   - Used useMemo (computed once, never updates)
-   - Needs reactive store selector for live updates
+Changes:
+- Updated SensorConfiguration interface (src/types/SensorData.ts):
+  - Removed top-level threshold fields (critical, warning, direction, etc.)
+  - Made metrics object required (previously optional)
+  - Added MetricConfiguration interface for type safety
+  - All sensors (single + multi-metric) use unified metrics object
 
-Solution:
-1. Fixed metricLabel computation:
-   - Multi-metric: Use selected metric's field label (unchanged)
-   - Single-metric: Use first alarm field's label (NEW)
-   - Example: depth sensor → "Depth" not "Depth Sounder"
+- Implemented V3→V4 migration (src/store/sensorConfigStore.ts):
+  - Bumped schema version 3→4
+  - Single-metric sensors: Wrap top-level thresholds → metrics[fieldName]
+  - Multi-metric sensors: Preserve existing metrics object
+  - User-friendly success toast on migration
+  - Fallback to clean slate for V0-V2 (incompatible schema)
 
-2. Changed currentMetricValue to useNmeaStore selector:
-   - Reactive to sensor data changes
-   - Re-renders when value updates
-   - Returns formattedValueWithUnit from MetricValue
+Migration Example:
+- V3: { critical: 2.0, warning: 3.0, enabled: true }
+- V4: { metrics: { depth: { critical: 2.0, warning: 3.0, enabled: true } } }
 
-Visual Result:
-BEFORE:
-┌─────────────────────────────┐
-│ Depth Sounder    (no value) │
-└─────────────────────────────┘
+Benefits:
+- Eliminates dual code paths (single vs multi-metric conditionals)
+- ~300 lines of conditional logic can now be removed
+- MetricSelector always rendered (disabled for single-metric)
+- Type-safe metrics access via MetricConfiguration interface
 
-AFTER:
-┌─────────────────────────────┐
-│ Depth              8.2 ft   │
-└─────────────────────────────┘
+Next Steps:
+- Update SensorInstance methods to use metrics object
+- Update schemaDefaults.ts to write to metrics
+- Simplify useSensorConfigForm (remove conditionals)
+- Simplify SensorConfigDialog (unified rendering)
 
-Live Updates:
-- Value changes as sensor data arrives
-- Real-time feedback for threshold setting
-- Helps users set appropriate limits based on current conditions
-
-Files: useSensorConfigForm.ts
+Files: src/types/SensorData.ts, src/store/sensorConfigStore.ts

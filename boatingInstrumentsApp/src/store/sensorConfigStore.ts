@@ -220,7 +220,7 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
       (set, get) => ({
         // Initial state
         configs: {},
-        version: 3, // Schema version (category→unitType refactor) // v2: MetricValue/SensorInstance refactor - clean slate
+        version: 4, // Schema version v4: Unified metrics object (single + multi-metric) // v3: category→unitType refactor // v2: MetricValue/SensorInstance refactor - clean slate
         lastSyncTimestamp: undefined,
         _hydrated: false, // Set to true after AsyncStorage hydration completes
 
@@ -307,7 +307,7 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
       {
         name: 'sensor-config-storage', // AsyncStorage key
         storage: createJSONStorage(() => AsyncStorage),
-        version: 3, // Bumped from 2 → 3 for category→unitType refactor
+        version: 4, // Bumped 3→4 for unified metrics object (Jan 2026)
 
         // Partial persistence - only persist configs, not derived state
         partialize: (state) => ({
@@ -316,16 +316,117 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
           lastSyncTimestamp: state.lastSyncTimestamp,
         }),
 
-        // Migration strategy: Clean slate on version mismatch
+        // Migration strategy: V3→V4 preserves data, older versions clear
         migrate: (persistedState: any, version: number) => {
-          if (version !== 3) {
-            log.app('[SensorConfigStore] Migration: Clearing configs due to schema version change', () => ({
+          // V3→V4: Migrate single-metric sensors to unified metrics object
+          if (version === 3) {
+            log.app('[SensorConfigStore] Migration: V3→V4 unified metrics schema', () => ({
               storedVersion: version,
-              expectedVersion: 3,
-              reason: 'category→unitType refactor',
+              targetVersion: 4,
             }));
 
-            // Show user-friendly notification
+            const migratedConfigs: SensorConfigMap = {};
+            let migratedCount = 0;
+            let skippedCount = 0;
+
+            for (const [key, config] of Object.entries(persistedState.configs || {})) {
+              // Parse sensor type from key (format: "sensorType:instance")
+              const [sensorType] = key.split(':');
+              
+              try {
+                const schema = getSensorSchema(sensorType as SensorType);
+                const alarmFields = Object.entries(schema.fields)
+                  .filter(([_, field]) => 'alarm' in field && field.alarm !== undefined)
+                  .map(([fieldKey, _]) => fieldKey);
+
+                // Check if already V4 format (has metrics, no top-level thresholds)
+                if (config.metrics && !config.critical && !config.warning) {
+                  migratedConfigs[key] = config;
+                  skippedCount++;
+                  continue;
+                }
+
+                // Determine migration path
+                if (alarmFields.length === 1) {
+                  // Single-metric: Wrap top-level thresholds in metrics object
+                  const fieldName = alarmFields[0];
+                  migratedConfigs[key] = {
+                    name: config.name,
+                    context: config.context,
+                    metrics: {
+                      [fieldName]: {
+                        critical: config.critical,
+                        warning: config.warning,
+                        direction: config.direction || 'below',
+                        criticalSoundPattern: config.criticalSoundPattern,
+                        warningSoundPattern: config.warningSoundPattern,
+                        criticalHysteresis: config.criticalHysteresis,
+                        warningHysteresis: config.warningHysteresis,
+                        enabled: config.enabled ?? true,
+                      }
+                    },
+                    audioEnabled: config.audioEnabled,
+                    lastModified: config.lastModified,
+                    createdAt: config.createdAt,
+                    updatedAt: config.updatedAt,
+                  };
+                  migratedCount++;
+                } else {
+                  // Multi-metric: Already correct, just ensure no top-level fields
+                  migratedConfigs[key] = {
+                    name: config.name,
+                    context: config.context,
+                    metrics: config.metrics || {},
+                    audioEnabled: config.audioEnabled,
+                    lastModified: config.lastModified,
+                    createdAt: config.createdAt,
+                    updatedAt: config.updatedAt,
+                  };
+                  skippedCount++;
+                }
+              } catch (error) {
+                // Schema lookup failed - preserve as-is with empty metrics
+                log.app('[SensorConfigStore] Migration warning: Could not migrate config', () => ({
+                  key,
+                  error: error instanceof Error ? error.message : String(error),
+                }));
+                migratedConfigs[key] = {
+                  ...config,
+                  metrics: config.metrics || {},
+                };
+                skippedCount++;
+              }
+            }
+
+            log.app('[SensorConfigStore] Migration complete', () => ({
+              migratedCount,
+              skippedCount,
+              totalCount: Object.keys(migratedConfigs).length,
+            }));
+
+            if (migratedCount > 0) {
+              useToastStore.getState().addToast({
+                type: 'success',
+                message: `Upgraded ${migratedCount} sensor configuration${migratedCount > 1 ? 's' : ''}`,
+                duration: 5000,
+              });
+            }
+
+            return {
+              configs: migratedConfigs,
+              version: 4,
+              lastSyncTimestamp: persistedState.lastSyncTimestamp,
+            };
+          }
+
+          // V0-V2: Clean slate (too old, incompatible schema)
+          if (version < 3) {
+            log.app('[SensorConfigStore] Migration: Clearing configs due to old schema version', () => ({
+              storedVersion: version,
+              expectedVersion: 4,
+              reason: 'Schema too old, data incompatible',
+            }));
+
             useToastStore.getState().addToast({
               type: 'info',
               message:
@@ -336,10 +437,12 @@ export const useSensorConfigStore = create<SensorConfigStoreState>()(
 
             return {
               configs: {},
-              version: 3,
+              version: 4,
               lastSyncTimestamp: undefined,
             };
           }
+
+          // Unknown version (future version?)
           return persistedState;
         },
 

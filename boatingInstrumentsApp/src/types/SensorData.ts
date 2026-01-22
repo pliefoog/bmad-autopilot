@@ -47,12 +47,12 @@ export interface MetricThresholds {
 }
 
 /**
- * Persistent configuration for sensor instances
- * Includes user-assigned names, alarm thresholds, context, and settings
+ * Per-metric configuration
+ * Used in unified SensorConfiguration.metrics object
+ * 
+ * Schema V2 (Unified): All sensors use this structure in metrics object
  */
-export interface SensorConfiguration {
-  name?: string;
-  context?: string; // Generic context value (e.g., 'agm', 'diesel', 'fuel') - schema-driven
+export interface MetricConfiguration {
   critical?: number;
   warning?: number;
   direction?: 'above' | 'below';
@@ -61,17 +61,23 @@ export interface SensorConfiguration {
   criticalHysteresis?: number;
   warningHysteresis?: number;
   enabled: boolean;
-  metrics?: {
-    [metricKey: string]: {
-      critical?: number;
-      warning?: number;
-      direction?: 'above' | 'below';
-      criticalSoundPattern?: string;
-      warningSoundPattern?: string;
-      criticalHysteresis?: number;
-      warningHysteresis?: number;
-      enabled: boolean;
-    };
+}
+
+/**
+ * Persistent configuration for sensor instances
+ * Includes user-assigned names, alarm thresholds, context, and settings
+ * 
+ * Schema V2 (Unified - January 2026):
+ * - BREAKING CHANGE: All sensors use metrics object (no top-level thresholds)
+ * - Single-metric sensors (depth, speed): metrics.depth = { critical, warning, ... }
+ * - Multi-metric sensors (battery, engine): metrics.voltage, metrics.current, etc.
+ * - Migration from V1: Top-level fields moved into metrics[firstAlarmField]
+ */
+export interface SensorConfiguration {
+  name?: string;
+  context?: string; // Generic context value (e.g., 'agm', 'diesel', 'fuel') - schema-driven
+  metrics: {
+    [metricKey: string]: MetricConfiguration;
   };
   audioEnabled?: boolean;
   lastModified?: number;
