@@ -261,7 +261,7 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   );
 
   const handleValueChanged = (newLow: number, newHigh: number) => {
-    if (alarmConfig.direction === 'above') {
+    if (direction === 'above') {
       setWarningValue(newLow);
       setCriticalValue(newHigh);
       debouncedOnChange(newHigh, newLow);
@@ -273,14 +273,14 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   };
 
   // Slider low/high mapping based on direction
-  const low = alarmConfig.direction === 'above' ? warningValue : criticalValue;
-  const high = alarmConfig.direction === 'above' ? criticalValue : warningValue;
+  const low = direction === 'above' ? warningValue : criticalValue;
+  const high = direction === 'above' ? criticalValue : warningValue;
 
   // Render functions for custom slider UI
   const renderThumb = (name: 'low' | 'high') => {
     const isWarning =
-      (name === 'low' && alarmConfig.direction === 'above') ||
-      (name === 'high' && alarmConfig.direction === 'below');
+      (name === 'low' && direction === 'above') ||
+      (name === 'high' && direction === 'below');
     const thumbColor = isWarning ? theme.warning : theme.error;
     const thresholdLabel = isWarning ? 'Warning' : 'Critical';
     const thresholdValue = isWarning ? warningValue : criticalValue;
@@ -383,11 +383,11 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
     } else {
       const criticalPercent = Math.max(
         0,
-        Math.min(100, ((critical - alarmConfig.min) / range) * 100),
+        Math.min(100, ((critical - min) / range) * 100),
       );
-      const warningPercent = Math.max(
+      const criticalPercent = Math.max(
         0,
-        Math.min(100, ((warning - alarmConfig.min) / range) * 100),
+        Math.min(100, ((warning - min) / range) * 100),
       );
 
       return (
