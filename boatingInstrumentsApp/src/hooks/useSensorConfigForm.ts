@@ -317,9 +317,11 @@ export const useSensorConfigForm = (
   // Only watch context field if sensor has contextKey (battery, engine)
   // For non-context sensors (depth, speed), return undefined
   const contextKey = sensorConfig?.contextKey;
+  // Use a non-existent field name '__no_context__' for non-context sensors
+  // This ensures useWatch returns undefined without breaking React Hook rules
   const watchedContext = useWatch({
     control: form.control,
-    name: contextKey as any, // Watch sensor-specific field (e.g., 'chemistry', 'engineType')
+    name: (contextKey || '__no_context__') as any, // Watch sensor-specific field or dummy field
   });
 
   // Single enrichedThresholds source
