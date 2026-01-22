@@ -134,7 +134,7 @@ const ConfigFieldRendererComponent: React.FC<ConfigFieldRendererProps> = ({
         <View style={[styles.field, isReadOnly && styles.readOnlyField]}>
           <View style={styles.labelRow}>
             <Text style={[styles.label, { color: theme.text }]}>{field.label}</Text>
-            {isReadOnly && <UniversalIcon name="lock" size={14} color={theme.textSecondary} />}
+            {isReadOnly && <UniversalIcon name="lock-closed" size={14} color={theme.textSecondary} />}
           </View>
           <TextInput
             style={[
@@ -174,7 +174,7 @@ const ConfigFieldRendererComponent: React.FC<ConfigFieldRendererProps> = ({
                 </Text>
               ) : null}
             </Text>
-            {isReadOnly && <UniversalIcon name="lock" size={14} color={theme.textSecondary} />}
+            {isReadOnly && <UniversalIcon name="lock-closed" size={14} color={theme.textSecondary} />}
           </View>
           <TextInput
             style={[
