@@ -345,12 +345,12 @@ export const useSensorConfigForm = (
     const direction = getAlarmDirection(sensorType, metric).direction;
     const triggerHint = getAlarmTriggerHint(sensorType);
 
-    // Use context from form (reactive) or fallback to 'unknown'
+    // Use context from form (reactive) or undefined for non-context sensors
     // watchedContext contains the value of the field specified by schema.contextKey
     // e.g., for battery: 'agm', 'lifepo4', etc.
     // e.g., for engine: 'diesel', 'gasoline', 'outboard'
-    // Context is now always a string (e.g., 'agm', 'diesel')
-    const contextValue = typeof watchedContext === 'string' ? watchedContext : 'unknown';
+    // For non-context sensors (depth, speed): watchedContext is undefined
+    const contextValue = typeof watchedContext === 'string' ? watchedContext : undefined;
 
     // Get first alarm field for sensors without metric selection
     const fieldKey = metric || alarmFieldKeys[0];
@@ -361,8 +361,8 @@ export const useSensorConfigForm = (
     // Validate thresholdRange exists - no fallbacks allowed
     if (!defaults?.thresholdRange) {
       throw new Error(
-        `No thresholdRange found for ${sensorType} with context "${contextValue}". ` +
-        `This indicates missing "unknown" context in sensorSchemas.ts`
+        `No thresholdRange found for ${sensorType}.${fieldKey}${contextValue ? ` with context "${contextValue}"` : ''}. ` +
+        `Check sensorSchemas.ts for missing context or thresholdRange definition.`
       );
     }
 
