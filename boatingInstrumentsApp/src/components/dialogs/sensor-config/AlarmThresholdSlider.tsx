@@ -246,11 +246,47 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
       (name === 'low' && direction === 'above') ||
       (name === 'high' && direction === 'below');
     const thumbColor = isWarning ? theme.warning : theme.error;
+    const thresholdLabel = isWarning ? 'Warning' : 'Critical';
+    const thresholdValue = isWarning ? sliderState.warning : sliderState.critical;
+    const computedHint = isWarning ? warningHint : criticalHint;
     
     return (
-      <View style={[styles.thumb, { backgroundColor: thumbColor }]} />
+      <View>
+        {/* Label above thumb */}
+        <Text
+          style={[
+            styles.thumbLabel,
+            styles.thumbLabelTop,
+            { color: thumbColor },
+          ]}
+        >
+          {thresholdLabel}
+        </Text>
+
+        {/* Thumb circle */}
+        <View style={[styles.thumb, { backgroundColor: thumbColor }]} />
+
+        {/* Threshold value below thumb */}
+        <View style={styles.thumbValueContainer}>
+          <Text style={[styles.thumbLabel, styles.thumbLabelBottom, { color: thumbColor }]}>
+            {formatDisplayValue(thresholdValue)}
+          </Text>
+          {/* Show computed absolute value in ratio mode */}
+          {computedHint && (
+            <Text
+              style={[
+                styles.thumbLabel,
+                styles.thumbLabelComputed,
+                { color: theme.textSecondary },
+              ]}
+            >
+              → {computedHint}
+            </Text>
+          )}
+        </View>
+      </View>
     );
-  }, [direction, theme.warning, theme.error]);
+  }, [direction, theme.warning, theme.error, theme.textSecondary, sliderState.warning, sliderState.critical, warningHint, criticalHint, formatDisplayValue]);
   
   const renderRail = useCallback(() => {
     return <View style={[styles.rail, { backgroundColor: theme.border }]} />;
@@ -386,6 +422,33 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
+  },
+  thumbLabel: {
+    position: 'absolute',
+    left: -30,
+    right: -30,
+    textAlign: 'center',
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  thumbLabelTop: {
+    bottom: 28,
+  },
+  thumbLabelBottom: {
+    top: 28,
+  },
+  thumbValueContainer: {
+    position: 'absolute',
+    top: 28,
+    left: -40,
+    right: -40,
+    alignItems: 'center',
+  },
+  thumbLabelComputed: {
+    fontSize: 10,
+    fontWeight: '400',
+    marginTop: 2,
   },
   rail: {
     flex: 1,

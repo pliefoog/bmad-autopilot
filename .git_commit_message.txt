@@ -1,24 +1,34 @@
-fix(sensor-config): make slider rail span full width with flex: 1
+feat(sensor-config): add threshold value labels below slider thumbs
 
-Problem:
-- Slider rail only visible between thumbs (53.0 to 64.0)
-- Rail should extend full width from min (0.0) to max (100.0)
-- Visual issue: rail appeared truncated
+Enhancement:
+- Display threshold values directly below each thumb
+- Show label (Warning/Critical) above thumb
+- Display formatted value below thumb
+- Show formula hints (→ computed value) for ratio mode
 
-Root Cause:
-- rail style missing flex: 1 property
-- Without flex: 1, rail doesn't expand to fill available space
-- RangeSlider library requires rail to have proper dimensions
+Implementation:
+- Updated renderThumb to return View with 3 elements:
+  1. Label above thumb (Warning/Critical)
+  2. Thumb circle (colored dot)
+  3. Value container below thumb (formatted value + hint)
+  
+- Added styles for label positioning:
+  * thumbLabel: Base label style with absolute positioning
+  * thumbLabelTop: 28px below thumb (above circle)
+  * thumbLabelBottom: 28px above thumb (below circle)
+  * thumbValueContainer: Container for value + formula hint
+  * thumbLabelComputed: Smaller font for computed hints
 
-Solution:
-- Add flex: 1 to rail style
-- Ensures rail expands to full container width
-- Matches old implementation approach
+User Experience:
+- Easier to read threshold values while dragging
+- No need to look at top legend during adjustment
+- Formula hints show computed absolute values (ratio mode)
+- Color-coded labels match thumb colors (orange/red)
 
-Visual Result:
-- Rail now spans from 0.0 to 100.0 (full range)
-- Gray baseline visible across entire width
-- Blue selected section between thumbs
-- Proper end-to-end slider appearance
+Example:
+  Warning (above thumb)
+     🟠 (orange thumb)
+  8.2 ft (below thumb)
+  → 2.5 m (formula hint if ratio mode)
 
 Files: AlarmThresholdSlider.tsx
