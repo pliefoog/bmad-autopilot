@@ -1,30 +1,36 @@
-fix(sensor-config): use enriched threshold defaults for slider fallback values
+fix(sensor-config): restore proper visual styling for threshold slider
 
 Problem:
-- Slider thumbs not positioned at schema defaults
-- Both critical and warning fell back to min.value
-- Caused thumbs to overlap at minimum position (0 for depth)
-- Slider bar not rendering properly with identical values
+- No green/blue slider rail visible (full width)
+- Critical thumb not red (was blue)
+- Warning thumb not orange (was blue)
+- All thumbs used theme.primary (blue) color
 
 Root Cause:
-- Fallback logic: criticalValueWatched ?? min.value
-- Fallback logic: warningValueWatched ?? min.value
-- Both used same fallback (min) instead of schema defaults
+- renderThumb/renderRail/renderRailSelected were inline arrow functions
+- Didn't utilize RangeSlider's name parameter ('low'/'high')
+- Couldn't differentiate between warning and critical thumbs
+- Missing useCallback import
 
 Solution:
-- Use enrichedThresholds.display.critical?.value as first fallback
-- Use enrichedThresholds.display.warning?.value as first fallback
-- Only fall back to min/max if enriched defaults missing
-- Ensures slider initializes with proper schema defaults (2m/2.5m for depth)
+- Import useCallback from React
+- Create memoized render functions (renderThumb, renderRail, renderRailSelected)
+- Use name parameter in renderThumb to determine warning vs critical
+- Apply correct colors: theme.warning (orange), theme.error (red)
+- Fix spacing.section → spacing.lg (section doesn't exist in settingsTokens)
 
-Fallback Chain:
-1. Form value (user-saved or edited)
-2. Enriched schema default (from ThresholdPresentationService)
-3. Range boundary (min for critical, max for warning)
+Visual Result:
+- Warning thumb: Orange (theme.warning)
+- Critical thumb: Red (theme.error)
+- Rail (unselected): Gray (theme.border)
+- Rail (selected): Blue (theme.primary)
+- Full-width slider rail visible
+- Thumbs properly colored based on direction
 
-Impact:
-- Depth slider: Initializes at 6.6ft (critical) and 8.2ft (warning) defaults
-- Battery slider: Initializes at correct voltage defaults per chemistry
-- Slider bar renders full width with visible separation between thumbs
+Implementation:
+- renderThumb checks if thumb is 'low' or 'high'
+- For 'above' direction: low=warning, high=critical
+- For 'below' direction: low=critical, high=warning
+- Memoized with useCallback for performance
 
-Files: SensorConfigDialog.tsx
+Files: AlarmThresholdSlider.tsx

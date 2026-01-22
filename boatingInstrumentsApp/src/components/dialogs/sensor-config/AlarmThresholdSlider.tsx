@@ -19,7 +19,7 @@
  * - Formula hints via useMemo (React auto-caches)
  */
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, useWindowDimensions, Animated } from 'react-native';
 import RangeSlider from 'rn-range-slider';
 import { ThemeColors } from '../../../store/themeStore';
@@ -238,6 +238,28 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
     }
   };
   
+  // ========== RENDER FUNCTIONS ==========
+  
+  const renderThumb = useCallback((name: 'low' | 'high') => {
+    // Determine if this thumb is for warning or critical based on direction
+    const isWarning =
+      (name === 'low' && direction === 'above') ||
+      (name === 'high' && direction === 'below');
+    const thumbColor = isWarning ? theme.warning : theme.error;
+    
+    return (
+      <View style={[styles.thumb, { backgroundColor: thumbColor }]} />
+    );
+  }, [direction, theme.warning, theme.error]);
+  
+  const renderRail = useCallback(() => {
+    return <View style={[styles.rail, { backgroundColor: theme.border }]} />;
+  }, [theme.border]);
+  
+  const renderRailSelected = useCallback(() => {
+    return <View style={[styles.railSelected, { backgroundColor: theme.primary }]} />;
+  }, [theme.primary]);
+  
   // ========== RENDER ==========
   
   // Determine slider low/high based on direction
@@ -263,7 +285,7 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
         <AnimatedThresholdValue
           label="CRITICAL"
           value={formatDisplayValue(sliderState.critical)}
-          color={theme.critical}
+          color={theme.error}
           theme={theme}
         />
         {criticalHint && (
@@ -293,11 +315,9 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
           low={sliderLow}
           high={sliderHigh}
           floatingLabel={false}
-          renderThumb={() => <View style={[styles.thumb, { backgroundColor: theme.primary }]} />}
-          renderRail={() => <View style={[styles.rail, { backgroundColor: theme.border }]} />}
-          renderRailSelected={() => (
-            <View style={[styles.railSelected, { backgroundColor: theme.primary }]} />
-          )}
+          renderThumb={renderThumb}
+          renderRail={renderRail}
+          renderRailSelected={renderRailSelected}
           onValueChanged={handleValueChanged}
         />
       </View>
@@ -320,16 +340,16 @@ export default AlarmThresholdSlider;
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: settingsTokens.spacing.section,
+    paddingVertical: settingsTokens.spacing.lg,
   },
   legend: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: settingsTokens.spacing.section,
+    marginBottom: settingsTokens.spacing.lg,
   },
   legendMobile: {
     flexDirection: 'column',
-    gap: settingsTokens.spacing.section,
+    gap: settingsTokens.spacing.lg,
   },
   legendLabel: {
     fontSize: 11,
