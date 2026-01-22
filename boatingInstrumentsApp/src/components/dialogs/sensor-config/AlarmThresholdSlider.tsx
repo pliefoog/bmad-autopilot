@@ -16,11 +16,10 @@
  * - Returns SI values directly (ratios for indirect, SI for direct)
  */
 
-import React, { useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useMemo, useRef, useEffect, useCallback, useState } from 'react';
 import { View, Text, StyleSheet, useWindowDimensions, Animated } from 'react-native';
 import RangeSlider from 'rn-range-slider';
 import { useDebouncedCallback } from 'use-debounce';
-import { ErrorBoundary } from 'react-error-boundary';
 import { ThemeColors } from '../../../store/themeStore';
 import { SensorType } from '../../../types/SensorData';
 import { useSensorConfigStore } from '../../../store/sensorConfigStore';
@@ -88,7 +87,6 @@ const AnimatedThresholdValue: React.FC<AnimatedThresholdValueProps> = ({
  */
 interface ErrorFallbackProps {
   error: Error;
-  resetErrorBoundary: () => void;
 }
 
 const ErrorFallback: React.FC<ErrorFallbackProps> = ({ error }) => (
@@ -208,8 +206,8 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   const defaultCritical = direction === 'above' ? min + (max - min) * 0.5 : max - (max - min) * 0.5;
 
   // Local state for slider
-  const [warningValue, setWarningValue] = React.useState<number>(currentWarning ?? defaultWarning);
-  const [criticalValue, setCriticalValue] = React.useState<number>(currentCritical ?? defaultCritical);
+  const [warningValue, setWarningValue] = useState<number>(currentWarning ?? defaultWarning);
+  const [criticalValue, setCriticalValue] = useState<number>(currentCritical ?? defaultCritical);
 
   // Sync state when saved config changes
   useEffect(() => {
@@ -265,20 +263,23 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   const warningHint = isRatioMode ? evaluateFormula(warningValue) : null;
   const criticalHint = isRatioMode ? evaluateFormula(criticalValue) : null;
 
-  // Format displayed values (schema-driven)
-  const formatDisplayValue = (value: number): string => {
-    if (isRatioMode) {
-      // Ratio mode: format with unit and space (e.g., "0.95 C-rate")
-      // Get unit from first context's indirectThresholdUnit
-      const firstContext = Object.keys(fieldDef.alarm?.contexts || {})[0];
-      const contextDef = firstContext ? fieldDef.alarm?.contexts[firstContext] : null;
-      const unitWithSpace = contextDef?.critical?.indirectThresholdUnit || '';
-      return `${value.toFixed(2)} ${unitWithSpace}`;
-    } else {
-      // Direct mode: use presentation formatting
-      return presentation.format(value);
-    }
-  };
+  // Format displayed values (schema-driven, memoized)
+  const formatDisplayValue = useCallback(
+    (value: number): string => {
+      if (isRatioMode) {
+        // Ratio mode: format with unit and space (e.g., "0.95 C-rate")
+        // Get unit from first context's indirectThresholdUnit
+        const firstContext = Object.keys(fieldDef.alarm?.contexts || {})[0];
+        const contextDef = firstContext ? fieldDef.alarm?.contexts[firstContext] : null;
+        const unitWithSpace = contextDef?.critical?.indirectThresholdUnit || '';
+        return `${value.toFixed(2)} ${unitWithSpace}`;
+      } else {
+        // Direct mode: use presentation formatting
+        return presentation.format(value);
+      }
+    },
+    [isRatioMode, fieldDef.alarm?.contexts, presentation]
+  );
 
   // Get unit symbol - for ratio mode, extract from first context's indirectThresholdUnit
   const unitSymbol = useMemo(() => {
