@@ -665,6 +665,7 @@ export const useSensorConfigForm = (
     },
     computed: {
       alarmConfig,
+      enrichedThresholds,
       criticalSliderRange,
       warningSliderRange,
       unitSymbol,

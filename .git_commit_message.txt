@@ -1,20 +1,34 @@
-fix: slider presentation for single-metric sensors (depth)
+fix(sensor-config): use display units for slider min/max to match threshold values
 
-Problem: Slider didn't render for depth sensor because sliderPresentation was null
+Problem:
+- Slider was broken for both depth and battery sensors
+- min/max were in SI units (meters for depth)
+- currentCritical/currentWarning were in display units (feet for depth)
+- Unit mismatch caused incorrect slider positioning
 
 Root Cause:
-- Depth is single-metric sensor (requiresMetricSelection = false)
-- watchedMetric is undefined for single-metric sensors
-- sliderPresentation only checked watchedMetric
-- alarmConfig correctly used: metric || alarmFieldKeys[0]
+- alarmConfig.min/max from thresholdRange (SI units)
+- criticalValueWatched/warningValueWatched from enriched.display (display units)
+- Slider expected all values in same unit system
 
 Solution:
-- Use same logic in all computed values
-- metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0]
-- Applied to: sliderPresentation, alarmFormula, ratioUnit
-- Now consistent with alarmConfig logic
+- Use enrichedThresholds.display.min.value/max.value (display units)
+- All slider values now in user's selected units (feet/meters/etc.)
+- Ensures consistent unit system for slider range and handles
 
-Files:
-- useSensorConfigForm.ts: Fixed sliderPresentation, alarmFormula, ratioUnit logic
+Changes:
+- SensorConfigDialog.tsx: Use enrichedThresholds.display min/max
+- useSensorConfigForm.ts: Export enrichedThresholds in computed
 
-Result: Slider now renders for both single-metric (depth) and multi-metric (battery) sensors
+Impact:
+- Depth slider: Now uses feet (if selected) for all values
+- Battery slider: Now uses correct voltage units for all values
+- Both sliders display and function correctly
+
+Testing:
+- Verify depth slider shows correct range (0-100ft or 0-30m)
+- Verify battery slider shows correct range (10-15V)
+- Verify dragging handles updates values correctly
+- Verify form saves use correct SI conversion
+
+Files: SensorConfigDialog.tsx, useSensorConfigForm.ts

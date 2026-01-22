@@ -423,15 +423,15 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                 ) : null}
 
                 {/* Threshold Slider - Dumb component with validated props */}
-                {computed.alarmConfig && selectedMetricValue && computed.sliderPresentation && (
+                {computed.alarmConfig && computed.sliderPresentation && computed.enrichedThresholds && (!computed.requiresMetricSelection || selectedMetricValue) && (
                   <View style={styles.sliderSection}>
                     <Text style={styles.groupLabel}>Threshold values</Text>
                     <AlarmThresholdSlider
-                      min={computed.alarmConfig.min}
-                      max={computed.alarmConfig.max}
+                      min={computed.enrichedThresholds.display.min.value}
+                      max={computed.enrichedThresholds.display.max.value}
                       direction={computed.alarmConfig.direction}
-                      currentCritical={criticalValueWatched ?? computed.alarmConfig.min}
-                      currentWarning={warningValueWatched ?? computed.alarmConfig.min}
+                      currentCritical={criticalValueWatched ?? computed.enrichedThresholds.display.min.value}
+                      currentWarning={warningValueWatched ?? computed.enrichedThresholds.display.min.value}
                       presentation={computed.sliderPresentation}
                       formula={computed.alarmFormula}
                       sensorMetrics={computed.sensorMetrics}
