@@ -123,7 +123,7 @@ export function getContextKey(sensorType: SensorType): string | undefined {
 export function getAlarmDefaults(
   sensorType: SensorType,
   fieldKey: string,
-  contextValue: string
+  contextValue: string | undefined
 ): ContextAlarmDefinition | undefined {
   const schema = SENSOR_SCHEMAS[sensorType];
   const field = schema.fields[fieldKey as keyof typeof schema.fields];
@@ -132,7 +132,10 @@ export function getAlarmDefaults(
     return undefined;
   }
   
-  return field.alarm.contexts[contextValue as keyof typeof field.alarm.contexts] as ContextAlarmDefinition | undefined;
+  // For non-context sensors (depth, speed), use first context key as default
+  const effectiveContext = contextValue ?? Object.keys(field.alarm.contexts)[0];
+  
+  return field.alarm.contexts[effectiveContext as keyof typeof field.alarm.contexts] as ContextAlarmDefinition | undefined;
 }
 
 /**

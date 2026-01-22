@@ -16,7 +16,7 @@
  * - Returns SI values directly (ratios for indirect, SI for direct)
  */
 
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, useWindowDimensions, Animated } from 'react-native';
 import RangeSlider from 'rn-range-slider';
 import { useDebouncedCallback } from 'use-debounce';
@@ -36,7 +36,7 @@ export interface AlarmThresholdSliderProps {
   sensorType: SensorType;
   instance: number;
   metric: string;
-  onThresholdsChange: (critical: number | undefined, warning: number | undefined) => void;
+  onThresholdsChange: (critical: number, warning: number) => void; // Always numbers, never undefined
   theme: ThemeColors;
 }
 
@@ -65,12 +65,12 @@ const AnimatedThresholdValue: React.FC<AnimatedThresholdValueProps> = ({
       Animated.timing(opacityAnim, {
         toValue: 0.6,
         duration: 100,
-        useNativeDriver: false,
+        useNativeDriver: true, // Use native driver for better performance
       }),
       Animated.timing(opacityAnim, {
         toValue: 1,
         duration: 300,
-        useNativeDriver: false,
+        useNativeDriver: true, // Use native driver for better performance
       }),
     ]).start();
   }, [value, opacityAnim]);
@@ -82,12 +82,6 @@ const AnimatedThresholdValue: React.FC<AnimatedThresholdValueProps> = ({
     </Animated.View>
   );
 };
-
-/**
- * Formula cache for computed threshold hints
- * Key: sensorType-instance-metric-context-ratioValue
- */
-const formulaCache = new Map<string, string>();
 
 /**
  * Error Fallback Component
@@ -113,22 +107,33 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   const { width } = useWindowDimensions();
   const isMobile = width < MOBILE_BREAKPOINT;
 
-  // Fetch schema and saved config
-  const schema = useMemo(() => {
+  // Fetch schema and saved config - wrap in try-catch for error handling
+  let schema, fieldDef, alarmDefaults, presentation;
+  try {
     const s = getSensorSchema(sensorType);
     if (!s) {
       throw new Error(`Schema not found for sensor type: ${sensorType}`);
     }
-    return s;
-  }, [sensorType]);
+    schema = s;
 
-  const fieldDef = useMemo(() => {
     const field = schema.fields[metric];
     if (!field) {
       throw new Error(`Field ${metric} not found in ${sensorType} schema`);
     }
-    return field;
-  }, [schema, metric]);
+    fieldDef = field;
+
+    if (!fieldDef.alarm) {
+      throw new Error(`No alarm configuration for ${sensorType}.${metric}`);
+    }
+  } catch (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          Threshold slider error: {error instanceof Error ? error.message : String(error)}
+        </Text>
+      </View>
+    );
+  }
 
   const savedConfig = useSensorConfigStore((state) => state.getConfig(sensorType, instance));
   const sensorInstance = useNmeaStore((state) => state.nmeaData?.sensors?.[sensorType]?.[instance]);
@@ -136,12 +141,8 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   // Get context for schema defaults lookup
   const context = typeof savedConfig?.context === 'string' ? savedConfig.context : undefined;
 
-  // Get alarm defaults from schema (schema-driven, no fallbacks)
-  const alarmDefaults = useMemo(() => {
-    if (!fieldDef.alarm) {
-      throw new Error(`No alarm configuration for ${sensorType}.${metric}`);
-    }
-
+  // Get alarm defaults and presentation - continue validation
+  try {
     // Get defaults with context (or undefined for simple sensors)
     const defaults = getAlarmDefaults(sensorType, metric, context);
     if (!defaults) {
@@ -149,12 +150,9 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
         `No alarm defaults found for ${sensorType}.${metric}${context ? ` with context "${context}"` : ''}`
       );
     }
+    alarmDefaults = defaults;
 
-    return defaults;
-  }, [sensorType, metric, context, fieldDef]);
-
-  // Get presentation for unit conversion/formatting (schema-driven via unitType)
-  const presentation = useMemo(() => {
+    // Get presentation for unit conversion/formatting (schema-driven via unitType)
     const category = fieldDef.unitType;
     if (!category) {
       throw new Error(`No unitType defined for ${sensorType}.${metric}`);
@@ -165,15 +163,38 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
     if (!pres) {
       throw new Error(`No presentation found for category "${category}"`);
     }
-
-    return pres;
-  }, [fieldDef.unitType, sensorType, metric]);
+    presentation = pres;
+  } catch (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>
+          Threshold slider error: {error instanceof Error ? error.message : String(error)}
+        </Text>
+      </View>
+    );
+  }
 
   // Detect ratio mode (indirect thresholds)
   const isRatioMode = !!fieldDef.alarm?.formula;
 
-  // Get min/max/step from schema thresholdRange
-  const { min, max, step } = alarmDefaults.thresholdRange;
+  // Component-scoped formula cache to prevent memory leaks
+  const formulaCache = useRef(new Map<string, string>()).current;
+
+  // Cleanup cache on unmount
+  useEffect(() => {
+    return () => {
+      formulaCache.clear();
+    };
+  }, [formulaCache]);
+
+  // Clear cache when context changes
+  useEffect(() => {
+    formulaCache.clear();
+  }, [sensorType, instance, metric, context, formulaCache]);
+
+  // Get min/max from schema thresholdRange, compute step
+  const { min, max } = alarmDefaults.thresholdRange;
+  const step = (max - min) / 100; // Compute granular step (1% of range)
 
   // Get alarm direction from schema
   const direction = alarmDefaults.direction;
@@ -182,13 +203,13 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   const currentCritical = savedConfig?.metrics?.[metric]?.critical ?? savedConfig?.critical;
   const currentWarning = savedConfig?.metrics?.[metric]?.warning ?? savedConfig?.warning;
 
-  // Local state for slider (initialized from saved config or schema defaults)
-  const [warningValue, setWarningValue] = React.useState<number>(
-    currentWarning ?? (direction === 'above' ? min + (max - min) * 0.3 : max - (max - min) * 0.3),
-  );
-  const [criticalValue, setCriticalValue] = React.useState<number>(
-    currentCritical ?? (direction === 'above' ? min + (max - min) * 0.5 : max - (max - min) * 0.5),
-  );
+  // Calculate default values
+  const defaultWarning = direction === 'above' ? min + (max - min) * 0.3 : max - (max - min) * 0.3;
+  const defaultCritical = direction === 'above' ? min + (max - min) * 0.5 : max - (max - min) * 0.5;
+
+  // Local state for slider
+  const [warningValue, setWarningValue] = React.useState<number>(currentWarning ?? defaultWarning);
+  const [criticalValue, setCriticalValue] = React.useState<number>(currentCritical ?? defaultCritical);
 
   // Sync state when saved config changes
   useEffect(() => {
@@ -202,6 +223,12 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
       if (!isRatioMode || !fieldDef.alarm?.formula || !sensorInstance) return null;
 
       const cacheKey = `${sensorType}-${instance}-${metric}-${context ?? 'none'}-${ratioValue.toFixed(3)}`;
+      
+      // Check cache size and clear if too large (prevent unbounded growth)
+      if (formulaCache.size > 100) {
+        formulaCache.clear();
+      }
+      
       const cached = formulaCache.get(cacheKey);
       if (cached) return cached;
 
@@ -242,7 +269,10 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   const formatDisplayValue = (value: number): string => {
     if (isRatioMode) {
       // Ratio mode: format with unit and space (e.g., "0.95 C-rate")
-      const unitWithSpace = fieldDef.alarm?.ratioUnit || '';
+      // Get unit from first context's indirectThresholdUnit
+      const firstContext = Object.keys(fieldDef.alarm?.contexts || {})[0];
+      const contextDef = firstContext ? fieldDef.alarm?.contexts[firstContext] : null;
+      const unitWithSpace = contextDef?.critical?.indirectThresholdUnit || '';
       return `${value.toFixed(2)} ${unitWithSpace}`;
     } else {
       // Direct mode: use presentation formatting
@@ -250,7 +280,15 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
     }
   };
 
-  const unitSymbol = isRatioMode ? (fieldDef.alarm?.ratioUnit || '') : presentation.unitSymbol;
+  // Get unit symbol - for ratio mode, extract from first context's indirectThresholdUnit
+  const unitSymbol = useMemo(() => {
+    if (isRatioMode) {
+      const firstContext = Object.keys(fieldDef.alarm?.contexts || {})[0];
+      const contextDef = firstContext ? fieldDef.alarm?.contexts[firstContext] : null;
+      return contextDef?.critical?.indirectThresholdUnit || '';
+    }
+    return presentation.unitSymbol;
+  }, [isRatioMode, fieldDef.alarm?.contexts, presentation.unitSymbol]);
 
   // Handle slider changes with debounced callback propagation
   const debouncedOnChange = useDebouncedCallback(
@@ -261,35 +299,64 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   );
 
   const handleValueChanged = (newLow: number, newHigh: number) => {
+    // Prevent invalid threshold crossing
     if (direction === 'above') {
+      if (newHigh <= newLow) return; // Critical must be above warning in 'above' mode
       setWarningValue(newLow);
       setCriticalValue(newHigh);
       debouncedOnChange(newHigh, newLow);
     } else {
+      if (newLow >= newHigh) return; // Critical must be below warning in 'below' mode
       setCriticalValue(newLow);
       setWarningValue(newHigh);
       debouncedOnChange(newLow, newHigh);
     }
   };
 
-  // Slider low/high mapping based on direction
-  const low = direction === 'above' ? warningValue : criticalValue;
-  const high = direction === 'above' ? criticalValue : warningValue;
+  // Slider low/high mapping based on direction (memoized)
+  const { low, high } = useMemo(
+    () => ({
+      low: direction === 'above' ? warningValue : criticalValue,
+      high: direction === 'above' ? criticalValue : warningValue,
+    }),
+    [direction, warningValue, criticalValue]
+  );
 
-  // Render functions for custom slider UI
-  const renderThumb = (name: 'low' | 'high') => {
-    const isWarning =
-      (name === 'low' && direction === 'above') ||
-      (name === 'high' && direction === 'below');
-    const thumbColor = isWarning ? theme.warning : theme.error;
-    const thresholdLabel = isWarning ? 'Warning' : 'Critical';
-    const thresholdValue = isWarning ? warningValue : criticalValue;
-    const computedHint = isWarning ? warningHint : criticalHint;
+  // Calculate thumb distance for overlap detection
+  const range = max - min;
+  const thumbDistance = range > 0 ? Math.abs(high - low) / range : 0;
+  const thumbsAreTooClose = thumbDistance < 0.2; // Less than 20% of range apart
+
+  // Render functions for custom slider UI (memoized)
+  const renderThumb = useCallback(
+    (name: 'low' | 'high') => {
+      const isWarning =
+        (name === 'low' && direction === 'above') ||
+        (name === 'high' && direction === 'below');
+      const thumbColor = isWarning ? theme.warning : theme.error;
+      const thresholdLabel = isWarning ? 'Warning' : 'Critical';
+      const thresholdValue = isWarning ? warningValue : criticalValue;
+      const computedHint = isWarning ? warningHint : criticalHint;
+
+      // Adjust label positioning when thumbs are close together
+      const labelFontSize = isMobile ? 11 : 12;
+      const labelOffset = thumbsAreTooClose ? (isWarning ? -45 : -20) : -30;
 
     return (
       <View>
         {/* Label above thumb */}
-        <Text style={[styles.thumbLabel, styles.thumbLabelTop, { color: thumbColor }]}>
+        <Text
+          style={[
+            styles.thumbLabel,
+            styles.thumbLabelTop,
+            {
+              color: thumbColor,
+              fontSize: labelFontSize,
+              left: labelOffset,
+              right: -labelOffset,
+            },
+          ]}
+        >
           {thresholdLabel}
         </Text>
 
@@ -324,10 +391,24 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
         </View>
       </View>
     );
-  };
+  },
+  [direction, theme, warningValue, criticalValue, warningHint, criticalHint, isMobile, thumbsAreTooClose, formatDisplayValue]
+);
 
-  const renderRail = () => {
+  const renderRail = useCallback(() => {
     const range = max - min;
+    
+    // Guard against invalid range
+    if (range <= 0) {
+      return (
+        <View style={styles.railContainer}>
+          <Text style={{ color: theme.error, fontSize: 12, textAlign: 'center' }}>
+            Invalid threshold range
+          </Text>
+        </View>
+      );
+    }
+    
     const warning = warningValue;
     const critical = criticalValue;
 
@@ -385,7 +466,7 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
         0,
         Math.min(100, ((critical - min) / range) * 100),
       );
-      const criticalPercent = Math.max(
+      const warningPercent = Math.max(
         0,
         Math.min(100, ((warning - min) / range) * 100),
       );
@@ -430,9 +511,12 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
         </View>
       );
     }
-  };
+  }, [max, min, theme, direction, warningValue, criticalValue]);
 
-  const renderRailSelected = () => <View style={styles.railSelectedTransparent} />;
+  const renderRailSelected = useCallback(
+    () => <View style={styles.railSelectedTransparent} />,
+    []
+  );
 
   // Responsive spacing tokens
   const hintSpacing = isMobile
@@ -505,31 +589,22 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
         />
       </View>
 
-      {/* Trigger hint */}
-      {alarmDefaults.triggerHint && (
-        <Text
-          style={[
-            styles.helpText,
-            { color: theme.textSecondary, marginTop: hintSpacing },
-          ]}
-        >
-          {alarmDefaults.triggerHint}
-        </Text>
-      )}
+      {/* Trigger hint - generated from direction */}
+      <Text
+        style={[
+          styles.helpText,
+          { color: theme.textSecondary, marginTop: hintSpacing },
+        ]}
+      >
+        {direction === 'above'
+          ? 'Alarms when value exceeds threshold'
+          : direction === 'below'
+          ? 'Alarms when value drops below threshold'
+          : 'Alarms when value crosses threshold'}
+      </Text>
     </View>
   );
 };
-
-/**
- * Wrapped component with ErrorBoundary
- */
-export const AlarmThresholdSliderWithErrorBoundary: React.FC<AlarmThresholdSliderProps> = (
-  props,
-) => (
-  <ErrorBoundary FallbackComponent={ErrorFallback}>
-    <AlarmThresholdSlider {...props} />
-  </ErrorBoundary>
-);
 
 const styles = StyleSheet.create({
   // Error fallback
