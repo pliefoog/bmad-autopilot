@@ -408,32 +408,25 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
             {enabledValue && (
               <View style={styles.settingGroup}>
-                {/* Metric Display/Selector */}
-                {computed.requiresMetricSelection && alarmMetrics.length > 0 ? (
+                {/* ✅ UNIFIED: Always show MetricSelector (interactive even for single-metric) */}
+                {alarmMetrics.length > 0 && (
                   <>
-                    <Text style={styles.groupLabel}>Alarm metric</Text>
+                    <Text style={styles.groupLabel}>
+                      {alarmMetrics.length > 1 ? 'Alarm metric' : 'Metric'}
+                    </Text>
                     <MetricSelector
                       alarmMetrics={alarmMetrics}
                       selectedMetric={selectedMetricValue ?? ''}
                       onMetricChange={(metric) => handlers.handleMetricChange(metric)}
                       theme={theme}
                     />
-                  </>
-                ) : computed.metricLabel ? (
-                  <>
-                    <Text style={styles.groupLabel}>Metric</Text>
-                    <View style={[styles.metricDisplay, { backgroundColor: theme.surface }]}>
-                      <Text style={[styles.metricDisplayLabel, { color: theme.text }]}>
-                        {computed.metricLabel}
+                    {currentMetricValue && (
+                      <Text style={[styles.metricDisplayValue, { color: theme.primary, marginTop: 8 }]}>
+                        Current: {currentMetricValue}
                       </Text>
-                      {currentMetricValue && (
-                        <Text style={[styles.metricDisplayValue, { color: theme.primary }]}>
-                          {currentMetricValue}
-                        </Text>
-                      )}
-                    </View>
+                    )}
                   </>
-                ) : null}
+                )}
 
                 {/* Threshold Slider - Dumb component with validated props */}
                 {/* ✅ UNIFIED: Slider always rendered when config available (no requiresMetricSelection check) */}
