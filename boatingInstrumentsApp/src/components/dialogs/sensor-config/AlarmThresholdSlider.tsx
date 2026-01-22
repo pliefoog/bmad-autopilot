@@ -302,6 +302,12 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
     evaluateAndUpdateHints(warningValue, criticalValue);
   }, [warningValue, criticalValue, isRatioMode, evaluateAndUpdateHints]);
 
+  // Get format function safely (handles optional format property)
+  const formatFn = useMemo(
+    () => ensureFormatFunction(presentation),
+    [presentation]
+  );
+
   // Format displayed values (schema-driven, memoized)
   const formatDisplayValue = useCallback(
     (value: number): string => {
@@ -318,12 +324,6 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
       }
     },
     [isRatioMode, fieldDef.alarm?.contexts, formatFn]
-  );
-
-  // Get format function safely (handles optional format property)
-  const formatFn = useMemo(
-    () => ensureFormatFunction(presentation),
-    [presentation]
   );
 
   // Get unit symbol - for ratio mode, extract from first context's indirectThresholdUnit
