@@ -208,6 +208,10 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   // Local state for slider
   const [warningValue, setWarningValue] = useState<number>(currentWarning ?? defaultWarning);
   const [criticalValue, setCriticalValue] = useState<number>(currentCritical ?? defaultCritical);
+  
+  // State for formula hints (ratio mode)
+  const [warningHint, setWarningHint] = useState<string | null>(null);
+  const [criticalHint, setCriticalHint] = useState<string | null>(null);
 
   // Sync state when saved config changes
   useEffect(() => {
@@ -215,53 +219,87 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
     if (currentCritical !== undefined) setCriticalValue(currentCritical);
   }, [currentWarning, currentCritical]);
 
-  // Debounced formula evaluation for live updates
-  const evaluateFormula = useDebouncedCallback(
-    (ratioValue: number): string | null => {
-      if (!isRatioMode || !fieldDef.alarm?.formula || !sensorInstance) return null;
+  // Debounced formula evaluation for live updates (side-effect pattern)
+  const evaluateAndUpdateHints = useDebouncedCallback(
+    (warningVal: number, criticalVal: number) => {
+      if (!isRatioMode || !fieldDef.alarm?.formula || !sensorInstance) {
+        setWarningHint(null);
+        setCriticalHint(null);
+        return;
+      }
 
-      const cacheKey = `${sensorType}-${instance}-${metric}-${context ?? 'none'}-${ratioValue.toFixed(3)}`;
-      
       // Check cache size and clear if too large (prevent unbounded growth)
       if (formulaCache.size > 100) {
         formulaCache.clear();
       }
+
+      // Evaluate warning hint
+      const warningCacheKey = `${sensorType}-${instance}-${metric}-${context ?? 'none'}-${warningVal.toFixed(3)}`;
+      let warningResult = formulaCache.get(warningCacheKey);
       
-      const cached = formulaCache.get(cacheKey);
-      if (cached) return cached;
+      if (!warningResult) {
+        try {
+          const metrics = sensorInstance.getAllMetrics();
+          const computedValue = evaluateThresholdFormula(
+            fieldDef.alarm.formula,
+            metrics,
+            warningVal,
+          );
 
-      try {
-        const metrics = sensorInstance.getAllMetrics();
-        const computedValue = evaluateThresholdFormula(
-          fieldDef.alarm.formula,
-          metrics,
-          ratioValue,
-        );
-
-        if (computedValue !== null) {
-          // Format computed value with proper units using presentation
-          const formatted = `${presentation.format(computedValue)} ${presentation.unitSymbol}`;
-          formulaCache.set(cacheKey, formatted);
-          return formatted;
+          if (computedValue !== null) {
+            warningResult = `${presentation.format(computedValue)} ${presentation.unitSymbol}`;
+            formulaCache.set(warningCacheKey, warningResult);
+          }
+        } catch (error) {
+          log.app('[AlarmThresholdSlider] Warning formula evaluation failed', () => ({
+            sensorType,
+            metric,
+            formula: fieldDef.alarm?.formula,
+            ratioValue: warningVal,
+            error: error instanceof Error ? error.message : String(error),
+          }));
         }
-      } catch (error) {
-        log.app('[AlarmThresholdSlider] Formula evaluation failed', () => ({
-          sensorType,
-          metric,
-          formula: fieldDef.alarm?.formula,
-          ratioValue,
-          error: error instanceof Error ? error.message : String(error),
-        }));
       }
 
-      return null;
+      // Evaluate critical hint
+      const criticalCacheKey = `${sensorType}-${instance}-${metric}-${context ?? 'none'}-${criticalVal.toFixed(3)}`;
+      let criticalResult = formulaCache.get(criticalCacheKey);
+      
+      if (!criticalResult) {
+        try {
+          const metrics = sensorInstance.getAllMetrics();
+          const computedValue = evaluateThresholdFormula(
+            fieldDef.alarm.formula,
+            metrics,
+            criticalVal,
+          );
+
+          if (computedValue !== null) {
+            criticalResult = `${presentation.format(computedValue)} ${presentation.unitSymbol}`;
+            formulaCache.set(criticalCacheKey, criticalResult);
+          }
+        } catch (error) {
+          log.app('[AlarmThresholdSlider] Critical formula evaluation failed', () => ({
+            sensorType,
+            metric,
+            formula: fieldDef.alarm?.formula,
+            ratioValue: criticalVal,
+            error: error instanceof Error ? error.message : String(error),
+          }));
+        }
+      }
+
+      // Update state with results
+      setWarningHint(warningResult || null);
+      setCriticalHint(criticalResult || null);
     },
     150, // 150ms debounce
   );
 
-  // Compute live hints for ratio mode
-  const warningHint = isRatioMode ? evaluateFormula(warningValue) : null;
-  const criticalHint = isRatioMode ? evaluateFormula(criticalValue) : null;
+  // Trigger hint evaluation when values change
+  useEffect(() => {
+    evaluateAndUpdateHints(warningValue, criticalValue);
+  }, [warningValue, criticalValue, isRatioMode, evaluateAndUpdateHints]);
 
   // Format displayed values (schema-driven, memoized)
   const formatDisplayValue = useCallback(
