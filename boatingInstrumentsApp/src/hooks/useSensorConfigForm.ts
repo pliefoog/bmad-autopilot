@@ -313,9 +313,13 @@ export const useSensorConfigForm = (
     control: form.control,
     name: 'warningValue',
   });
+  
+  // Only watch context field if sensor has contextKey (battery, engine)
+  // For non-context sensors (depth, speed), return undefined
+  const contextKey = sensorConfig?.contextKey;
   const watchedContext = useWatch({
     control: form.control,
-    name: 'context',
+    name: contextKey as any, // Watch sensor-specific field (e.g., 'chemistry', 'engineType')
   });
 
   // Single enrichedThresholds source
