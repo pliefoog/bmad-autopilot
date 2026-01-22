@@ -103,10 +103,21 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   onThresholdsChange,
   theme,
 }) => {
+  // ========== ALL HOOKS FIRST (React Rules of Hooks) ==========
   const { width } = useWindowDimensions();
   const isMobile = width < MOBILE_BREAKPOINT;
+  
+  const savedConfig = useSensorConfigStore((state) => state.getConfig(sensorType, instance));
+  const sensorInstance = useNmeaStore((state) => state.nmeaData?.sensors?.[sensorType]?.[instance]);
+  
+  // Component-scoped formula cache (must be before any early returns)
+  const formulaCache = useRef(new Map<string, string>()).current;
 
-  // Fetch schema and saved config - wrap in try-catch for error handling
+  // ========== VALIDATION & DATA FETCHING (after all hooks) ==========
+  // Get context for schema defaults lookup
+  const context = typeof savedConfig?.context === 'string' ? savedConfig.context : undefined;
+
+  // Fetch schema and validate
   let schema, fieldDef, alarmDefaults, presentation;
   try {
     const s = getSensorSchema(sensorType);
@@ -124,24 +135,7 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
     if (!fieldDef.alarm) {
       throw new Error(`No alarm configuration for ${sensorType}.${metric}`);
     }
-  } catch (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>
-          Threshold slider error: {error instanceof Error ? error.message : String(error)}
-        </Text>
-      </View>
-    );
-  }
 
-  const savedConfig = useSensorConfigStore((state) => state.getConfig(sensorType, instance));
-  const sensorInstance = useNmeaStore((state) => state.nmeaData?.sensors?.[sensorType]?.[instance]);
-
-  // Get context for schema defaults lookup
-  const context = typeof savedConfig?.context === 'string' ? savedConfig.context : undefined;
-
-  // Get alarm defaults and presentation - continue validation
-  try {
     // Get defaults with context (or undefined for simple sensors)
     const defaults = getAlarmDefaults(sensorType, metric, context);
     if (!defaults) {
@@ -164,6 +158,7 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
     }
     presentation = pres;
   } catch (error) {
+    // Early return OK here - all hooks already called above
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>
