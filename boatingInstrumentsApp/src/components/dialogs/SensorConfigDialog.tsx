@@ -251,6 +251,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   const selectedMetricValue = useWatch({ control: form.control, name: 'selectedMetric' });
   const criticalPatternValue = useWatch({ control: form.control, name: 'criticalSoundPattern' });
   const warningPatternValue = useWatch({ control: form.control, name: 'warningSoundPattern' });
+  const criticalValueWatched = useWatch({ control: form.control, name: 'criticalValue' });
+  const warningValueWatched = useWatch({ control: form.control, name: 'warningValue' });
 
   // Track unsaved changes for UI feedback
   const hasUnsavedChanges = form.formState.isDirty && !form.formState.isSubmitting;
@@ -420,14 +422,20 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                   </>
                 ) : null}
 
-                {/* Threshold Slider - Self-contained with minimal props */}
-                {computed.alarmConfig && selectedMetricValue && (
+                {/* Threshold Slider - Dumb component with validated props */}
+                {computed.alarmConfig && selectedMetricValue && computed.sliderPresentation && (
                   <View style={styles.sliderSection}>
                     <Text style={styles.groupLabel}>Threshold values</Text>
                     <AlarmThresholdSlider
-                      sensorType={selectedSensorType}
-                      instance={selectedInstance}
-                      metric={selectedMetricValue}
+                      min={computed.alarmConfig.min}
+                      max={computed.alarmConfig.max}
+                      direction={computed.alarmConfig.direction}
+                      currentCritical={criticalValueWatched ?? computed.alarmConfig.min}
+                      currentWarning={warningValueWatched ?? computed.alarmConfig.min}
+                      presentation={computed.sliderPresentation}
+                      formula={computed.alarmFormula}
+                      sensorMetrics={computed.sensorMetrics}
+                      ratioUnit={computed.ratioUnit}
                       onThresholdsChange={(critical, warning) => {
                         form.setValue('criticalValue', critical);
                         form.setValue('warningValue', warning);
