@@ -403,13 +403,14 @@ export const useSensorConfigForm = (
       format: ensureFormatFunction(presentation),
       symbol: presentation.symbol,
     };
-  }, [sensorType, watchedMetric, requiresMetricSelection, alarmFieldKeys]);
+  }, [sensorType, watchedMetric, alarmFieldKeys, defaultMetric]);
   
   // Get alarm formula (ratio mode detection)
   const alarmFormula = useMemo(() => {
     if (!sensorType) return undefined;
     
-    const metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0];
+    // ✅ UNIFIED: Always use watchedMetric || defaultMetric
+    const metricKey = watchedMetric || defaultMetric;
     if (!metricKey) return undefined;
     
     const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
@@ -417,7 +418,7 @@ export const useSensorConfigForm = (
     if (!fieldDef || !('alarm' in fieldDef) || !fieldDef.alarm) return undefined;
     
     return (fieldDef.alarm as any)?.formula as string | undefined;
-  }, [sensorType, watchedMetric, requiresMetricSelection, alarmFieldKeys]);
+  }, [sensorType, watchedMetric, alarmFieldKeys, defaultMetric]);
   
   // Get sensor metrics for formula evaluation
   const sensorMetrics = useMemo(() => {
@@ -432,7 +433,8 @@ export const useSensorConfigForm = (
   const ratioUnit = useMemo(() => {
     if (!sensorType || !alarmFormula) return undefined;
     
-    const metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0];
+    // ✅ UNIFIED: Always use watchedMetric || defaultMetric
+    const metricKey = watchedMetric || defaultMetric;
     if (!metricKey) return undefined;
     
     const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
@@ -451,8 +453,8 @@ export const useSensorConfigForm = (
     (state) => {
       if (!sensorType) return undefined;
       
-      // Compute metric key inside selector for proper reactivity
-      const metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0];
+      // ✅ UNIFIED: Always use watchedMetric || defaultMetric (computed inside selector for reactivity)
+      const metricKey = watchedMetric || defaultMetric;
       if (!metricKey) return undefined;
       
       const sensorInstance = (state.nmeaData as any)?.sensors?.[sensorType]?.[selectedInstance];
@@ -508,19 +510,14 @@ export const useSensorConfigForm = (
   const metricLabel = useMemo(() => {
     if (!sensorConfig) return sensorType || '';
     
-    if (requiresMetricSelection && watchedMetric) {
-      // Multi-metric: use selected metric's label
-      return sensorConfig.fields[watchedMetric]?.label || '';
-    }
-    
-    // Single-metric: use first alarm field's label
-    const firstAlarmField = alarmFieldKeys[0];
-    if (firstAlarmField) {
-      return sensorConfig.fields[firstAlarmField]?.label || '';
+    // ✅ UNIFIED: Always use watchedMetric || defaultMetric
+    const metricKey = watchedMetric || defaultMetric;
+    if (metricKey) {
+      return sensorConfig.fields[metricKey]?.label || '';
     }
     
     return sensorConfig?.displayName || sensorType || '';
-  }, [requiresMetricSelection, watchedMetric, sensorConfig, sensorType, alarmFieldKeys]);
+  }, [watchedMetric, sensorConfig, sensorType, defaultMetric]);
 
   // Handler: Metric change
   const handleMetricChange = useCallback(

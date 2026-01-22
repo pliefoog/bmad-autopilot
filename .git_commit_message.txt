@@ -1,47 +1,37 @@
-refactor(sensors): simplify useSensorConfigForm - unified metric access
+refactor(sensors): complete useSensorConfigForm unification
 
-Phase 1: Data Structure Unification - Step 3-4 Progress
+Phase 1: Data Structure Unification - Step 5 Complete
 
-Changes:
-- Simplified metric key resolution in useSensorConfigForm.ts:
-  - Added defaultMetric constant (alarmFieldKeys[0])
-  - Removed dual-path logic for single vs multi-metric
-  - Always use watchedMetric || defaultMetric (no conditionals)
-  - Simplified sound pattern loading (always from metrics object)
+Removed all requiresMetricSelection conditionals from useSensorConfigForm:
+- alarmFormula: Always use watchedMetric || defaultMetric
+- ratioUnit: Always use watchedMetric || defaultMetric
+- sliderPresentation: Always use watchedMetric || defaultMetric
+- metricLabel: Always use watchedMetric || defaultMetric
+- currentMetricValue: Always use watchedMetric || defaultMetric
 
-- Updated SensorInstance.ts:
-  - Removed single-metric path in updateThresholdsFromConfig
-  - Schema V4: Always read from config.metrics object
-
-Before (conditional logic):
+Pattern (before):
 ```typescript
 const metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0];
-if (requiresMetricSelection && firstMetric) {
+if (requiresMetricSelection && watchedMetric) {
   // Multi-metric path
 } else {
-  // Single-metric path  
+  // Single-metric path
 }
 ```
 
-After (unified):
+Pattern (after):
 ```typescript
 const defaultMetric = alarmFieldKeys[0];
 const metricKey = watchedMetric || defaultMetric;
-// Always use metrics object
-if (firstMetric && currentThresholds?.metrics?.[firstMetric]) {
-  // Single unified path
-}
+// Single unified path - works for both
 ```
 
-Benefits:
-- Removed ~50 lines of conditional logic
-- Single code path for metric resolution
-- requiresMetricSelection still tracked (for UI only - disable dropdown)
-- Type-safe with defaultMetric constant
+Impact:
+- ~100 lines of conditional logic eliminated
+- requiresMetricSelection now UI-only (disable dropdown)
+- All computed values use unified metric resolution
+- Zero branching based on sensor alarm field count
 
-Remaining in Phase 1:
-- Remove more requiresMetricSelection conditionals in computed values
-- Simplify SensorConfigDialog rendering (always show MetricSelector)
-- Update schemaDefaults.ts if needed
+Next: Simplify SensorConfigDialog rendering (remove conditional MetricSelector)
 
-Files: src/hooks/useSensorConfigForm.ts, src/types/SensorInstance.ts
+Files: src/hooks/useSensorConfigForm.ts
