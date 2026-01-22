@@ -445,6 +445,24 @@ export const useSensorConfigForm = (
     return contextDef?.critical?.indirectThresholdUnit;
   }, [sensorType, watchedMetric, alarmFormula, requiresMetricSelection, alarmFieldKeys]);
 
+  // Get current metric value for display
+  const currentMetricValue = useMemo(() => {
+    if (!sensorType) return undefined;
+    
+    const metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0];
+    if (!metricKey) return undefined;
+    
+    const nmeaData = useNmeaStore.getState().nmeaData as any;
+    const sensorInstance = nmeaData?.sensors?.[sensorType]?.[selectedInstance];
+    if (!sensorInstance) return undefined;
+    
+    const metricValue = sensorInstance.getMetric(metricKey);
+    if (!metricValue) return undefined;
+    
+    // Return formatted value with unit
+    return metricValue.formattedValueWithUnit;
+  }, [sensorType, selectedInstance, watchedMetric, requiresMetricSelection, alarmFieldKeys]);
+
   // Slider ranges
   const criticalSliderRange = useMemo(
     () =>
@@ -676,6 +694,7 @@ export const useSensorConfigForm = (
       alarmFormula,
       sensorMetrics,
       ratioUnit,
+      currentMetricValue,
     },
   };
 };

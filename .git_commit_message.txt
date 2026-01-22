@@ -1,34 +1,40 @@
-feat(sensor-config): add threshold value labels below slider thumbs
+feat(sensor-config): show metric name and current value for single-metric sensors
 
 Enhancement:
-- Display threshold values directly below each thumb
-- Show label (Warning/Critical) above thumb
-- Display formatted value below thumb
-- Show formula hints (→ computed value) for ratio mode
+- Display metric name and current value for single-metric sensors (depth, wind, speed)
+- Previously only multi-metric sensors (battery, engine) showed metric info
+- Now single-metric sensors show equivalent static display
 
 Implementation:
-- Updated renderThumb to return View with 3 elements:
-  1. Label above thumb (Warning/Critical)
-  2. Thumb circle (colored dot)
-  3. Value container below thumb (formatted value + hint)
-  
-- Added styles for label positioning:
-  * thumbLabel: Base label style with absolute positioning
-  * thumbLabelTop: 28px below thumb (above circle)
-  * thumbLabelBottom: 28px above thumb (below circle)
-  * thumbValueContainer: Container for value + formula hint
-  * thumbLabelComputed: Smaller font for computed hints
+1. Added currentMetricValue to useSensorConfigForm computed values
+   - Fetches MetricValue from sensor instance
+   - Returns formattedValueWithUnit (e.g., "8.2 ft", "15.3 kt")
+   - Uses same logic as multi-metric (metric key resolution)
+
+2. Updated SensorConfigDialog metric display logic
+   - Multi-metric: Shows dropdown selector (existing)
+   - Single-metric: Shows static display with label + current value (NEW)
+   - Conditional rendering based on requiresMetricSelection flag
+
+3. Added metricDisplay styles
+   - Horizontal layout with space-between
+   - Label on left (metric name), value on right (current reading)
+   - Primary color for value to highlight live data
+   - Rounded background matching theme surface
 
 User Experience:
-- Easier to read threshold values while dragging
-- No need to look at top legend during adjustment
-- Formula hints show computed absolute values (ratio mode)
-- Color-coded labels match thumb colors (orange/red)
+- Depth sensor now shows: "Depth" → "8.2 ft"
+- Wind sensor shows: "Speed" → "15.3 kt"
+- Battery shows dropdown (unchanged, multi-metric)
+- Live value updates with sensor data
+- Consistent visual language across sensor types
 
 Example:
-  Warning (above thumb)
-     🟠 (orange thumb)
-  8.2 ft (below thumb)
-  → 2.5 m (formula hint if ratio mode)
+┌─────────────────────────────────┐
+│ Metric                          │
+│ ┌─────────────────────────────┐ │
+│ │ Depth            8.2 ft     │ │
+│ └─────────────────────────────┘ │
+└─────────────────────────────────┘
 
-Files: AlarmThresholdSlider.tsx
+Files: useSensorConfigForm.ts, SensorConfigDialog.tsx

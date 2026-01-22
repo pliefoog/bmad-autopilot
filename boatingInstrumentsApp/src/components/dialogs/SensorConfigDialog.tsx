@@ -409,7 +409,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
             {enabledValue && (
               <View style={styles.settingGroup}>
-                {/* Metric Selector */}
+                {/* Metric Display/Selector */}
                 {computed.requiresMetricSelection && alarmMetrics.length > 0 ? (
                   <>
                     <Text style={styles.groupLabel}>Alarm metric</Text>
@@ -419,6 +419,20 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                       onMetricChange={(metric) => handlers.handleMetricChange(metric)}
                       theme={theme}
                     />
+                  </>
+                ) : computed.metricLabel ? (
+                  <>
+                    <Text style={styles.groupLabel}>Metric</Text>
+                    <View style={[styles.metricDisplay, { backgroundColor: theme.surface }]}>
+                      <Text style={[styles.metricDisplayLabel, { color: theme.text }]}>
+                        {computed.metricLabel}
+                      </Text>
+                      {computed.currentMetricValue && (
+                        <Text style={[styles.metricDisplayValue, { color: theme.primary }]}>
+                          {computed.currentMetricValue}
+                        </Text>
+                      )}
+                    </View>
                   </>
                 ) : null}
 
@@ -542,6 +556,23 @@ const styles = StyleSheet.create({
   },
   sliderSection: {
     marginTop: 16,
+  },
+  metricDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  metricDisplayLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  metricDisplayValue: {
+    fontSize: 18,
+    fontWeight: '700',
   },
   sliderRow: {
     flexDirection: 'row',
