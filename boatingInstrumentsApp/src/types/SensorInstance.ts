@@ -658,24 +658,8 @@ export class SensorInstance<T extends SensorData = SensorData> {
       return thresholds;
     };
 
-    // Apply single-metric thresholds
-    if (config.critical !== undefined || config.warning !== undefined) {
-      // Get first alarm-capable metric for single-metric sensors
-      // Dynamic require to avoid circular dependency: registry → SensorInstance → registry
-      const { getSensorSchema } = require('../registry');
-      const schema = getSensorSchema(this.sensorType);
-      const alarmFields = Object.entries(schema?.fields || {})
-        .filter(([_, field]: [string, any]) => field.alarm !== undefined)
-        .map(([key, _]) => key);
-      
-      if (alarmFields.length > 0) {
-        const metricKey = alarmFields[0]; // First alarm field
-        const thresholds = convertToMetricThresholds(config, config.direction);
-        this.updateThresholds(metricKey, thresholds);
-      }
-    }
-
-    // Apply multi-metric thresholds
+    // Apply metrics thresholds (UNIFIED: single + multi-metric)
+    // Schema V4: All sensors use metrics object, no top-level thresholds
     if (config.metrics) {
       Object.entries(config.metrics).forEach(([metricKey, metricConfig]: [string, any]) => {
         const thresholds = convertToMetricThresholds(metricConfig, metricConfig.direction);

@@ -1,37 +1,47 @@
-feat(sensors): unified metrics schema V4 migration
+refactor(sensors): simplify useSensorConfigForm - unified metric access
 
-Phase 1: Data Structure Unification - Step 1-2 Complete
-
-BREAKING CHANGE: SensorConfiguration now requires metrics object for all sensors
+Phase 1: Data Structure Unification - Step 3-4 Progress
 
 Changes:
-- Updated SensorConfiguration interface (src/types/SensorData.ts):
-  - Removed top-level threshold fields (critical, warning, direction, etc.)
-  - Made metrics object required (previously optional)
-  - Added MetricConfiguration interface for type safety
-  - All sensors (single + multi-metric) use unified metrics object
+- Simplified metric key resolution in useSensorConfigForm.ts:
+  - Added defaultMetric constant (alarmFieldKeys[0])
+  - Removed dual-path logic for single vs multi-metric
+  - Always use watchedMetric || defaultMetric (no conditionals)
+  - Simplified sound pattern loading (always from metrics object)
 
-- Implemented V3→V4 migration (src/store/sensorConfigStore.ts):
-  - Bumped schema version 3→4
-  - Single-metric sensors: Wrap top-level thresholds → metrics[fieldName]
-  - Multi-metric sensors: Preserve existing metrics object
-  - User-friendly success toast on migration
-  - Fallback to clean slate for V0-V2 (incompatible schema)
+- Updated SensorInstance.ts:
+  - Removed single-metric path in updateThresholdsFromConfig
+  - Schema V4: Always read from config.metrics object
 
-Migration Example:
-- V3: { critical: 2.0, warning: 3.0, enabled: true }
-- V4: { metrics: { depth: { critical: 2.0, warning: 3.0, enabled: true } } }
+Before (conditional logic):
+```typescript
+const metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0];
+if (requiresMetricSelection && firstMetric) {
+  // Multi-metric path
+} else {
+  // Single-metric path  
+}
+```
+
+After (unified):
+```typescript
+const defaultMetric = alarmFieldKeys[0];
+const metricKey = watchedMetric || defaultMetric;
+// Always use metrics object
+if (firstMetric && currentThresholds?.metrics?.[firstMetric]) {
+  // Single unified path
+}
+```
 
 Benefits:
-- Eliminates dual code paths (single vs multi-metric conditionals)
-- ~300 lines of conditional logic can now be removed
-- MetricSelector always rendered (disabled for single-metric)
-- Type-safe metrics access via MetricConfiguration interface
+- Removed ~50 lines of conditional logic
+- Single code path for metric resolution
+- requiresMetricSelection still tracked (for UI only - disable dropdown)
+- Type-safe with defaultMetric constant
 
-Next Steps:
-- Update SensorInstance methods to use metrics object
-- Update schemaDefaults.ts to write to metrics
-- Simplify useSensorConfigForm (remove conditionals)
-- Simplify SensorConfigDialog (unified rendering)
+Remaining in Phase 1:
+- Remove more requiresMetricSelection conditionals in computed values
+- Simplify SensorConfigDialog rendering (always show MetricSelector)
+- Update schemaDefaults.ts if needed
 
-Files: src/types/SensorData.ts, src/store/sensorConfigStore.ts
+Files: src/hooks/useSensorConfigForm.ts, src/types/SensorInstance.ts

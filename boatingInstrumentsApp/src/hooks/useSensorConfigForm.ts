@@ -209,6 +209,9 @@ export const useSensorConfigForm = (
   // Determine if sensor requires metric selection (multi-alarm)
   const requiresMetricSelection = alarmFieldKeys.length > 1;
   const supportsAlarms = alarmFieldKeys.length > 0;
+  
+  // ✅ UNIFIED: Always use first alarm field as default (single-metric only has 1 option)
+  const defaultMetric = alarmFieldKeys[0];
 
   // Get current thresholds from store
   const currentThresholds = useMemo(
@@ -241,7 +244,8 @@ export const useSensorConfigForm = (
       resolvedDisplayName: displayName,
     }));
 
-    const firstMetric = requiresMetricSelection && alarmFieldKeys.length > 0 ? alarmFieldKeys[0] : undefined;
+    // ✅ UNIFIED: Always use first alarm field as default (works for single and multi-metric)
+    const firstMetric = alarmFieldKeys[0];
     let criticalValue: number | undefined;
     let warningValue: number | undefined;
     let criticalSoundPattern = 'rapid_pulse';
@@ -261,16 +265,12 @@ export const useSensorConfigForm = (
       }
     }
 
-    // Get sound patterns from sensor instance thresholds
-    if (requiresMetricSelection && firstMetric) {
-      const metricConfig = currentThresholds?.metrics?.[firstMetric];
-      if (metricConfig) {
-        criticalSoundPattern = metricConfig.criticalSoundPattern || 'rapid_pulse';
-        warningSoundPattern = metricConfig.warningSoundPattern || 'warble';
-      }
-    } else if (currentThresholds) {
-      criticalSoundPattern = currentThresholds.criticalSoundPattern || 'rapid_pulse';
-      warningSoundPattern = currentThresholds.warningSoundPattern || 'warble';
+    // ✅ UNIFIED: Schema V4 always uses metrics object (single + multi-metric)
+    // Get sound patterns from sensor instance thresholds via metrics object
+    if (firstMetric && currentThresholds?.metrics?.[firstMetric]) {
+      const metricConfig = currentThresholds.metrics[firstMetric];
+      criticalSoundPattern = metricConfig.criticalSoundPattern || 'rapid_pulse';
+      warningSoundPattern = metricConfig.warningSoundPattern || 'warble';
     }
 
     // Extract context from saved config (user-selected, e.g., 'agm', 'diesel')
@@ -288,7 +288,7 @@ export const useSensorConfigForm = (
       criticalSoundPattern,
       warningSoundPattern,
     };
-  }, [sensorType, selectedInstance, savedConfig, currentThresholds, requiresMetricSelection, sensorConfig, alarmFieldKeys]);
+  }, [sensorType, selectedInstance, savedConfig, currentThresholds, sensorConfig, alarmFieldKeys, defaultMetric]);
 
   // Initialize RHF with schema validation
   const form = useForm<SensorFormData>({
@@ -355,7 +355,8 @@ export const useSensorConfigForm = (
       return null;
     }
 
-    const metric = requiresMetricSelection ? watchedMetric : undefined;
+    // ✅ UNIFIED: Always use metric (watchedMetric || defaultMetric)
+    const metric = watchedMetric || defaultMetric;
     const direction = getAlarmDirection(sensorType, metric).direction;
     const triggerHint = getAlarmTriggerHint(sensorType);
 
@@ -381,14 +382,14 @@ export const useSensorConfigForm = (
     const step = 0.1;
 
     return { direction, triggerHint, min: baseMin, max: baseMax, step };
-  }, [sensorType, selectedInstance, requiresMetricSelection, watchedMetric, contextValue, alarmFieldKeys]);
+  }, [sensorType, selectedInstance, watchedMetric, contextValue, alarmFieldKeys, defaultMetric]);
 
   // Compute slider presentation data (for new simplified slider)
   const sliderPresentation = useMemo(() => {
     if (!sensorType) return null;
     
-    // Use same logic as alarmConfig: metric for multi-metric sensors, first alarm field for single-metric
-    const metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0];
+    // ✅ UNIFIED: Always use watchedMetric || defaultMetric
+    const metricKey = watchedMetric || defaultMetric;
     if (!metricKey) return null;
     
     const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
@@ -443,7 +444,7 @@ export const useSensorConfigForm = (
     const firstContext = Object.keys(alarm.contexts || {})[0];
     const contextDef = firstContext ? alarm.contexts[firstContext] : null;
     return contextDef?.critical?.indirectThresholdUnit;
-  }, [sensorType, watchedMetric, alarmFormula, requiresMetricSelection, alarmFieldKeys]);
+  }, [sensorType, watchedMetric, alarmFormula, alarmFieldKeys, defaultMetric]);
 
   // Get current metric value for display (reactive to store changes)
   const currentMetricValue = useNmeaStore(
