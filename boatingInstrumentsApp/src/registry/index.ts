@@ -106,18 +106,25 @@ export function getContextKey(sensorType: SensorType): string | undefined {
  * Get alarm defaults for a specific field and context
  * @param sensorType - Sensor type
  * @param fieldKey - Field name
- * @param contextValue - Context value (e.g., 'lifepo4', 'diesel')
+ * @param contextValue - Context value (e.g., 'lifepo4', 'diesel'), undefined for non-context sensors or invalid values
  * @returns Alarm thresholds for the context, or undefined if not found
+ * 
+ * Context Resolution:
+ * - If contextValue provided and exists in contexts → use it
+ * - If contextValue undefined/invalid → use alarm.defaultContext
+ * - Depth sensor: contextValue=undefined → uses 'default' context
+ * - Battery sensor with invalid chemistry: contextValue='invalid' → falls back to 'agm' (defaultContext)
  * 
  * @example
  * ```typescript
- * getAlarmDefaults('battery', 'voltage', 'lifepo4')
- * // Returns: {
- * //   critical: { min: 12.8 },
- * //   warning: { min: 13.0 },
- * //   criticalSoundPattern: 'battery_critical',
- * //   warningSoundPattern: 'warning'
- * // }
+ * // Battery with valid context
+ * getAlarmDefaults('battery', 'voltage', 'lifepo4')  // Uses 'lifepo4' context
+ * 
+ * // Battery with undefined context (fallback to default)
+ * getAlarmDefaults('battery', 'voltage', undefined)  // Uses 'agm' (defaultContext)
+ * 
+ * // Depth sensor (no contextKey)
+ * getAlarmDefaults('depth', 'depth', undefined)  // Uses 'default' context
  * ```
  */
 export function getAlarmDefaults(
@@ -132,8 +139,10 @@ export function getAlarmDefaults(
     return undefined;
   }
   
-  // For non-context sensors (depth, speed), use first context key as default
-  const effectiveContext = contextValue ?? Object.keys(field.alarm.contexts)[0];
+  // Use provided context if it exists, otherwise use defaultContext from schema
+  const effectiveContext = (contextValue && field.alarm.contexts[contextValue]) 
+    ? contextValue 
+    : field.alarm.defaultContext;
   
   return field.alarm.contexts[effectiveContext as keyof typeof field.alarm.contexts] as ContextAlarmDefinition | undefined;
 }

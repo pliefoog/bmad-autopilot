@@ -106,6 +106,7 @@ export interface ContextAlarmDefinition {
 export interface AlarmDefinition {
   direction: AlarmDirection;
   contexts: Record<string, ContextAlarmDefinition>; // Context value → alarm config
+  defaultContext: string; // Default context to use when contextKey is undefined or invalid
   safetyRequired?: boolean; // If true, require confirmation for disabling alarm
 }
 
@@ -220,6 +221,7 @@ export const SENSOR_SCHEMAS = {
         max: 16.0,
         alarm: {
           direction: 'below' as const,
+          defaultContext: 'agm',
           safetyRequired: true,
           contexts: {
             'lead-acid': {
@@ -240,11 +242,6 @@ export const SENSOR_SCHEMAS = {
             'lifepo4': {
               critical: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.03', indirectThreshold: 1.067, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'triple_blast' },
               warning: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.03', indirectThreshold: 1.083, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'morse_u' },
-              thresholdRange: { min: 0.90, max: 1.15 },
-            },
-            'unknown': {
-              critical: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.05', indirectThreshold: 0.975, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'triple_blast' },
-              warning: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.05', indirectThreshold: 0.983, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'morse_u' },
               thresholdRange: { min: 0.90, max: 1.15 },
             },
           },
@@ -268,6 +265,7 @@ export const SENSOR_SCHEMAS = {
         max: 500,
         alarm: {
           direction: 'above' as const,
+          defaultContext: 'agm',
           contexts: {
             'lead-acid': {
               critical: { formula: 'capacity * indirectThreshold', indirectThreshold: 0.5, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'triple_blast' },  // 0.5C for lead-acid
@@ -289,11 +287,6 @@ export const SENSOR_SCHEMAS = {
               warning: { formula: 'capacity * indirectThreshold', indirectThreshold: 1.0, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'morse_u' },       // 1C for LiFePO4
               thresholdRange: { min: 0, max: 2.0 },
             },
-            'unknown': {
-              critical: { formula: 'capacity * indirectThreshold', indirectThreshold: 0.45, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'triple_blast' },  // Conservative 0.45C rate
-              warning: { formula: 'capacity * indirectThreshold', indirectThreshold: 0.3, indirectThresholdUnit: 'C-rate', hysteresis: 0.05, sound: 'morse_u' },      // Conservative 0.3C rate
-              thresholdRange: { min: 0, max: 0.6 },
-            },
           },
         },
       },
@@ -307,6 +300,7 @@ export const SENSOR_SCHEMAS = {
         max: 80,
         alarm: {
           direction: 'above' as const,
+          defaultContext: 'agm',
           contexts: {
             'lead-acid': {
               critical: { value: 55, hysteresis: 0.05, sound: 'triple_blast' },  // 55°C
@@ -328,11 +322,6 @@ export const SENSOR_SCHEMAS = {
               warning: { value: 55, hysteresis: 0.05, sound: 'morse_u' },
               thresholdRange: { min: -20, max: 80 },
             },
-            'unknown': {
-              critical: { value: 50, hysteresis: 0.05, sound: 'triple_blast' },  // Conservative universal safe limit
-              warning: { value: 45, hysteresis: 0.05, sound: 'morse_u' },       // Conservative warning
-              thresholdRange: { min: -10, max: 60 },  // Narrower safe range for unknown chemistry
-            },
           },
         },
       },
@@ -346,6 +335,7 @@ export const SENSOR_SCHEMAS = {
         max: 100,
         alarm: {
           direction: 'below' as const,
+          defaultContext: 'agm',
           safetyRequired: true,
           contexts: {
             'lead-acid': {
@@ -366,11 +356,6 @@ export const SENSOR_SCHEMAS = {
             'lifepo4': {
               critical: { value: 20, hysteresis: 0.05, sound: 'triple_blast' },  // LiFePO4 safe to 20%
               warning: { value: 40, hysteresis: 0.05, sound: 'morse_u' },
-              thresholdRange: { min: 0, max: 100 },
-            },
-            'unknown': {
-              critical: { value: 30, hysteresis: 0.05, sound: 'triple_blast' },  // Conservative safe limit
-              warning: { value: 50, hysteresis: 0.05, sound: 'morse_u' },       // Higher warning for unknown chemistry
               thresholdRange: { min: 0, max: 100 },
             },
           },
@@ -405,6 +390,7 @@ export const SENSOR_SCHEMAS = {
         max: 100,
         alarm: {
           direction: 'below' as const,
+          defaultContext: 'default',
           safetyRequired: true,
           contexts: {
             default: {
@@ -478,6 +464,7 @@ export const SENSOR_SCHEMAS = {
         max: 6500,
         alarm: {
           direction: 'above' as const,
+          defaultContext: 'diesel',
           contexts: {
             diesel: {
               critical: { formula: 'maxRpm * indirectThreshold', indirectThreshold: 0.93, indirectThresholdUnit: '% RPM', hysteresis: 0.05, sound: 'warble' },
@@ -494,11 +481,6 @@ export const SENSOR_SCHEMAS = {
               warning: { formula: 'maxRpm * indirectThreshold', indirectThreshold: 0.87, indirectThresholdUnit: '% RPM', hysteresis: 0.05, sound: 'morse_u' },
               thresholdRange: { min: 0.70, max: 1.00 },
             },
-            'unknown': {
-              critical: { formula: 'maxRpm * indirectThreshold', indirectThreshold: 0.90, indirectThresholdUnit: '% RPM', hysteresis: 0.05, sound: 'warble' },  // Conservative lower multiplier
-              warning: { formula: 'maxRpm * indirectThreshold', indirectThreshold: 0.83, indirectThresholdUnit: '% RPM', hysteresis: 0.05, sound: 'morse_u' },  // Conservative warning
-              thresholdRange: { min: 0.70, max: 1.00 },
-            },
           },
         },
       },
@@ -512,6 +494,7 @@ export const SENSOR_SCHEMAS = {
         max: 130,
         alarm: {
           direction: 'above' as const,
+          defaultContext: 'diesel',
           safetyRequired: true,
           contexts: {
             diesel: {
@@ -529,11 +512,6 @@ export const SENSOR_SCHEMAS = {
               warning: { value: 75, hysteresis: 0.05, sound: 'morse_u' },
               thresholdRange: { min: 0, max: 130 },
             },
-            'unknown': {
-              critical: { value: 90, hysteresis: 0.05, sound: 'warble' },  // Conservative universal safe temp (Celsius)
-              warning: { value: 80, hysteresis: 0.05, sound: 'morse_u' },  // Conservative warning
-              thresholdRange: { min: 0, max: 130 },
-            },
           },
         },
       },
@@ -547,6 +525,7 @@ export const SENSOR_SCHEMAS = {
         max: 600,
         alarm: {
           direction: 'below' as const,
+          defaultContext: 'diesel',
           safetyRequired: true,
           contexts: {
             diesel: {
@@ -562,11 +541,6 @@ export const SENSOR_SCHEMAS = {
             outboard: {
               critical: { value: 8, hysteresis: 0.05, sound: 'warble' },
               warning: { value: 12, hysteresis: 0.05, sound: 'morse_u' },
-              thresholdRange: { min: 0, max: 600 },
-            },
-            'unknown': {
-              critical: { value: 15, hysteresis: 0.05, sound: 'warble' },  // Conservative highest minimum pressure
-              warning: { value: 20, hysteresis: 0.05, sound: 'morse_u' },  // Conservative warning
               thresholdRange: { min: 0, max: 600 },
             },
           },

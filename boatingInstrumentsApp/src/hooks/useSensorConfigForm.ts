@@ -314,15 +314,17 @@ export const useSensorConfigForm = (
     name: 'warningValue',
   });
   
-  // Only watch context field if sensor has contextKey (battery, engine)
-  // For non-context sensors (depth, speed), return undefined
+  // Watch context field if sensor has contextKey (battery/engine chemistry/engineType)
+  // For non-context sensors (depth), contextKey is undefined and watchedContext will be undefined
+  // We use a dummy field name to satisfy React Hook rules (hooks must be called unconditionally)
   const contextKey = sensorConfig?.contextKey;
-  // Use a non-existent field name '__no_context__' for non-context sensors
-  // This ensures useWatch returns undefined without breaking React Hook rules
   const watchedContext = useWatch({
     control: form.control,
-    name: (contextKey || '__no_context__') as any, // Watch sensor-specific field or dummy field
+    name: (contextKey || '__unused__') as any, // Dummy field for non-context sensors
   });
+  
+  // For sensors with contextKey, use the watched value; otherwise undefined
+  const contextValue = contextKey ? (typeof watchedContext === 'string' ? watchedContext : undefined) : undefined;
 
   // Single enrichedThresholds source
   const enrichedThresholds = useMemo(() => {
@@ -351,17 +353,13 @@ export const useSensorConfigForm = (
     const direction = getAlarmDirection(sensorType, metric).direction;
     const triggerHint = getAlarmTriggerHint(sensorType);
 
-    // Use context from form (reactive) or undefined for non-context sensors
-    // watchedContext contains the value of the field specified by schema.contextKey
-    // e.g., for battery: 'agm', 'lifepo4', etc.
-    // e.g., for engine: 'diesel', 'gasoline', 'outboard'
-    // For non-context sensors (depth, speed): watchedContext is undefined
-    const contextValue = typeof watchedContext === 'string' ? watchedContext : undefined;
-
     // Get first alarm field for sensors without metric selection
     const fieldKey = metric || alarmFieldKeys[0];
     if (!fieldKey) return null; // No alarm fields
 
+    // contextValue is already defined in outer scope (from watchedContext)
+    // For sensors with contextKey: actual context value (e.g., 'agm', 'diesel')
+    // For non-context sensors: undefined → uses alarm.defaultContext
     const defaults = getAlarmDefaults(sensorType, fieldKey, contextValue);
 
     // Validate thresholdRange exists - no fallbacks allowed
@@ -377,7 +375,7 @@ export const useSensorConfigForm = (
     const step = 0.1;
 
     return { direction, triggerHint, min: baseMin, max: baseMax, step };
-  }, [sensorType, selectedInstance, requiresMetricSelection, watchedMetric, watchedContext]);
+  }, [sensorType, selectedInstance, requiresMetricSelection, watchedMetric, contextValue, alarmFieldKeys]);
 
   // Slider ranges
   const criticalSliderRange = useMemo(
