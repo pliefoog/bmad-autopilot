@@ -1,34 +1,30 @@
-fix(sensor-config): use display units for slider min/max to match threshold values
+fix(sensor-config): use enriched threshold defaults for slider fallback values
 
 Problem:
-- Slider was broken for both depth and battery sensors
-- min/max were in SI units (meters for depth)
-- currentCritical/currentWarning were in display units (feet for depth)
-- Unit mismatch caused incorrect slider positioning
+- Slider thumbs not positioned at schema defaults
+- Both critical and warning fell back to min.value
+- Caused thumbs to overlap at minimum position (0 for depth)
+- Slider bar not rendering properly with identical values
 
 Root Cause:
-- alarmConfig.min/max from thresholdRange (SI units)
-- criticalValueWatched/warningValueWatched from enriched.display (display units)
-- Slider expected all values in same unit system
+- Fallback logic: criticalValueWatched ?? min.value
+- Fallback logic: warningValueWatched ?? min.value
+- Both used same fallback (min) instead of schema defaults
 
 Solution:
-- Use enrichedThresholds.display.min.value/max.value (display units)
-- All slider values now in user's selected units (feet/meters/etc.)
-- Ensures consistent unit system for slider range and handles
+- Use enrichedThresholds.display.critical?.value as first fallback
+- Use enrichedThresholds.display.warning?.value as first fallback
+- Only fall back to min/max if enriched defaults missing
+- Ensures slider initializes with proper schema defaults (2m/2.5m for depth)
 
-Changes:
-- SensorConfigDialog.tsx: Use enrichedThresholds.display min/max
-- useSensorConfigForm.ts: Export enrichedThresholds in computed
+Fallback Chain:
+1. Form value (user-saved or edited)
+2. Enriched schema default (from ThresholdPresentationService)
+3. Range boundary (min for critical, max for warning)
 
 Impact:
-- Depth slider: Now uses feet (if selected) for all values
-- Battery slider: Now uses correct voltage units for all values
-- Both sliders display and function correctly
+- Depth slider: Initializes at 6.6ft (critical) and 8.2ft (warning) defaults
+- Battery slider: Initializes at correct voltage defaults per chemistry
+- Slider bar renders full width with visible separation between thumbs
 
-Testing:
-- Verify depth slider shows correct range (0-100ft or 0-30m)
-- Verify battery slider shows correct range (10-15V)
-- Verify dragging handles updates values correctly
-- Verify form saves use correct SI conversion
-
-Files: SensorConfigDialog.tsx, useSensorConfigForm.ts
+Files: SensorConfigDialog.tsx
