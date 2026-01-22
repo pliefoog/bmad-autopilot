@@ -25,6 +25,7 @@ import { SensorType } from '../../../types/SensorData';
 import { useSensorConfigStore } from '../../../store/sensorConfigStore';
 import { getSensorSchema, getAlarmDefaults } from '../../../registry';
 import { evaluateThresholdFormula } from '../../../utils/formulaEvaluator';
+import { ensureFormatFunction } from '../../../presentation/presentations';
 import { useNmeaStore } from '../../../store/nmeaStore';
 import { usePresentationStore } from '../../../presentation/presentationStore';
 import { MOBILE_BREAKPOINT, settingsTokens } from '../../../theme/settingsTokens';
@@ -247,7 +248,7 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
           );
 
           if (computedValue !== null) {
-            warningResult = `${presentation.format(computedValue)} ${presentation.unitSymbol}`;
+            warningResult = `${formatFn(computedValue)} ${presentation.symbol}`;
             formulaCache.set(warningCacheKey, warningResult);
           }
         } catch (error) {
@@ -275,7 +276,7 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
           );
 
           if (computedValue !== null) {
-            criticalResult = `${presentation.format(computedValue)} ${presentation.unitSymbol}`;
+            criticalResult = `${formatFn(computedValue)} ${presentation.symbol}`;
             formulaCache.set(criticalCacheKey, criticalResult);
           }
         } catch (error) {
@@ -313,10 +314,16 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
         return `${value.toFixed(2)} ${unitWithSpace}`;
       } else {
         // Direct mode: use presentation formatting
-        return presentation.format(value);
+        return formatFn(value);
       }
     },
-    [isRatioMode, fieldDef.alarm?.contexts, presentation]
+    [isRatioMode, fieldDef.alarm?.contexts, formatFn]
+  );
+
+  // Get format function safely (handles optional format property)
+  const formatFn = useMemo(
+    () => ensureFormatFunction(presentation),
+    [presentation]
   );
 
   // Get unit symbol - for ratio mode, extract from first context's indirectThresholdUnit
@@ -326,8 +333,8 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
       const contextDef = firstContext ? fieldDef.alarm?.contexts[firstContext] : null;
       return contextDef?.critical?.indirectThresholdUnit || '';
     }
-    return presentation.unitSymbol;
-  }, [isRatioMode, fieldDef.alarm?.contexts, presentation.unitSymbol]);
+    return presentation.symbol;
+  }, [isRatioMode, fieldDef.alarm?.contexts, presentation.symbol]);
 
   // Handle slider changes with debounced callback propagation
   const debouncedOnChange = useDebouncedCallback(
