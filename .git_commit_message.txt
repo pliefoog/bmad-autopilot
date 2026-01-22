@@ -1,36 +1,24 @@
-fix(sensor-config): restore proper visual styling for threshold slider
+fix(sensor-config): make slider rail span full width with flex: 1
 
 Problem:
-- No green/blue slider rail visible (full width)
-- Critical thumb not red (was blue)
-- Warning thumb not orange (was blue)
-- All thumbs used theme.primary (blue) color
+- Slider rail only visible between thumbs (53.0 to 64.0)
+- Rail should extend full width from min (0.0) to max (100.0)
+- Visual issue: rail appeared truncated
 
 Root Cause:
-- renderThumb/renderRail/renderRailSelected were inline arrow functions
-- Didn't utilize RangeSlider's name parameter ('low'/'high')
-- Couldn't differentiate between warning and critical thumbs
-- Missing useCallback import
+- rail style missing flex: 1 property
+- Without flex: 1, rail doesn't expand to fill available space
+- RangeSlider library requires rail to have proper dimensions
 
 Solution:
-- Import useCallback from React
-- Create memoized render functions (renderThumb, renderRail, renderRailSelected)
-- Use name parameter in renderThumb to determine warning vs critical
-- Apply correct colors: theme.warning (orange), theme.error (red)
-- Fix spacing.section → spacing.lg (section doesn't exist in settingsTokens)
+- Add flex: 1 to rail style
+- Ensures rail expands to full container width
+- Matches old implementation approach
 
 Visual Result:
-- Warning thumb: Orange (theme.warning)
-- Critical thumb: Red (theme.error)
-- Rail (unselected): Gray (theme.border)
-- Rail (selected): Blue (theme.primary)
-- Full-width slider rail visible
-- Thumbs properly colored based on direction
-
-Implementation:
-- renderThumb checks if thumb is 'low' or 'high'
-- For 'above' direction: low=warning, high=critical
-- For 'below' direction: low=critical, high=warning
-- Memoized with useCallback for performance
+- Rail now spans from 0.0 to 100.0 (full range)
+- Gray baseline visible across entire width
+- Blue selected section between thumbs
+- Proper end-to-end slider appearance
 
 Files: AlarmThresholdSlider.tsx

@@ -388,6 +388,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   rail: {
+    flex: 1,
     height: 4,
     borderRadius: 2,
   },
