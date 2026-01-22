@@ -168,15 +168,13 @@ export const useSensorConfigForm = (
   const savedConfig = useSensorConfigStore(
     (state) => sensorType ? state.getConfig(sensorType, selectedInstance) : undefined,
     (a, b) => {
-      // Deep equality check for config changes
+      // ✅ UNIFIED: Schema V4 equality check (no top-level enabled/critical/warning)
       if (!a && !b) return true;
       if (!a || !b) return false;
       const isEqual = (
         a.name === b.name &&
-        a.enabled === b.enabled &&
-        JSON.stringify(a.context) === JSON.stringify(b.context) &&
-        JSON.stringify(a.critical) === JSON.stringify(b.critical) &&
-        JSON.stringify(a.warning) === JSON.stringify(b.warning)
+        a.context === b.context &&
+        JSON.stringify(a.metrics) === JSON.stringify(b.metrics)
       );
 
       // Debug: Log equality checks
