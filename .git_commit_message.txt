@@ -1,0 +1,20 @@
+fix: slider presentation for single-metric sensors (depth)
+
+Problem: Slider didn't render for depth sensor because sliderPresentation was null
+
+Root Cause:
+- Depth is single-metric sensor (requiresMetricSelection = false)
+- watchedMetric is undefined for single-metric sensors
+- sliderPresentation only checked watchedMetric
+- alarmConfig correctly used: metric || alarmFieldKeys[0]
+
+Solution:
+- Use same logic in all computed values
+- metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0]
+- Applied to: sliderPresentation, alarmFormula, ratioUnit
+- Now consistent with alarmConfig logic
+
+Files:
+- useSensorConfigForm.ts: Fixed sliderPresentation, alarmFormula, ratioUnit logic
+
+Result: Slider now renders for both single-metric (depth) and multi-metric (battery) sensors

@@ -385,10 +385,14 @@ export const useSensorConfigForm = (
 
   // Compute slider presentation data (for new simplified slider)
   const sliderPresentation = useMemo(() => {
-    if (!sensorType || !watchedMetric) return null;
+    if (!sensorType) return null;
+    
+    // Use same logic as alarmConfig: metric for multi-metric sensors, first alarm field for single-metric
+    const metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0];
+    if (!metricKey) return null;
     
     const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
-    const fieldDef = schema?.fields[watchedMetric as keyof typeof schema.fields];
+    const fieldDef = schema?.fields[metricKey as keyof typeof schema.fields];
     if (!fieldDef || !('unitType' in fieldDef) || typeof fieldDef.unitType !== 'string') return null;
     
     const presentation = usePresentationStore.getState().getPresentationForCategory(fieldDef.unitType as any);
@@ -398,18 +402,21 @@ export const useSensorConfigForm = (
       format: ensureFormatFunction(presentation),
       symbol: presentation.symbol,
     };
-  }, [sensorType, watchedMetric]);
+  }, [sensorType, watchedMetric, requiresMetricSelection, alarmFieldKeys]);
   
   // Get alarm formula (ratio mode detection)
   const alarmFormula = useMemo(() => {
-    if (!sensorType || !watchedMetric) return undefined;
+    if (!sensorType) return undefined;
+    
+    const metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0];
+    if (!metricKey) return undefined;
     
     const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
-    const fieldDef = schema?.fields[watchedMetric as keyof typeof schema.fields];
+    const fieldDef = schema?.fields[metricKey as keyof typeof schema.fields];
     if (!fieldDef || !('alarm' in fieldDef) || !fieldDef.alarm) return undefined;
     
     return (fieldDef.alarm as any)?.formula as string | undefined;
-  }, [sensorType, watchedMetric]);
+  }, [sensorType, watchedMetric, requiresMetricSelection, alarmFieldKeys]);
   
   // Get sensor metrics for formula evaluation
   const sensorMetrics = useMemo(() => {
@@ -422,10 +429,13 @@ export const useSensorConfigForm = (
   
   // Get ratio unit for ratio mode
   const ratioUnit = useMemo(() => {
-    if (!sensorType || !watchedMetric || !alarmFormula) return undefined;
+    if (!sensorType || !alarmFormula) return undefined;
+    
+    const metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0];
+    if (!metricKey) return undefined;
     
     const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
-    const fieldDef = schema?.fields[watchedMetric as keyof typeof schema.fields];
+    const fieldDef = schema?.fields[metricKey as keyof typeof schema.fields];
     if (!fieldDef || !('alarm' in fieldDef) || !fieldDef.alarm) return undefined;
     
     const alarm = fieldDef.alarm as any;
@@ -433,7 +443,7 @@ export const useSensorConfigForm = (
     const firstContext = Object.keys(alarm.contexts || {})[0];
     const contextDef = firstContext ? alarm.contexts[firstContext] : null;
     return contextDef?.critical?.indirectThresholdUnit;
-  }, [sensorType, watchedMetric, alarmFormula]);
+  }, [sensorType, watchedMetric, alarmFormula, requiresMetricSelection, alarmFieldKeys]);
 
   // Slider ranges
   const criticalSliderRange = useMemo(
