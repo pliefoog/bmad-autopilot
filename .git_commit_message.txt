@@ -1,40 +1,43 @@
-feat(sensor-config): show metric name and current value for single-metric sensors
+fix(sensor-config): show correct field label and live value for single-metric sensors
 
-Enhancement:
-- Display metric name and current value for single-metric sensors (depth, wind, speed)
-- Previously only multi-metric sensors (battery, engine) showed metric info
-- Now single-metric sensors show equivalent static display
+Problem:
+1. Metric label showing sensor name "Depth Sounder" instead of field name "Depth"
+2. Current value not displayed (always undefined)
 
-Implementation:
-1. Added currentMetricValue to useSensorConfigForm computed values
-   - Fetches MetricValue from sensor instance
-   - Returns formattedValueWithUnit (e.g., "8.2 ft", "15.3 kt")
-   - Uses same logic as multi-metric (metric key resolution)
+Root Cause:
+1. metricLabel logic:
+   - Single-metric path returned sensorConfig.displayName (wrong)
+   - Should return field label from first alarm field
 
-2. Updated SensorConfigDialog metric display logic
-   - Multi-metric: Shows dropdown selector (existing)
-   - Single-metric: Shows static display with label + current value (NEW)
-   - Conditional rendering based on requiresMetricSelection flag
+2. currentMetricValue logic:
+   - Used useMemo (computed once, never updates)
+   - Needs reactive store selector for live updates
 
-3. Added metricDisplay styles
-   - Horizontal layout with space-between
-   - Label on left (metric name), value on right (current reading)
-   - Primary color for value to highlight live data
-   - Rounded background matching theme surface
+Solution:
+1. Fixed metricLabel computation:
+   - Multi-metric: Use selected metric's field label (unchanged)
+   - Single-metric: Use first alarm field's label (NEW)
+   - Example: depth sensor → "Depth" not "Depth Sounder"
 
-User Experience:
-- Depth sensor now shows: "Depth" → "8.2 ft"
-- Wind sensor shows: "Speed" → "15.3 kt"
-- Battery shows dropdown (unchanged, multi-metric)
-- Live value updates with sensor data
-- Consistent visual language across sensor types
+2. Changed currentMetricValue to useNmeaStore selector:
+   - Reactive to sensor data changes
+   - Re-renders when value updates
+   - Returns formattedValueWithUnit from MetricValue
 
-Example:
-┌─────────────────────────────────┐
-│ Metric                          │
-│ ┌─────────────────────────────┐ │
-│ │ Depth            8.2 ft     │ │
-│ └─────────────────────────────┘ │
-└─────────────────────────────────┘
+Visual Result:
+BEFORE:
+┌─────────────────────────────┐
+│ Depth Sounder    (no value) │
+└─────────────────────────────┘
 
-Files: useSensorConfigForm.ts, SensorConfigDialog.tsx
+AFTER:
+┌─────────────────────────────┐
+│ Depth              8.2 ft   │
+└─────────────────────────────┘
+
+Live Updates:
+- Value changes as sensor data arrives
+- Real-time feedback for threshold setting
+- Helps users set appropriate limits based on current conditions
+
+Files: useSensorConfigForm.ts

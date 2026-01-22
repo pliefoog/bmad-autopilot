@@ -395,7 +395,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
             <View style={styles.settingRow}>
               <Text style={[styles.settingLabel, { color: theme.text }]}>Enable alarms</Text>
               <PlatformToggle
-                label="Enable alarms"
+                label=""
                 value={enabledValue ?? false}
                 onValueChange={(value) => {
                   if (!value && ['depth', 'battery', 'engine'].includes(selectedSensorType)) {

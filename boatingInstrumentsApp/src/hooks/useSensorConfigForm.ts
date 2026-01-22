@@ -445,23 +445,26 @@ export const useSensorConfigForm = (
     return contextDef?.critical?.indirectThresholdUnit;
   }, [sensorType, watchedMetric, alarmFormula, requiresMetricSelection, alarmFieldKeys]);
 
-  // Get current metric value for display
-  const currentMetricValue = useMemo(() => {
-    if (!sensorType) return undefined;
-    
-    const metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0];
-    if (!metricKey) return undefined;
-    
-    const nmeaData = useNmeaStore.getState().nmeaData as any;
-    const sensorInstance = nmeaData?.sensors?.[sensorType]?.[selectedInstance];
-    if (!sensorInstance) return undefined;
-    
-    const metricValue = sensorInstance.getMetric(metricKey);
-    if (!metricValue) return undefined;
-    
-    // Return formatted value with unit
-    return metricValue.formattedValueWithUnit;
-  }, [sensorType, selectedInstance, watchedMetric, requiresMetricSelection, alarmFieldKeys]);
+  // Get current metric value for display (reactive to store changes)
+  const currentMetricValue = useNmeaStore(
+    (state) => {
+      if (!sensorType) return undefined;
+      
+      // Compute metric key inside selector for proper reactivity
+      const metricKey = requiresMetricSelection ? watchedMetric : alarmFieldKeys[0];
+      if (!metricKey) return undefined;
+      
+      const sensorInstance = (state.nmeaData as any)?.sensors?.[sensorType]?.[selectedInstance];
+      if (!sensorInstance) return undefined;
+      
+      const metricValue = sensorInstance.getMetric(metricKey);
+      if (!metricValue) return undefined;
+      
+      // Return formatted value with unit
+      return metricValue.formattedValueWithUnit;
+    },
+    (a, b) => a === b
+  );
 
   // Slider ranges
   const criticalSliderRange = useMemo(
@@ -502,11 +505,21 @@ export const useSensorConfigForm = (
   // Compute display values
   const unitSymbol = useMemo(() => enrichedThresholds?.display.min.unit || '', [enrichedThresholds]);
   const metricLabel = useMemo(() => {
-    if (!requiresMetricSelection || !watchedMetric || !sensorConfig) {
-      return sensorConfig?.displayName || sensorType || '';
+    if (!sensorConfig) return sensorType || '';
+    
+    if (requiresMetricSelection && watchedMetric) {
+      // Multi-metric: use selected metric's label
+      return sensorConfig.fields[watchedMetric]?.label || '';
     }
-    return sensorConfig.fields[watchedMetric]?.label || '';
-  }, [requiresMetricSelection, watchedMetric, sensorConfig, sensorType]);
+    
+    // Single-metric: use first alarm field's label
+    const firstAlarmField = alarmFieldKeys[0];
+    if (firstAlarmField) {
+      return sensorConfig.fields[firstAlarmField]?.label || '';
+    }
+    
+    return sensorConfig?.displayName || sensorType || '';
+  }, [requiresMetricSelection, watchedMetric, sensorConfig, sensorType, alarmFieldKeys]);
 
   // Handler: Metric change
   const handleMetricChange = useCallback(
