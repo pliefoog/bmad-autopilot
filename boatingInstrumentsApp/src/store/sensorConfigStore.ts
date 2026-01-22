@@ -149,7 +149,17 @@ const migrateOldContextFormat = (configs: SensorConfigMap): {
         const [sensorType] = key.split('-');
         const schema = getSensorSchema(sensorType as SensorType);
         
-        if (schema.contextKey) {
+        // Clear "unknown" placeholder - never valid
+        if (newConfig.context === 'unknown') {
+          log.app('[SensorConfigStore] Clearing "unknown" placeholder context', () => ({
+            key,
+            sensorType,
+          }));
+          delete newConfig.context;
+          invalidContextCount++;
+          contextMigrated = true;
+        } else if (schema.contextKey) {
+          // Validate against schema options
           const contextField = schema.fields[schema.contextKey];
           const isValid = contextField?.options?.includes(newConfig.context);
           
@@ -167,6 +177,16 @@ const migrateOldContextFormat = (configs: SensorConfigMap): {
             invalidContextCount++;
             contextMigrated = true; // Mark as migrated to trigger save
           }
+        } else {
+          // No contextKey in schema - sensor doesn't use context, clear it
+          log.app('[SensorConfigStore] Clearing context from sensor without contextKey', () => ({
+            key,
+            sensorType,
+            contextValue: newConfig.context,
+          }));
+          delete newConfig.context;
+          invalidContextCount++;
+          contextMigrated = true;
         }
       } catch (error) {
         // Schema lookup failed - keep context as-is
