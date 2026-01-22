@@ -171,9 +171,6 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   // Detect ratio mode (indirect thresholds)
   const isRatioMode = !!fieldDef.alarm?.formula;
 
-  // Component-scoped formula cache to prevent memory leaks
-  const formulaCache = useRef(new Map<string, string>()).current;
-
   // Cleanup cache on unmount
   useEffect(() => {
     return () => {
