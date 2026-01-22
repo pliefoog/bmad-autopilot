@@ -141,8 +141,7 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
     if (!fieldDef.alarm) return null;
 
     try {
-      const service = ThresholdPresentationService.getInstance();
-      return service.enrichThresholds(sensorType, metric, context);
+      return ThresholdPresentationService.enrichThresholds(sensorType, metric, context);
     } catch (error) {
       log.app('[AlarmThresholdSlider] Enrichment failed', () => ({
         sensorType,
