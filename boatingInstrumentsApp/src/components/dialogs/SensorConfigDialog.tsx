@@ -136,7 +136,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
   }, [instances, selectedInstance]);
 
   // Get form hook (all form logic centralized here)
-  const { form, enrichedThresholds, handlers, computed } = useSensorConfigForm(
+  const { form, enrichedThresholds, currentMetricValue, handlers, computed } = useSensorConfigForm(
     selectedSensorType,
     selectedInstance,
     async (sensorType, instance, data) => {
@@ -150,28 +150,27 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       const trimmedName = data.name?.trim();
       const defaultName = trimmedName || `${sensorType}-${instance}`;
 
+      // ✅ UNIFIED (Schema V4): Top-level only has name + context
+      // All thresholds/sounds/direction now in metrics object
       const updates: Partial<SensorConfiguration> = {
         name: defaultName,
-        enabled: data.enabled,
-        direction: getAlarmDirection(sensorType, data.selectedMetric).direction,
-        criticalSoundPattern: data.criticalSoundPattern,
-        warningSoundPattern: data.warningSoundPattern,
       };
 
-      // Build threshold updates (slider returns SI values directly)
-      if (computed.requiresMetricSelection && data.selectedMetric) {
+      // ✅ UNIFIED (Schema V4): Always save thresholds to metrics object
+      // For single-metric sensors: metrics = { depth: { critical, warning, direction, ... } }
+      // For multi-metric sensors: metrics = { voltage: {...}, current: {...} }
+      const metricKey = data.selectedMetric; // Always populated (watchedMetric || defaultMetric)
+      if (metricKey) {
         updates.metrics = {
-          [data.selectedMetric]: {
+          [metricKey]: {
             critical: data.criticalValue,
             warning: data.warningValue,
+            direction: getAlarmDirection(sensorType, data.selectedMetric).direction,
             criticalSoundPattern: data.criticalSoundPattern,
             warningSoundPattern: data.warningSoundPattern,
             enabled: data.enabled,
           },
         };
-      } else {
-        updates.critical = data.criticalValue;
-        updates.warning = data.warningValue;
       }
 
       // Generic context handling (schema-driven)
@@ -427,9 +426,9 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                       <Text style={[styles.metricDisplayLabel, { color: theme.text }]}>
                         {computed.metricLabel}
                       </Text>
-                      {computed.currentMetricValue && (
+                      {currentMetricValue && (
                         <Text style={[styles.metricDisplayValue, { color: theme.primary }]}>
-                          {computed.currentMetricValue}
+                          {currentMetricValue}
                         </Text>
                       )}
                     </View>
@@ -437,15 +436,16 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                 ) : null}
 
                 {/* Threshold Slider - Dumb component with validated props */}
-                {computed.alarmConfig && computed.sliderPresentation && computed.enrichedThresholds && (!computed.requiresMetricSelection || selectedMetricValue) && (
+                {/* ✅ UNIFIED: Slider always rendered when config available (no requiresMetricSelection check) */}
+                {computed.alarmConfig && computed.sliderPresentation && enrichedThresholds && (
                   <View style={styles.sliderSection}>
                     <Text style={styles.groupLabel}>Threshold values</Text>
                     <AlarmThresholdSlider
-                      min={computed.enrichedThresholds.display.min.value}
-                      max={computed.enrichedThresholds.display.max.value}
+                      min={enrichedThresholds.display.min.value}
+                      max={enrichedThresholds.display.max.value}
                       direction={computed.alarmConfig.direction}
-                      currentCritical={criticalValueWatched ?? computed.enrichedThresholds.display.critical?.value ?? computed.enrichedThresholds.display.min.value}
-                      currentWarning={warningValueWatched ?? computed.enrichedThresholds.display.warning?.value ?? computed.enrichedThresholds.display.max.value}
+                      currentCritical={criticalValueWatched ?? enrichedThresholds.display.critical?.value ?? enrichedThresholds.display.min.value}
+                      currentWarning={warningValueWatched ?? enrichedThresholds.display.warning?.value ?? enrichedThresholds.display.max.value}
                       presentation={computed.sliderPresentation}
                       formula={computed.alarmFormula}
                       sensorMetrics={computed.sensorMetrics}

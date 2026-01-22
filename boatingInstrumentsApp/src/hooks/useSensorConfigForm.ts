@@ -95,6 +95,7 @@ const createSensorFormSchema = (direction?: 'above' | 'below') =>
 export interface UseSensorConfigFormReturn {
   form: UseFormReturn<SensorFormData>;
   enrichedThresholds: EnrichedThresholdInfo | null;
+  currentMetricValue: string | undefined;
   handlers: {
     handleMetricChange: (newMetric: string) => void;
     handleEnabledChange: (value: boolean) => void;
@@ -684,6 +685,7 @@ export const useSensorConfigForm = (
   return {
     form,
     enrichedThresholds,
+    currentMetricValue,
     handlers: {
       handleMetricChange,
       handleEnabledChange,
