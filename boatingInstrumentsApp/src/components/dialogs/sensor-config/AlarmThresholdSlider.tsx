@@ -69,7 +69,16 @@ function calculateEffectiveValue(
     }
     
     if (typeof result === 'number' && !isNaN(result)) {
-      return `${presentation.format(result)} ${presentation.symbol}`;
+      const formattedResult = `${presentation.format(result)} ${presentation.symbol}`;
+      if (__DEV__) {
+        console.log('[AlarmThresholdSlider] Returning formatted:', {
+          result,
+          formatted: presentation.format(result),
+          symbol: presentation.symbol,
+          final: formattedResult,
+        });
+      }
+      return formattedResult;
     }
   } catch (err) {
     // Formula evaluation failed - fallback to ratio display
