@@ -35,7 +35,6 @@ import {
 import { useWatch } from 'react-hook-form';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useNmeaStore } from '../../store/nmeaStore';
-import { useSensorConfigStore } from '../../store/sensorConfigStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { SensorType, SensorConfiguration } from '../../types/SensorData';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
@@ -144,7 +143,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       
       // Capture store methods inside callback to avoid stale closure
       const updateSensorThresholds = useNmeaStore.getState().updateSensorThresholds;
-      const setConfig = useSensorConfigStore.getState().setConfig;
+      const setConfig = useNmeaStore.getState().setSensorConfig;
       
       // If name field is empty, set default format
       const trimmedName = data.name?.trim();

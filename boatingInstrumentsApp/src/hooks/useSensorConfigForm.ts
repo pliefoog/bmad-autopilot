@@ -26,7 +26,6 @@ import { z } from 'zod';
 import { Platform, Alert } from 'react-native';
 
 import { useNmeaStore } from '../store/nmeaStore';
-import { useSensorConfigStore } from '../store/sensorConfigStore';
 import { usePresentationStore } from '../presentation/presentationStore';
 import { ensureFormatFunction } from '../presentation/presentations';
 
@@ -164,9 +163,9 @@ export const useSensorConfigForm = (
   // Store access - only getSensorThresholds needed here
   const getSensorThresholds = useNmeaStore((state) => state.getSensorThresholds);
 
-  // Watch sensorConfigStore for changes to trigger form re-initialization
-  const savedConfig = useSensorConfigStore(
-    (state) => sensorType ? state.getConfig(sensorType, selectedInstance) : undefined,
+  // Watch nmeaStore for changes to trigger form re-initialization
+  const savedConfig = useNmeaStore(
+    (state) => sensorType ? state.getSensorConfig(sensorType, selectedInstance) : undefined,
     (a, b) => {
       // ✅ UNIFIED: Schema V4 equality check (no top-level enabled/critical/warning)
       if (!a && !b) return true;

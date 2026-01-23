@@ -53,7 +53,6 @@
 import { SensorType } from '../types/SensorData';
 import { log } from '../utils/logging/logger';
 import { useNmeaStore } from '../store/nmeaStore';
-import { useSensorConfigStore } from '../store/sensorConfigStore';
 import { sensorRegistry } from './SensorDataRegistry';
 import { usePresentationStore } from '../presentation/presentationStore';
 import { getAlarmDefaults, getSensorSchema } from '../registry';
@@ -163,9 +162,9 @@ class ThresholdPresentationServiceClass {
     const thresholds = nmeaStore.getSensorThresholds(sensorType, instance, metric);
 
     // Get defaults from schema for this sensor/metric
-    // Context must come from sensorConfigStore (persistent), not thresholds (MetricThresholds doesn't have context)
+    // Context must come from nmeaStore (persistent), not thresholds (MetricThresholds doesn't have context)
     const sensorInstance = sensorRegistry.get(sensorType, instance);
-    const savedConfig = useSensorConfigStore.getState().getConfig(sensorType, instance);
+    const savedConfig = useNmeaStore.getState().getSensorConfig(sensorType, instance);
     const context = savedConfig?.context || {};
     
     // Get the field key for alarm defaults lookup

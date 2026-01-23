@@ -21,7 +21,6 @@ import React, { ReactElement } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useWidgetVisibilityOptional } from '../contexts/WidgetVisibilityContext';
 import { useNmeaStore } from '../store/nmeaStore';
-import { useSensorConfigStore } from '../store/sensorConfigStore';
 import { sensorRegistry } from '../services/SensorDataRegistry';
 import type { SensorInstance } from '../types/SensorInstance';
 import type { SensorType } from '../types/SensorData';
@@ -121,8 +120,8 @@ export const TemplatedWidget: React.FC<TemplatedWidgetProps> = ({
 
   // Subscribe to sensor configuration for custom name
   // This ensures header updates when user changes name in SensorConfigDialog
-  const customName = useSensorConfigStore((state) => {
-    const config = state.getConfig(sensorType, instanceNumber);
+  const customName = useNmeaStore((state) => {
+    const config = state.getSensorConfig(sensorType, instanceNumber);
     return config?.name;
   });
 

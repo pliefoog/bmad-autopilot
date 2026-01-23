@@ -45,7 +45,6 @@ import { getUnitType, getMnemonic, isCacheInitialized } from '../registry/global
 import { evaluateAlarm } from '../utils/alarmEvaluation';
 import { log } from '../utils/logging/logger';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
-import { useSensorConfigStore } from '../store/sensorConfigStore';
 import { resolveThreshold } from '../utils/thresholdResolver';
 import type { SensorConfiguration } from './SensorData';
 
@@ -134,16 +133,16 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * Initialize sensor with thresholds (Priority: User Settings → Registry Defaults)
    * 
    * Purpose:
-   * - Load user-saved thresholds from sensorConfigStore (primary source)
+   * - Load user-saved thresholds from nmeaStore (primary source)
    * - Fall back to registry defaults if no user settings exist
    * - Ensures configuration dialog shows proper values instead of empty/zero
    * 
    * Priority Hierarchy:
-   * 1. User-saved settings (from sensorConfigStore persistence)
+   * 1. User-saved settings (from nmeaStore persistence)
    * 2. Registry defaults (from SensorConfigRegistry)
    * 
    * Implementation Notes:
-   * - Checks sensorConfigStore.getConfig(sensorType, instance) first
+   * - Checks nmeaStore.getSensorConfig(sensorType, instance) first
    * - If user config exists: loads critical/warning/metrics from stored config
    * - If no user config: loads from getAlarmDefaults(sensorType)
    * - Supports both single-metric and multi-metric sensors
