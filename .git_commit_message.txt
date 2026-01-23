@@ -1,0 +1,25 @@
+fix: indirectThreshold architecture - store both resolved and ratio values
+
+CRITICAL ARCHITECTURE FIX:
+- MetricThresholds now stores BOTH resolved min/max (for alarms/TrendLine) AND original indirectThreshold (for UI editing and recalculation when dependencies change)
+- Alarm evaluation uses resolved min/max values with hysteresis
+- TrendLine displays resolved threshold lines (not ratios)
+- SensorConfigDialog edits the indirectThreshold ratio value
+- Future: Support recalculation when dependency values change (e.g., voltage threshold when temperature changes)
+
+Implementation Details:
+1. MetricThresholds.critical/warning: Added comments clarifying min/max for alarms, indirectThreshold for UI/recalc
+2. SensorInstance.convertToMetricThresholds: Stores BOTH resolved value and original ratio
+3. ThresholdPresentationService: Reads indirectThreshold from runtime thresholds (now available)
+4. nmeaStore.updateSensorThresholds: Simplified to call updateThresholdsFromConfig which handles all conversion
+
+Data Flow:
+- Storage: MetricConfiguration.indirectThreshold = { critical: 1.5, warning: 1.0 }
+- Runtime: MetricThresholds.critical = { max: 225, indirectThreshold: 1.5 }
+  - max: Resolved value (150Ah × 1.5 C-rate = 225A) - used by alarms/TrendLine
+  - indirectThreshold: Original ratio - used by UI and future recalculation
+- Alarm: evaluateAlarm checks critical.max (225A) against current value
+- TrendLine: Displays horizontal line at resolved threshold (225A)
+- Dialog: Slider shows indirectThreshold ratio (1.5 C-rate)
+
+Files: SensorData.ts, SensorInstance.ts, ThresholdPresentationService.ts, nmeaStore.ts

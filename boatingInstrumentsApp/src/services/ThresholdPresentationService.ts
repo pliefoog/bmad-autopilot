@@ -214,11 +214,11 @@ class ThresholdPresentationServiceClass {
 
       // Derive numeric thresholds from MetricThresholds structure
       // For 'below' alarms, use .min; for 'above' alarms, use .max
-      // For ratio mode (indirectThreshold), use .indirectThreshold
+      // For ratio mode, use .indirectThreshold for UI editing
       const t = thresholds as any;
       if (t) {
         if (ratioMode) {
-          // CRITICAL FIX (Jan 2025): Load indirectThreshold from storage for ratio mode
+          // Ratio mode: Use indirectThreshold (user's ratio value) from runtime thresholds
           critical = t.critical?.indirectThreshold;
           warning = t.warning?.indirectThreshold;
         } else if (direction === 'below') {
@@ -275,12 +275,12 @@ class ThresholdPresentationServiceClass {
       direction = field?.alarm?.direction;
 
       // Derive numeric thresholds from MetricThresholds structure
-      // For ratio mode (indirectThreshold), use .indirectThreshold
+      // For ratio mode, use .indirectThreshold for UI editing
       // For direct mode, use .min or .max based on direction
       const t = thresholds as any;
       if (t) {
         if (ratioMode) {
-          // CRITICAL FIX (Jan 2025): Load indirectThreshold from storage for ratio mode
+          // Ratio mode: Use indirectThreshold (user's ratio value) from runtime thresholds
           critical = t.critical?.indirectThreshold;
           warning = t.warning?.indirectThreshold;
         } else if (direction === 'below') {

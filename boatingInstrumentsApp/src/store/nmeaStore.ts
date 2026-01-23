@@ -294,133 +294,24 @@ export const useNmeaStore = create<NmeaStore>()(
           return;
         }
 
-        // Update sensor name if provided (custom user-assigned name from config)
-        // This syncs the persistent config name to the working sensor instance
-        if (thresholds.name !== undefined) {
-          log.storeInit('nmeaStore: Updating sensor name', () => ({
-            sensorType,
-            instance,
-            oldName: sensorInstance.name,
-            newName: thresholds.name,
-          }));
-          sensorInstance.name = thresholds.name;
-        }
-
-        // Extract actual threshold values from configuration object
-        // (thresholds parameter is actually a SensorConfiguration update object)
-        const hasThresholdValues = 
-          thresholds.critical !== undefined || 
-          thresholds.warning !== undefined ||
-          thresholds.metrics !== undefined;
-
-        // Only update thresholds if threshold values are present
-        if (!hasThresholdValues) {
-          log.app('No threshold values to update - skipping threshold update', () => ({
-            sensorType,
-            instance,
-            hasName: !!thresholds.name,
-            hasEnabled: thresholds.enabled !== undefined,
-          }));
-          return;
-        }
-
-        // Handle multi-metric sensors (e.g., weather, battery, engine)
-        if (thresholds.metrics) {
-          // Multi-metric: iterate through each metric in the metrics object
-          for (const [metricKey, metricConfig] of Object.entries(thresholds.metrics)) {
-            // Validate metric key exists in sensor
-            const metricKeys = sensorInstance.getMetricKeys();
-            if (!metricKeys.includes(metricKey)) {
-              log.app('Skipping unknown metric key in multi-metric update', () => ({
-                sensorType,
-                instance,
-                metricKey,
-                availableMetrics: metricKeys,
-              }));
-              continue;
-            }
-
-            // Check if this metric config has actual threshold values
-            const hasMetricThresholds = 
-              (metricConfig as any).critical !== undefined ||
-              (metricConfig as any).warning !== undefined ||
-              (metricConfig as any).indirectThreshold !== undefined;
-
-            if (!hasMetricThresholds) {
-              log.app('Skipping metric without threshold values', () => ({
-                sensorType,
-                instance,
-                metricKey,
-              }));
-              continue;
-            }
-
-            // Extract threshold properties from metric config
-            // CRITICAL FIX (Jan 2025): Handle both direct and indirectThreshold modes
-            const metricThresholds: any = {
-              direction: thresholds.direction || (metricConfig as any).direction,
-              staleThresholdMs: (metricConfig as any).staleThresholdMs,
-              enabled: (metricConfig as any).enabled ?? true,
-            };
-            
-            // Check if this is ratio mode (indirectThreshold)
-            if ((metricConfig as any).indirectThreshold) {
-              metricThresholds.critical = {
-                indirectThreshold: (metricConfig as any).indirectThreshold.critical,
-              };
-              metricThresholds.warning = {
-                indirectThreshold: (metricConfig as any).indirectThreshold.warning,
-              };
-            } else {
-              // Direct mode - use critical/warning values
-              metricThresholds.critical = (metricConfig as any).critical;
-              metricThresholds.warning = (metricConfig as any).warning;
-              metricThresholds.min = (metricConfig as any).min;
-              metricThresholds.max = (metricConfig as any).max;
-            }
-
-            sensorInstance.updateThresholds(metricKey, metricThresholds);
-          }
-          return;
-        }
-
-        // Handle single-metric sensors (e.g., depth, speed)
-        const metricKeys = sensorInstance.getMetricKeys();
-        if (metricKeys.length === 0) {
-          log.app('Cannot update thresholds - no metrics found', () => ({
-            sensorType,
-            instance,
-          }));
-          return;
-        }
-
-        // Use provided metricKey or default to first metric (backward compatibility)
-        const targetMetricKey = metricKey || metricKeys[0];
+        // CRITICAL FIX (Jan 2026): Use SensorInstance's updateThresholdsFromConfig
+        // This method properly handles formula resolution for indirectThreshold (ratio-based alarms)
+        // 
+        // PREVIOUS BUG: nmeaStore did its own conversion which stored raw indirectThreshold values
+        // without resolving formulas (e.g., "capacity * indirectThreshold"). This caused alarms
+        // to never trigger because evaluateAlarm checks critical.min/max, not critical.indirectThreshold.
+        // 
+        // SensorInstance.updateThresholdsFromConfig:
+        // 1. Detects ratio mode (indirectThreshold present in config)
+        // 2. Gets schema ThresholdConfig with formula definition
+        // 3. Injects user's indirectThreshold value (e.g., 1.5 C-rate)
+        // 4. Calls resolveThreshold to evaluate formula → numeric value
+        // 5. Stores resolved value in critical.min or critical.max based on direction
+        // 
+        // The thresholds parameter is a SensorConfiguration object (despite name),
+        // so we can pass it directly to updateThresholdsFromConfig.
         
-        // Validate metric key exists
-        if (!metricKeys.includes(targetMetricKey)) {
-          log.app('Cannot update thresholds - metric key not found', () => ({
-            sensorType,
-            instance,
-            requestedMetricKey: targetMetricKey,
-            availableMetrics: metricKeys,
-          }));
-          return;
-        }
-        
-        // Extract only threshold-specific properties for updateThresholds
-        // (not the full configuration object with name, enabled, etc.)
-        const metricThresholds = {
-          critical: thresholds.critical,
-          warning: thresholds.warning,
-          min: thresholds.min,
-          max: thresholds.max,
-          direction: thresholds.direction,
-          staleThresholdMs: thresholds.staleThresholdMs,
-          enabled: thresholds.enabled ?? true,
-        };
-        
-        sensorInstance.updateThresholds(targetMetricKey, metricThresholds);
+        sensorInstance.updateThresholdsFromConfig(thresholds as SensorConfiguration);
       },
 
       /**

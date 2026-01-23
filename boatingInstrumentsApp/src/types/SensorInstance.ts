@@ -651,6 +651,8 @@ export class SensorInstance<T extends SensorData = SensorData> {
             };
             const resolvedCritical = resolveThreshold(criticalConfig, config);
             
+            // Store BOTH resolved value (for alarms/TrendLine) AND ratio (for UI/recalc)
+            thresholds.critical.indirectThreshold = cfg.indirectThreshold.critical;
             if (resolvedCritical !== undefined) {
               if (direction === 'below') {
                 thresholds.critical.min = resolvedCritical;
@@ -667,6 +669,8 @@ export class SensorInstance<T extends SensorData = SensorData> {
             };
             const resolvedWarning = resolveThreshold(warningConfig, config);
             
+            // Store BOTH resolved value (for alarms/TrendLine) AND ratio (for UI/recalc)
+            thresholds.warning.indirectThreshold = cfg.indirectThreshold.warning;
             if (resolvedWarning !== undefined) {
               if (direction === 'below') {
                 thresholds.warning.min = resolvedWarning;

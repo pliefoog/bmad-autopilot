@@ -32,14 +32,14 @@ import { SENSOR_SCHEMAS, type InferSensorData, type SensorType } from '../regist
  */
 export interface MetricThresholds {
   critical: {
-    min?: number;
-    max?: number;
-    indirectThreshold?: number;  // For formula-based ratio thresholds (Jan 2025)
+    min?: number;  // Resolved threshold value for alarm evaluation
+    max?: number;  // Resolved threshold value for alarm evaluation
+    indirectThreshold?: number;  // Original ratio for UI editing & recalculation (Jan 2026)
   };
   warning: {
-    min?: number;
-    max?: number;
-    indirectThreshold?: number;  // For formula-based ratio thresholds (Jan 2025)
+    min?: number;  // Resolved threshold value for alarm evaluation
+    max?: number;  // Resolved threshold value for alarm evaluation
+    indirectThreshold?: number;  // Original ratio for UI editing & recalculation (Jan 2026)
   };
   hysteresis?: number;
   criticalSoundPattern?: string;
