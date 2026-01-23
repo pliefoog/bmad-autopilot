@@ -442,11 +442,11 @@ const styles = StyleSheet.create({
     bottom: 28,
   },
   thumbLabelBottom: {
-    top: 28,
+    top: 24,  // Closer to thumb to match top label spacing
   },
   thumbValueContainer: {
     position: 'absolute',
-    top: 28,
+    top: 24,  // Closer to thumb to match top label spacing
     left: -40,
     right: -40,
     alignItems: 'center',
