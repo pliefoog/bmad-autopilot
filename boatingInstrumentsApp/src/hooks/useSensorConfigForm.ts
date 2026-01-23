@@ -447,21 +447,47 @@ export const useSensorConfigForm = (
   }, [sensorType, watchedMetric, alarmFormula, alarmFieldKeys, defaultMetric]);
 
   // Get current metric value for display (reactive to store changes)
+  // Compute metric key outside selector so it triggers re-subscription when changed
+  const activeMetricKey = watchedMetric || defaultMetric;
+  
   const currentMetricValue = useNmeaStore(
     (state) => {
-      if (!sensorType) return undefined;
-      
-      // ✅ UNIFIED: Always use watchedMetric || defaultMetric (computed inside selector for reactivity)
-      const metricKey = watchedMetric || defaultMetric;
-      if (!metricKey) return undefined;
+      if (!sensorType || !activeMetricKey) {
+        log.app('[useSensorConfigForm] No sensorType or activeMetricKey', () => ({
+          sensorType,
+          activeMetricKey,
+          watchedMetric,
+          defaultMetric,
+        }));
+        return undefined;
+      }
       
       const sensorInstance = (state.nmeaData as any)?.sensors?.[sensorType]?.[selectedInstance];
-      if (!sensorInstance) return undefined;
+      if (!sensorInstance) {
+        log.app('[useSensorConfigForm] No sensor instance', () => ({
+          sensorType,
+          selectedInstance,
+          availableSensors: Object.keys((state.nmeaData as any)?.sensors || {}),
+        }));
+        return undefined;
+      }
       
-      const metricValue = sensorInstance.getMetric(metricKey);
-      if (!metricValue) return undefined;
+      const metricValue = sensorInstance.getMetric(activeMetricKey);
+      if (!metricValue) {
+        log.app('[useSensorConfigForm] No metric value', () => ({
+          sensorType,
+          activeMetricKey,
+          availableMetrics: Array.from(sensorInstance.metrics?.keys() || []),
+        }));
+        return undefined;
+      }
       
       // Return formatted value with unit
+      log.app('[useSensorConfigForm] Got metric value', () => ({
+        sensorType,
+        activeMetricKey,
+        formattedValueWithUnit: metricValue.formattedValueWithUnit,
+      }));
       return metricValue.formattedValueWithUnit;
     },
     (a, b) => a === b
