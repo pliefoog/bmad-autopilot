@@ -391,6 +391,12 @@ export class SensorInstance<T extends SensorData = SensorData> {
     // Note: Calculated metrics (dewPoint, ROT, trueWind) are now handled
     // by CalculatedMetricsService in SensorDataRegistry
 
+    // CRITICAL: Recalculate formula-based thresholds when dependency values change
+    // Example: voltage threshold depends on temperature, current threshold depends on capacity
+    if (hasChanges) {
+      this._recalculateFormulaDependentThresholds();
+    }
+
     return { changed: hasChanges, changedMetrics };
   }
 
@@ -552,6 +558,119 @@ export class SensorInstance<T extends SensorData = SensorData> {
         : point.value,
       timestamp: point.timestamp,
     }));
+  }
+
+  /**
+   * Recalculate formula-based thresholds when dependency values change
+   * 
+   * Purpose:
+   * - When capacity changes (150Ah → 200Ah), current threshold (capacity * 1.5) must be recalculated
+   * - When temperature changes, voltage threshold (nominalVoltage + temp compensation) must be recalculated
+   * - Detects formula-based thresholds by presence of indirectThreshold field
+   * 
+   * Implementation:
+   * - Iterate through all stored thresholds
+   * - For metrics with indirectThreshold (indicates formula-based), re-resolve formula
+   * - Build context from current metric values (capacity, temperature, nominalVoltage, etc.)
+   * - Re-evaluate formula and update resolved min/max values
+   * - Preserve original indirectThreshold value (user's ratio)
+   * - Skip direct thresholds (no indirectThreshold field)
+   * 
+   * @private
+   */
+  private _recalculateFormulaDependentThresholds(): void {
+    const schema = SENSOR_SCHEMAS[this.sensorType as keyof typeof SENSOR_SCHEMAS];
+    if (!schema) return;
+
+    // Build context from current metric values (capacity, temperature, nominalVoltage, etc.)
+    const context: Record<string, any> = {
+      sensorType: this.sensorType,
+      instance: this.instance,
+      name: this.name,
+      context: this.context,
+    };
+
+    // Add all current metric values to context
+    for (const [metricKey, buffer] of this._history.entries()) {
+      const latest = buffer.getLatest();
+      if (latest && typeof latest.value === 'number') {
+        context[metricKey] = latest.value;
+      }
+    }
+
+    // Check each threshold for formula dependencies (indicated by indirectThreshold)
+    for (const [metricKey, thresholds] of this._thresholds.entries()) {
+      const hasCriticalFormula = thresholds.critical.indirectThreshold !== undefined;
+      const hasWarningFormula = thresholds.warning.indirectThreshold !== undefined;
+
+      if (!hasCriticalFormula && !hasWarningFormula) {
+        continue; // Skip direct thresholds
+      }
+
+      // Get schema definition for this metric
+      const fieldDef = schema.fields[metricKey as keyof typeof schema.fields] as any;
+      const alarm = fieldDef?.alarm;
+      if (!alarm) continue;
+
+      // Get context-specific threshold config from schema
+      const contextKey = schema.contextKey;
+      const contextValue = this.context ? (this.context as any)[contextKey!] : undefined;
+      const contextDef = contextValue
+        ? alarm.contexts[contextValue]
+        : alarm.contexts[Object.keys(alarm.contexts)[0]];
+      if (!contextDef) continue;
+
+      const direction = alarm.direction;
+
+      // Recalculate critical threshold if formula-based
+      if (hasCriticalFormula && contextDef.critical) {
+        const criticalConfig = {
+          ...contextDef.critical,
+          indirectThreshold: thresholds.critical.indirectThreshold,
+        };
+        const resolvedCritical = resolveThreshold(criticalConfig, context as any);
+
+        if (resolvedCritical !== undefined) {
+          if (direction === 'below') {
+            thresholds.critical.min = resolvedCritical;
+          } else {
+            thresholds.critical.max = resolvedCritical;
+          }
+
+          // Re-evaluate alarm with new threshold
+          const metric = this.getMetric(metricKey);
+          if (metric && typeof metric.si_value === 'number') {
+            const previousState = this._alarmStates.get(metricKey) ?? 0;
+            const staleThreshold = thresholds.staleThresholdMs ?? 5000;
+            const newState = evaluateAlarm(
+              metric.si_value,
+              metric.timestamp,
+              thresholds,
+              previousState,
+              staleThreshold,
+            );
+            this._alarmStates.set(metricKey, newState);
+          }
+        }
+      }
+
+      // Recalculate warning threshold if formula-based
+      if (hasWarningFormula && contextDef.warning) {
+        const warningConfig = {
+          ...contextDef.warning,
+          indirectThreshold: thresholds.warning.indirectThreshold,
+        };
+        const resolvedWarning = resolveThreshold(warningConfig, context as any);
+
+        if (resolvedWarning !== undefined) {
+          if (direction === 'below') {
+            thresholds.warning.min = resolvedWarning;
+          } else {
+            thresholds.warning.max = resolvedWarning;
+          }
+        }
+      }
+    }
   }
 
   /**
