@@ -234,8 +234,11 @@ class ThresholdPresentationServiceClass {
       }
 
       // Get min/max display range from schema
-      // In ratio mode, use thresholdRange (ratio min/max), not field min/max (physical value range)
-      if (ratioMode && schemaDefaults?.thresholdRange) {
+      // CRITICAL FIX (Jan 2025): Always prefer thresholdRange over field.min/max
+      // - thresholdRange = slider range for configuring thresholds (e.g., 0-10m for depth)
+      // - field.min/max = physical sensor range (e.g., 0-100m for depth sensor)
+      // Slider should use thresholdRange (what user can configure), not physical range
+      if (schemaDefaults?.thresholdRange) {
         minSI = schemaDefaults.thresholdRange.min;
         maxSI = schemaDefaults.thresholdRange.max;
       } else if (field && field.min !== undefined && field.max !== undefined) {
@@ -279,8 +282,11 @@ class ThresholdPresentationServiceClass {
       }
 
       // Get min/max from schema
-      // In ratio mode, use thresholdRange (ratio min/max), not field min/max (physical value range)
-      if (ratioMode && schemaDefaults?.thresholdRange) {
+      // CRITICAL FIX (Jan 2025): Always prefer thresholdRange over field.min/max
+      // - thresholdRange = slider range for configuring thresholds (e.g., 0-10m for depth)
+      // - field.min/max = physical sensor range (e.g., 0-100m for depth sensor)
+      // Slider should use thresholdRange (what user can configure), not physical range
+      if (schemaDefaults?.thresholdRange) {
         minSI = schemaDefaults.thresholdRange.min;
         maxSI = schemaDefaults.thresholdRange.max;
       } else if (field && field.min !== undefined && field.max !== undefined) {

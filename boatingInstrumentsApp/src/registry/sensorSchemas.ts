@@ -394,9 +394,9 @@ export const SENSOR_SCHEMAS = {
           safetyRequired: true,
           contexts: {
             default: {
-              critical: { value: 2.0, hysteresis: 0.02, sound: 'rapid_pulse' },
-              warning: { value: 2.5, hysteresis: 0.02, sound: 'morse_u' },
-              thresholdRange: { min: 0, max: 100 },
+              critical: { value: 2.0, hysteresis: 0.2, sound: 'rapid_pulse' },
+              warning: { value: 2.5, hysteresis: 0.2, sound: 'morse_u' },
+              thresholdRange: { min: 0, max: 10 },
             },
           },
         },
