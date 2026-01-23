@@ -90,6 +90,18 @@ export interface EnrichedThresholdInfo {
     critical?: string;   // Computed absolute value with formula fallbacks (e.g., "11.8 V" when nominalVoltage missing)
     warning?: string;    // Computed absolute value with formula fallbacks
   };
+  
+  // Resolved range boundaries (Jan 2026) - for static min/max display in ratio mode
+  resolvedRange?: {
+    min: number;     // SI value: formula evaluated with indirectThreshold = ratio min
+    max: number;     // SI value: formula evaluated with indirectThreshold = ratio max
+  };
+  
+  // Formula evaluation context (Jan 2026) - for dynamic thumb label calculation
+  formulaContext?: {
+    formula: string;              // Schema formula (e.g., "capacity * indirectThreshold")
+    parameters: Record<string, number>;  // Current sensor values (capacity: 150, temperature: 25, etc.)
+  };
 
   // Display information (formatted with user's preferred units)
   display: {
@@ -402,6 +414,10 @@ class ThresholdPresentationServiceClass {
     // Build absolute value strings for ratio mode (show computed value with fallback indicators)
     let absoluteCritical: string | undefined;
     let absoluteWarning: string | undefined;
+    let resolvedMin: number | undefined;
+    let resolvedMax: number | undefined;
+    let formula: string | undefined;
+    let formulaParameters: Record<string, number> | undefined;
 
     if (ratioMode && schemaDefaults) {
       // Compute absolute values by resolving formulas with current sensor data
@@ -424,6 +440,30 @@ class ThresholdPresentationServiceClass {
       formulaContext.capacity = formulaContext.capacity ?? 140;
       formulaContext.maxRpm = formulaContext.maxRpm ?? 3000;
       formulaContext.temperature = formulaContext.temperature ?? 25;
+      
+      // Store formula and parameters for slider's dynamic calculation
+      formula = schemaDefaults.critical.formula || schemaDefaults.warning.formula;
+      formulaParameters = { ...formulaContext };
+      
+      // Resolve range boundaries (min/max) for static display
+      if (formula) {
+        try {
+          resolvedMin = evaluateFormula(formula, {
+            ...formulaContext,
+            indirectThreshold: minSI,  // Ratio min (e.g., 0)
+          });
+          resolvedMax = evaluateFormula(formula, {
+            ...formulaContext,
+            indirectThreshold: maxSI,  // Ratio max (e.g., 3)
+          });
+        } catch (err) {
+          log.app('[ThresholdPresentationService] Failed to resolve range boundaries', () => ({
+            sensorType,
+            metric,
+            error: err instanceof Error ? err.message : String(err),
+          }));
+        }
+      }
       
       // Evaluate critical threshold formula if it exists
       if (schemaDefaults.critical.formula && critical !== undefined) {
@@ -478,6 +518,14 @@ class ThresholdPresentationServiceClass {
       absoluteValue: ratioMode ? {
         critical: absoluteCritical,
         warning: absoluteWarning,
+      } : undefined,
+      resolvedRange: (ratioMode && resolvedMin !== undefined && resolvedMax !== undefined) ? {
+        min: resolvedMin,
+        max: resolvedMax,
+      } : undefined,
+      formulaContext: (ratioMode && formula && formulaParameters) ? {
+        formula,
+        parameters: formulaParameters,
       } : undefined,
       display: {
         critical: criticalDisplay,

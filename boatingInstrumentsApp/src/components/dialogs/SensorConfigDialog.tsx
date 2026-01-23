@@ -469,6 +469,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                       formula={computed.alarmFormula}
                       sensorMetrics={computed.sensorMetrics}
                       ratioUnit={computed.ratioUnit}
+                      resolvedRange={computed.resolvedRange}
+                      formulaContext={computed.formulaContext}
                       onThresholdsChange={(critical, warning) => {
                         form.setValue('criticalValue', critical);
                         form.setValue('warningValue', warning);

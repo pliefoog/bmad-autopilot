@@ -115,6 +115,8 @@ export interface UseSensorConfigFormReturn {
     alarmFormula: string | undefined;
     sensorMetrics: Map<string, any> | undefined;
     ratioUnit: string | undefined;
+    resolvedRange: { min: number; max: number } | undefined;
+    formulaContext: { formula: string; parameters: Record<string, number> } | undefined;
   };
 }
 
@@ -766,6 +768,8 @@ export const useSensorConfigForm = (
       sensorMetrics,
       ratioUnit,
       currentMetricValue,
+      resolvedRange: enrichedThresholds?.resolvedRange,
+      formulaContext: enrichedThresholds?.formulaContext,
     },
   };
 };

@@ -24,6 +24,44 @@ import { View, Text, StyleSheet, useWindowDimensions, Animated } from 'react-nat
 import RangeSlider from 'rn-range-slider';
 import { ThemeColors } from '../../../store/themeStore';
 import { MOBILE_BREAKPOINT, settingsTokens } from '../../../theme/settingsTokens';
+import { evaluateFormula } from '../../../utils/formulaEvaluator';
+
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Calculate effective threshold value from slider position
+ * For ratio mode: Evaluates formula with thumb's ratio value
+ * For direct mode: Returns thumb value as-is (formatted)
+ */
+function calculateEffectiveValue(
+  thumbValue: number,
+  isRatioMode: boolean,
+  formulaContext: { formula: string; parameters: Record<string, number> } | undefined,
+  presentation: { format: (v: number) => string; symbol: string } | undefined,
+  ratioUnit?: string
+): string {
+  if (!isRatioMode || !formulaContext || !presentation) {
+    // Direct mode: format as-is
+    return presentation ? `${presentation.format(thumbValue)} ${presentation.symbol}` : thumbValue.toString();
+  }
+  
+  try {
+    // Ratio mode: evaluate formula with thumb position
+    const result = evaluateFormula(formulaContext.formula, {
+      ...formulaContext.parameters,
+      indirectThreshold: thumbValue,
+    });
+    
+    if (typeof result === 'number' && !isNaN(result)) {
+      return `${presentation.format(result)} ${presentation.symbol}`;
+    }
+  } catch {
+    // Formula evaluation failed - fallback to ratio display
+  }
+  
+  // Fallback: show ratio value
+  return `${thumbValue.toFixed(2)}${ratioUnit ? ` ${ratioUnit}` : ''}`;
+}
 
 // ==================== TYPES ====================
 
@@ -54,6 +92,18 @@ export interface AlarmThresholdSliderProps {
   
   /** Optional: Sensor metrics for formula evaluation (ratio mode) */
   sensorMetrics?: Map<string, any>;
+  
+  /** Optional: Resolved range boundaries for static display (Jan 2026) */
+  resolvedRange?: {
+    min: number;  // SI units
+    max: number;  // SI units
+  };
+  
+  /** Optional: Formula context for dynamic calculation (Jan 2026) */
+  formulaContext?: {
+    formula: string;
+    parameters: Record<string, number>;
+  };
   
   /** Callback when thresholds change */
   onThresholdsChange: (critical: number, warning: number) => void;
@@ -121,6 +171,8 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   presentation,
   formula,
   sensorMetrics,
+  resolvedRange,
+  formulaContext,
   onThresholdsChange,
   theme,
   ratioUnit,
@@ -128,6 +180,7 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   // ========== ALL HOOKS FIRST (React Rules of Hooks) ==========
   
   const { width } = useWindowDimensions();
+  const isRatioMode = Boolean(formula && (sensorMetrics || formulaContext));
   const isMobile = width < MOBILE_BREAKPOINT;
   
   // Single state object for simplicity
@@ -146,80 +199,11 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   
   // ========== COMPUTED VALUES (All hooks called, safe to compute) ==========
   
-  // Detect ratio mode
-  const isRatioMode = !!formula;
-  
   // Compute step (1% of range for granular control)
   const step = useMemo(() => (max - min) / 100, [min, max]);
   
-  // Format displayed values
-  const formatDisplayValue = useMemo(() => {
-    return (value: number): string => {
-      if (isRatioMode && ratioUnit) {
-        // Ratio mode: "0.95 C-rate"
-        return `${value.toFixed(2)} ${ratioUnit}`;
-      }
-      // Direct mode: use presentation formatting
-      return presentation.format(value);
-    };
-  }, [isRatioMode, ratioUnit, presentation]);
-  
-  // Formula hints (ratio mode only, auto-cached by React)
-  const warningHint = useMemo(() => {
-    if (!isRatioMode || !formula || !sensorMetrics) return null;
-    
-    try {
-      // Simple formula evaluation: replace variables with metric values
-      let evaluated = formula;
-      sensorMetrics.forEach((metricValue, key) => {
-        const value = typeof metricValue === 'number' ? metricValue : metricValue?.si_value;
-        if (typeof value === 'number') {
-          evaluated = evaluated.replace(new RegExp(`\\b${key}\\b`, 'g'), value.toString());
-        }
-      });
-      
-      // Replace "ratio" with actual slider value
-      evaluated = evaluated.replace(/\bratio\b/g, sliderState.warning.toString());
-      
-      // Evaluate the expression
-      const result = eval(evaluated);
-      if (typeof result === 'number' && !isNaN(result)) {
-        return `${presentation.format(result)} ${presentation.symbol}`;
-      }
-    } catch {
-      // Silently fail - formula hints are optional UX enhancement
-    }
-    
-    return null;
-  }, [isRatioMode, formula, sensorMetrics, sliderState.warning, presentation]);
-  
-  const criticalHint = useMemo(() => {
-    if (!isRatioMode || !formula || !sensorMetrics) return null;
-    
-    try {
-      let evaluated = formula;
-      sensorMetrics.forEach((metricValue, key) => {
-        const value = typeof metricValue === 'number' ? metricValue : metricValue?.si_value;
-        if (typeof value === 'number') {
-          evaluated = evaluated.replace(new RegExp(`\\b${key}\\b`, 'g'), value.toString());
-        }
-      });
-      
-      evaluated = evaluated.replace(/\bratio\b/g, sliderState.critical.toString());
-      
-      const result = eval(evaluated);
-      if (typeof result === 'number' && !isNaN(result)) {
-        return `${presentation.format(result)} ${presentation.symbol}`;
-      }
-    } catch {
-      // Silently fail
-    }
-    
-    return null;
-  }, [isRatioMode, formula, sensorMetrics, sliderState.critical, presentation]);
-  
-  // Get unit symbol
-  const unitSymbol = ratioUnit || presentation.symbol;
+  // Get unit symbol (use presentation symbol since effective values are displayed)
+  const unitSymbol = presentation.symbol;
   
   // ========== EVENT HANDLERS ==========
   
@@ -248,7 +232,15 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
     const thumbColor = isWarning ? theme.warning : theme.error;
     const thresholdLabel = isWarning ? 'Warning' : 'Critical';
     const thresholdValue = isWarning ? sliderState.warning : sliderState.critical;
-    const computedHint = isWarning ? warningHint : criticalHint;
+    
+    // Calculate effective value (resolved from formula in ratio mode)
+    const effectiveValue = calculateEffectiveValue(
+      thresholdValue,
+      isRatioMode,
+      formulaContext,
+      presentation,
+      ratioUnit
+    );
     
     return (
       <View>
@@ -269,24 +261,12 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
         {/* Threshold value below thumb */}
         <View style={styles.thumbValueContainer}>
           <Text style={[styles.thumbLabel, styles.thumbLabelBottom, { color: thumbColor }]}>
-            {formatDisplayValue(thresholdValue)}
+            {effectiveValue}
           </Text>
-          {/* Show computed absolute value in ratio mode */}
-          {computedHint && (
-            <Text
-              style={[
-                styles.thumbLabel,
-                styles.thumbLabelComputed,
-                { color: theme.textSecondary },
-              ]}
-            >
-              → {computedHint}
-            </Text>
-          )}
         </View>
       </View>
     );
-  }, [direction, theme.warning, theme.error, theme.textSecondary, sliderState.warning, sliderState.critical, warningHint, criticalHint, formatDisplayValue]);
+  }, [direction, theme.warning, theme.error, theme.textSecondary, sliderState.warning, sliderState.critical, isRatioMode, formulaContext, presentation, ratioUnit]);
   
   const renderRail = useCallback(() => {
     return <View style={[styles.rail, { backgroundColor: theme.border }]} />;
@@ -308,36 +288,34 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
       <View style={[styles.legend, isMobile && styles.legendMobile]}>
         <AnimatedThresholdValue
           label="WARNING"
-          value={formatDisplayValue(sliderState.warning)}
+          value={calculateEffectiveValue(sliderState.warning, isRatioMode, formulaContext, presentation, ratioUnit)}
           color={theme.warning}
           theme={theme}
         />
-        {warningHint && (
-          <Text style={[styles.hintText, { color: theme.textSecondary }]}>
-            {warningHint}
-          </Text>
-        )}
         
         <AnimatedThresholdValue
           label="CRITICAL"
-          value={formatDisplayValue(sliderState.critical)}
+          value={calculateEffectiveValue(sliderState.critical, isRatioMode, formulaContext, presentation, ratioUnit)}
           color={theme.error}
           theme={theme}
         />
-        {criticalHint && (
-          <Text style={[styles.hintText, { color: theme.textSecondary }]}>
-            {criticalHint}
-          </Text>
-        )}
       </View>
       
       {/* Range Indicator */}
       <View style={styles.rangeRow}>
         <Text style={[styles.rangeLabel, { color: theme.textSecondary }]}>
-          {formatDisplayValue(min)}
+          {isRatioMode && resolvedRange && formulaContext
+            ? calculateEffectiveValue(min, isRatioMode, formulaContext, presentation, ratioUnit)
+            : isRatioMode && ratioUnit
+              ? `${min.toFixed(2)} ${ratioUnit}`
+              : presentation.format(min)}
         </Text>
         <Text style={[styles.rangeLabel, { color: theme.textSecondary }]}>
-          {formatDisplayValue(max)}
+          {isRatioMode && resolvedRange && formulaContext
+            ? calculateEffectiveValue(max, isRatioMode, formulaContext, presentation, ratioUnit)
+            : isRatioMode && ratioUnit
+              ? `${max.toFixed(2)} ${ratioUnit}`
+              : presentation.format(max)}
         </Text>
       </View>
       
