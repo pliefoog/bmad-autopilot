@@ -416,13 +416,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               <PlatformToggle
                 label=""
                 value={enabledValue ?? false}
-                onValueChange={(value) => {
-                  if (!value && ['depth', 'battery', 'engine'].includes(selectedSensorType)) {
-                    handlers.handleEnabledChange(value);
-                  } else {
-                    form.setValue('enabled', value);
-                  }
-                }}
+                onValueChange={(value) => handlers.handleEnabledChange(value)}
               />
             </View>
 

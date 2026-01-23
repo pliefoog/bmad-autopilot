@@ -626,10 +626,10 @@ export const useSensorConfigForm = (
         const message = `${sensorType?.toUpperCase()} alarms are critical for vessel safety. Disable this alarm?`;
         const ok = await confirm(title, message);
         if (ok) {
-          form.setValue('enabled', value);
+          form.setValue('enabled', value, { shouldDirty: true });
         }
       } else {
-        form.setValue('enabled', value);
+        form.setValue('enabled', value, { shouldDirty: true });
       }
     },
     [sensorType, form, confirm],
