@@ -430,18 +430,13 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
               <View style={styles.settingGroup}>
                 {/* ✅ UNIFIED: Always show MetricSelector (interactive even for single-metric) */}
                 {alarmMetrics.length > 0 && (
-                  <>
-                    <Text style={styles.groupLabel}>
-                      {alarmMetrics.length > 1 ? 'Alarm metric' : 'Metric'}
-                    </Text>
-                    <MetricSelector
-                      alarmMetrics={alarmMetrics}
-                      selectedMetric={selectedMetricValue ?? ''}
-                      onMetricChange={(metric) => handlers.handleMetricChange(metric)}
-                      theme={theme}
-                      currentValue={currentMetricValue}
-                    />
-                  </>
+                  <MetricSelector
+                    alarmMetrics={alarmMetrics}
+                    selectedMetric={selectedMetricValue ?? ''}
+                    onMetricChange={(metric) => handlers.handleMetricChange(metric)}
+                    theme={theme}
+                    currentValue={currentMetricValue}
+                  />
                 )}
 
                 {/* Threshold Slider - Dumb component with validated props */}
@@ -449,7 +444,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                 {/* CRITICAL: key prop forces remount when metric changes - prevents stale enrichedThresholds */}
                 {computed.alarmConfig && computed.sliderPresentation && enrichedThresholds && (
                   <View style={styles.sliderSection}>
-                    <Text style={styles.groupLabel}>Threshold values</Text>
+                    <Text style={styles.groupLabel}>Threshold</Text>
                     <AlarmThresholdSlider
                       key={`${selectedSensorType}-${selectedInstance}-${form.watch('selectedMetric')}`}
                       min={enrichedThresholds.display.min.value}
@@ -545,7 +540,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   settingGroup: {
-    marginTop: 16,
+    marginTop: 8,  // Tighter spacing - tucked under Enable Alarm
   },
   groupLabel: {
     fontSize: 14,
