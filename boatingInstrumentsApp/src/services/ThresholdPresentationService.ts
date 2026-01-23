@@ -445,6 +445,17 @@ class ThresholdPresentationServiceClass {
       formula = schemaDefaults.critical.formula || schemaDefaults.warning.formula;
       formulaParameters = { ...formulaContext };
       
+      // Debug logging
+      if (__DEV__) {
+        console.log('[ThresholdPresentationService] Formula context computed:', {
+          sensorType,
+          metric,
+          formula,
+          parameters: formulaParameters,
+          ratioMode,
+        });
+      }
+      
       // Resolve range boundaries (min/max) for static display
       if (formula) {
         try {
@@ -502,7 +513,7 @@ class ThresholdPresentationServiceClass {
       }
     }
 
-    return {
+    const result = {
       critical,
       warning,
       min: minSI,
@@ -540,6 +551,20 @@ class ThresholdPresentationServiceClass {
         ? (displayValue: number) => `${formatFn(displayValue)} ${ratioUnit || ''}`
         : (displayValue: number) => `${formatFn(displayValue)} ${presentation.symbol}`,
     };
+    
+    // Debug logging
+    if (__DEV__) {
+      console.log('[ThresholdPresentationService] Returning enriched thresholds:', {
+        sensorType,
+        metric,
+        ratioMode: result.ratioMode,
+        hasFormulaContext: !!result.formulaContext,
+        formulaContext: result.formulaContext,
+        hasResolvedRange: !!result.resolvedRange,
+      });
+    }
+    
+    return result;
   }
 
   /**

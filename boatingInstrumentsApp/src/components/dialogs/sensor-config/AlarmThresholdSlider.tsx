@@ -40,6 +40,18 @@ function calculateEffectiveValue(
   presentation: { format: (v: number) => string; symbol: string } | undefined,
   ratioUnit?: string
 ): string {
+  // Debug logging
+  if (__DEV__) {
+    console.log('[AlarmThresholdSlider] calculateEffectiveValue:', {
+      thumbValue,
+      isRatioMode,
+      hasFormulaContext: !!formulaContext,
+      hasPresentation: !!presentation,
+      formula: formulaContext?.formula,
+      parameters: formulaContext?.parameters,
+    });
+  }
+  
   if (!isRatioMode || !formulaContext || !presentation) {
     // Direct mode: format as-is
     return presentation ? `${presentation.format(thumbValue)} ${presentation.symbol}` : thumbValue.toString();
@@ -52,11 +64,18 @@ function calculateEffectiveValue(
       indirectThreshold: thumbValue,
     });
     
+    if (__DEV__) {
+      console.log('[AlarmThresholdSlider] Formula result:', { result, formatted: presentation.format(result) });
+    }
+    
     if (typeof result === 'number' && !isNaN(result)) {
       return `${presentation.format(result)} ${presentation.symbol}`;
     }
-  } catch {
+  } catch (err) {
     // Formula evaluation failed - fallback to ratio display
+    if (__DEV__) {
+      console.error('[AlarmThresholdSlider] Formula evaluation failed:', err);
+    }
   }
   
   // Fallback: show ratio value
@@ -180,7 +199,7 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   // ========== ALL HOOKS FIRST (React Rules of Hooks) ==========
   
   const { width } = useWindowDimensions();
-  const isRatioMode = Boolean(formula && (sensorMetrics || formulaContext));
+  const isRatioMode = Boolean(formulaContext);  // Ratio mode if formula context provided
   const isMobile = width < MOBILE_BREAKPOINT;
   
   // Single state object for simplicity
