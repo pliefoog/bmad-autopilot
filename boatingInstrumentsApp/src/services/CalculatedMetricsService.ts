@@ -94,7 +94,7 @@ export class DewPointCalculator implements MetricCalculator {
     if (!Number.isFinite(dewPoint) || dewPoint > T) return results;
 
     // Get unitType for dewPoint field
-    const unitType = sensor.getUnitType('dewPoint');
+    const unitType = sensor.getUnitTypeFor('dewPoint');
     const metric = unitType
       ? new MetricValue(dewPoint, Date.now(), unitType)
       : new MetricValue(dewPoint, Date.now());
@@ -152,7 +152,7 @@ export class RateOfTurnCalculator implements MetricCalculator {
     // Convert to degrees per minute
     const rot = (deltaHeading / deltaTime) * 60;
 
-    const unitType = sensor.getUnitType('rateOfTurn');
+    const unitType = sensor.getUnitTypeFor('rateOfTurn');
     const metric = unitType
       ? new MetricValue(rot, Date.now(), unitType)
       : new MetricValue(rot, Date.now());
@@ -242,8 +242,8 @@ export class TrueWindCalculator implements MetricCalculator {
     }));
 
     // Create MetricValue objects
-    const speedUnitType = sensor.getUnitType('trueSpeed');
-    const directionUnitType = sensor.getUnitType('trueDirection');
+    const speedUnitType = sensor.getUnitTypeFor('trueSpeed');
+    const directionUnitType = sensor.getUnitTypeFor('trueDirection');
 
     const speedMetric = speedUnitType
       ? new MetricValue(trueWind.speed, now, speedUnitType)

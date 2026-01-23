@@ -1,0 +1,19 @@
+fix(calculators): use correct method name getUnitTypeFor
+
+Error: "sensor.getUnitType is not a function" in DewPointCalculator
+
+Root Cause: Three calculators calling wrong method name
+- DewPointCalculator line 97
+- RateOfTurnCalculator line 155  
+- TrueWindCalculator lines 245-246
+
+SensorInstance has getUnitTypeFor(metricKey) not getUnitType(metricKey).
+
+Fix: Changed all 4 occurrences to getUnitTypeFor()
+
+Impact: Calculated metrics now work without runtime errors
+- Dew point (weather sensors)
+- Rate of turn (compass sensors)
+- True wind speed/direction (wind sensors)
+
+File: CalculatedMetricsService.ts (-4 getUnitType, +4 getUnitTypeFor)

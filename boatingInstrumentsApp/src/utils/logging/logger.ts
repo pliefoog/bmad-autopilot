@@ -75,6 +75,7 @@ const DEBUG_FLAGS: Record<string, boolean> = {
   'ui.interaction': false,
   'ui.layout': false,
   'ui.trendline': false,
+  'ui.sensor-config': false,
   ui: false, // Parent category
 
   // App categories
@@ -179,6 +180,7 @@ export const log = {
 
   // App convenience methods
   app: (msg: string, dataFn?: () => any) => log.debug('app.lifecycle', msg, dataFn),
+  sensorConfig: (msg: string, dataFn?: () => any) => log.debug('ui.sensor-config', msg, dataFn),
 };
 
 /**

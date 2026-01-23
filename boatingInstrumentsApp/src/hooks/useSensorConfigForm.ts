@@ -234,7 +234,7 @@ export const useSensorConfigForm = (
       ? getSensorDisplayName(sensorType, selectedInstance, savedConfig, sensorInstance?.name)
       : '';
 
-    log.app('useSensorConfigForm: Initializing form data', () => ({
+    log.sensorConfig('Initializing form data', () => ({
       sensorType,
       instance: selectedInstance,
       savedConfigName: savedConfig?.name,
@@ -453,7 +453,7 @@ export const useSensorConfigForm = (
   const currentMetricValue = useNmeaStore(
     (state) => {
       if (!sensorType || !activeMetricKey) {
-        log.app('[useSensorConfigForm] No sensorType or activeMetricKey', () => ({
+        log.sensorConfig('No sensorType or activeMetricKey', () => ({
           sensorType,
           activeMetricKey,
           watchedMetric,
@@ -464,7 +464,7 @@ export const useSensorConfigForm = (
       
       const sensorInstance = (state.nmeaData as any)?.sensors?.[sensorType]?.[selectedInstance];
       if (!sensorInstance) {
-        log.app('[useSensorConfigForm] No sensor instance', () => ({
+        log.sensorConfig('No sensor instance', () => ({
           sensorType,
           selectedInstance,
           availableSensors: Object.keys((state.nmeaData as any)?.sensors || {}),
@@ -474,7 +474,7 @@ export const useSensorConfigForm = (
       
       const metricValue = sensorInstance.getMetric(activeMetricKey);
       if (!metricValue) {
-        log.app('[useSensorConfigForm] No metric value', () => ({
+        log.sensorConfig('No metric value', () => ({
           sensorType,
           activeMetricKey,
           availableMetrics: Array.from(sensorInstance.metrics?.keys() || []),
@@ -483,7 +483,7 @@ export const useSensorConfigForm = (
       }
       
       // Return formatted value with unit
-      log.app('[useSensorConfigForm] Got metric value', () => ({
+      log.sensorConfig('✅ Got metric value', () => ({
         sensorType,
         activeMetricKey,
         formattedValueWithUnit: metricValue.formattedValueWithUnit,
