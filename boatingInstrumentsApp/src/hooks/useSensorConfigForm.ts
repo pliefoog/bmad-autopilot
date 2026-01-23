@@ -330,15 +330,22 @@ export const useSensorConfigForm = (
   // For sensors with contextKey, use the watched value; otherwise undefined
   const contextValue = contextKey ? (typeof watchedContext === 'string' ? watchedContext : undefined) : undefined;
 
-  // Single enrichedThresholds source
+  // ✅ GUARD: Validate metric is valid for current sensor (prevent stale values during sensor switch)
+  const validatedMetric = useMemo(() => {
+    const metric = watchedMetric || defaultMetric;
+    const isValid = alarmFieldKeys.includes(metric);
+    return isValid ? metric : alarmFieldKeys[0];
+  }, [watchedMetric, defaultMetric, alarmFieldKeys]);
+
+  // Single enrichedThresholds source - use validated metric to prevent flickering
   const enrichedThresholds = useMemo(() => {
     if (!sensorType) return null;
     return ThresholdPresentationService.getEnrichedThresholds(
       sensorType,
       selectedInstance,
-      watchedMetric,
+      validatedMetric,
     );
-  }, [sensorType, selectedInstance, watchedMetric]);
+  }, [sensorType, selectedInstance, validatedMetric]);
 
   // Compute alarm configuration
   const alarmConfig = useMemo(() => {
@@ -353,18 +360,12 @@ export const useSensorConfigForm = (
       return null;
     }
 
-    // ✅ UNIFIED: Always use metric (watchedMetric || defaultMetric)
-    const metric = watchedMetric || defaultMetric;
-    
-    // GUARD: Ensure metric is valid for this sensor (prevent stale values during sensor switch)
-    const isValidMetric = alarmFieldKeys.includes(metric);
-    const validMetric = isValidMetric ? metric : alarmFieldKeys[0];
-    
-    const direction = getAlarmDirection(sensorType, validMetric).direction;
+    // ✅ Use validatedMetric (already computed above with guard)
+    const direction = getAlarmDirection(sensorType, validatedMetric).direction;
     const triggerHint = getAlarmTriggerHint(sensorType);
 
     // Get first alarm field for sensors without metric selection
-    const fieldKey = validMetric || alarmFieldKeys[0];
+    const fieldKey = validatedMetric || alarmFieldKeys[0];
     if (!fieldKey) return null; // No alarm fields
 
     // contextValue is already defined in outer scope (from watchedContext)
@@ -385,18 +386,14 @@ export const useSensorConfigForm = (
     const step = 0.1;
 
     return { direction, triggerHint, min: baseMin, max: baseMax, step };
-  }, [sensorType, selectedInstance, watchedMetric, contextValue, alarmFieldKeys, defaultMetric]);
+  }, [sensorType, selectedInstance, validatedMetric, contextValue, alarmFieldKeys]);
 
   // Compute slider presentation data (for new simplified slider)
   const sliderPresentation = useMemo(() => {
-    if (!sensorType) return null;
-    
-    // ✅ UNIFIED: Always use watchedMetric || defaultMetric
-    const metricKey = watchedMetric || defaultMetric;
-    if (!metricKey) return null;
+    if (!sensorType || !validatedMetric) return null;
     
     const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
-    const fieldDef = schema?.fields[metricKey as keyof typeof schema.fields];
+    const fieldDef = schema?.fields[validatedMetric as keyof typeof schema.fields];
     if (!fieldDef || !('unitType' in fieldDef) || typeof fieldDef.unitType !== 'string') return null;
     
     const presentation = usePresentationStore.getState().getPresentationForCategory(fieldDef.unitType as any);
@@ -406,22 +403,18 @@ export const useSensorConfigForm = (
       format: ensureFormatFunction(presentation),
       symbol: presentation.symbol,
     };
-  }, [sensorType, watchedMetric, alarmFieldKeys, defaultMetric]);
+  }, [sensorType, validatedMetric]);
   
   // Get alarm formula (ratio mode detection)
   const alarmFormula = useMemo(() => {
-    if (!sensorType) return undefined;
-    
-    // ✅ UNIFIED: Always use watchedMetric || defaultMetric
-    const metricKey = watchedMetric || defaultMetric;
-    if (!metricKey) return undefined;
+    if (!sensorType || !validatedMetric) return undefined;
     
     const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
-    const fieldDef = schema?.fields[metricKey as keyof typeof schema.fields];
+    const fieldDef = schema?.fields[validatedMetric as keyof typeof schema.fields];
     if (!fieldDef || !('alarm' in fieldDef) || !fieldDef.alarm) return undefined;
     
     return (fieldDef.alarm as any)?.formula as string | undefined;
-  }, [sensorType, watchedMetric, alarmFieldKeys, defaultMetric]);
+  }, [sensorType, validatedMetric]);
   
   // Get sensor metrics for formula evaluation
   const sensorMetrics = useMemo(() => {
@@ -434,14 +427,10 @@ export const useSensorConfigForm = (
   
   // Get ratio unit for ratio mode
   const ratioUnit = useMemo(() => {
-    if (!sensorType || !alarmFormula) return undefined;
-    
-    // ✅ UNIFIED: Always use watchedMetric || defaultMetric
-    const metricKey = watchedMetric || defaultMetric;
-    if (!metricKey) return undefined;
+    if (!sensorType || !validatedMetric || !alarmFormula) return undefined;
     
     const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
-    const fieldDef = schema?.fields[metricKey as keyof typeof schema.fields];
+    const fieldDef = schema?.fields[validatedMetric as keyof typeof schema.fields];
     if (!fieldDef || !('alarm' in fieldDef) || !fieldDef.alarm) return undefined;
     
     const alarm = fieldDef.alarm as any;
@@ -449,12 +438,9 @@ export const useSensorConfigForm = (
     const firstContext = Object.keys(alarm.contexts || {})[0];
     const contextDef = firstContext ? alarm.contexts[firstContext] : null;
     return contextDef?.critical?.indirectThresholdUnit;
-  }, [sensorType, watchedMetric, alarmFormula, alarmFieldKeys, defaultMetric]);
+  }, [sensorType, validatedMetric, alarmFormula]);
 
   // Get current metric value for display (reactive to store changes)
-  // Compute metric key outside selector so it triggers re-subscription when changed
-  const activeMetricKey = watchedMetric || defaultMetric;
-  
   // Use nmeaData.timestamp as reactive trigger (changes on every NMEA message)
   // This ensures component re-renders when sensor data updates
   const currentMetricValue = useNmeaStore(
@@ -462,10 +448,10 @@ export const useSensorConfigForm = (
       // Subscribe to timestamp to trigger re-evaluation on data updates
       const _ = state.nmeaData.timestamp;
       
-      if (!sensorType || !activeMetricKey) {
-        log.sensorConfig('No sensorType or activeMetricKey', () => ({
+      if (!sensorType || !validatedMetric) {
+        log.sensorConfig('No sensorType or validatedMetric', () => ({
           sensorType,
-          activeMetricKey,
+          validatedMetric,
           watchedMetric,
           defaultMetric,
         }));
@@ -483,11 +469,11 @@ export const useSensorConfigForm = (
         return undefined;
       }
       
-      const metricValue = sensorInstance.getMetric(activeMetricKey);
+      const metricValue = sensorInstance.getMetric(validatedMetric);
       if (!metricValue) {
         log.sensorConfig('No metric value', () => ({
           sensorType,
-          activeMetricKey,
+          validatedMetric,
           availableMetrics: Array.from(sensorInstance.metrics?.keys() || []),
         }));
         return undefined;
@@ -496,7 +482,7 @@ export const useSensorConfigForm = (
       // Return formatted value with unit
       log.sensorConfig('✅ Got metric value', () => ({
         sensorType,
-        activeMetricKey,
+        validatedMetric,
         formattedValueWithUnit: metricValue.formattedValueWithUnit,
       }));
       return metricValue.formattedValueWithUnit;
@@ -545,14 +531,12 @@ export const useSensorConfigForm = (
   const metricLabel = useMemo(() => {
     if (!sensorConfig) return sensorType || '';
     
-    // ✅ UNIFIED: Always use watchedMetric || defaultMetric
-    const metricKey = watchedMetric || defaultMetric;
-    if (metricKey) {
-      return sensorConfig.fields[metricKey]?.label || '';
+    if (validatedMetric) {
+      return sensorConfig.fields[validatedMetric]?.label || '';
     }
     
     return sensorConfig?.displayName || sensorType || '';
-  }, [watchedMetric, sensorConfig, sensorType, defaultMetric]);
+  }, [validatedMetric, sensorConfig, sensorType]);
 
   // Handler: Metric change
   const handleMetricChange = useCallback(
