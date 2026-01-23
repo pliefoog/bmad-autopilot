@@ -419,11 +419,15 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                       onMetricChange={(metric) => handlers.handleMetricChange(metric)}
                       theme={theme}
                     />
-                    {currentMetricValue && (
-                      <Text style={[styles.metricDisplayValue, { color: theme.primary, marginTop: 8 }]}>
-                        Current: {currentMetricValue}
+                    {/* Current metric value display - always show, even if undefined */}
+                    <View style={[styles.metricValueDisplay, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                      <Text style={[styles.metricValueLabel, { color: theme.textSecondary }]}>
+                        Current Value:
                       </Text>
-                    )}
+                      <Text style={[styles.metricValueText, { color: currentMetricValue ? theme.primary : theme.textSecondary }]}>
+                        {currentMetricValue || '—'}
+                      </Text>
+                    </View>
                   </>
                 )}
 
@@ -564,6 +568,24 @@ const styles = StyleSheet.create({
   },
   metricDisplayValue: {
     fontSize: 18,
+    fontWeight: '700',
+  },
+  metricValueDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  metricValueLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  metricValueText: {
+    fontSize: 20,
     fontWeight: '700',
   },
   sliderRow: {
