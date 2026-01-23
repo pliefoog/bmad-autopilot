@@ -454,10 +454,12 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
                 {/* Threshold Slider - Dumb component with validated props */}
                 {/* ✅ UNIFIED: Slider always rendered when config available (no requiresMetricSelection check) */}
+                {/* CRITICAL: key prop forces remount when metric changes - prevents stale enrichedThresholds */}
                 {computed.alarmConfig && computed.sliderPresentation && enrichedThresholds && (
                   <View style={styles.sliderSection}>
                     <Text style={styles.groupLabel}>Threshold values</Text>
                     <AlarmThresholdSlider
+                      key={`${selectedSensorType}-${selectedInstance}-${form.watch('selectedMetric')}`}
                       min={enrichedThresholds.display.min.value}
                       max={enrichedThresholds.display.max.value}
                       direction={computed.alarmConfig.direction}

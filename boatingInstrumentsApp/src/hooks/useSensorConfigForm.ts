@@ -349,8 +349,16 @@ export const useSensorConfigForm = (
   }, [watchedMetric, defaultMetric, alarmFieldKeys]);
 
   // Single enrichedThresholds source - use validated metric to prevent flickering
+  // CRITICAL: Ensure validatedMetric is NOT undefined before calling service
   const enrichedThresholds = useMemo(() => {
-    if (!sensorType) return null;
+    // Early return if no sensor or metric - prevents stale data
+    if (!sensorType || !validatedMetric) {
+      log.sensorConfig('⏭️ Skipping enrichedThresholds - no sensor/metric', () => ({
+        sensorType,
+        validatedMetric,
+      }));
+      return null;
+    }
     
     log.sensorConfig('🔄 enrichedThresholds recomputing', () => ({
       sensorType,
@@ -367,10 +375,13 @@ export const useSensorConfigForm = (
     );
     
     log.sensorConfig('✅ enrichedThresholds result', () => ({
+      metric: validatedMetric,
       ratioMode: result?.ratioMode,
       ratioUnit: result?.ratioUnit,
-      min: result?.display.min.value,
-      max: result?.display.max.value,
+      minSI: result?.min,
+      maxSI: result?.max,
+      minDisplay: result?.display.min.value,
+      maxDisplay: result?.display.max.value,
     }));
     
     return result;
