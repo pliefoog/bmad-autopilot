@@ -610,7 +610,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
     
     // Helper to convert SensorConfiguration threshold format to MetricThresholds format
     // CRITICAL: Detects and resolves calculated thresholds (e.g., C-rate current, nominalVoltage scaling)
-    const convertToMetricThresholds = (cfg: any, direction?: 'above' | 'below'): MetricThresholds => {
+    const convertToMetricThresholds = (cfg: any, metricKey: string, direction?: 'above' | 'below'): MetricThresholds => {
       const thresholds: MetricThresholds = {
         critical: {},
         warning: {},
@@ -624,28 +624,83 @@ export class SensorInstance<T extends SensorData = SensorData> {
       // Jan 2026: Support calculated thresholds (capacity-based, voltage-based, RPM-based)
       // Schema defines formulas; resolver converts them to numeric values at runtime
       
-      // Resolve critical threshold (calculated or static value field)
-      if (cfg.critical !== undefined) {
-        const resolvedCritical = resolveThreshold(cfg.critical, config);
+      // CRITICAL FIX (Jan 2025): Handle both direct and indirectThreshold modes
+      // For ratio mode: Get schema ThresholdConfig, inject user's indirectThreshold, resolve formula
+      // For direct mode: Use static value directly
+      
+      // Check if this is ratio mode (indirectThreshold stored separately)
+      const hasIndirectThreshold = cfg.indirectThreshold !== undefined;
+      
+      if (hasIndirectThreshold) {
+        // RATIO MODE: Get schema ThresholdConfig with formula, inject user's ratio value
+        const schema = SENSOR_SCHEMAS[this.sensorType as keyof typeof SENSOR_SCHEMAS];
+        const fieldDef = schema?.fields[metricKey as keyof typeof schema.fields] as any;
+        const alarm = fieldDef?.alarm;
         
-        if (resolvedCritical !== undefined) {
-          if (direction === 'below') {
-            thresholds.critical.min = resolvedCritical;
-          } else {
-            thresholds.critical.max = resolvedCritical;
+        if (alarm) {
+          // Get context-specific threshold config
+          const contextKey = schema.contextKey;
+          const contextValue = config.context ? (config.context as any)[contextKey!] : undefined;
+          const contextDef = contextValue ? alarm.contexts[contextValue] : alarm.contexts[Object.keys(alarm.contexts)[0]];
+          
+          // Build ThresholdConfig with user's indirectThreshold value
+          if (contextDef?.critical && cfg.indirectThreshold.critical !== undefined) {
+            const criticalConfig = {
+              ...contextDef.critical,
+              indirectThreshold: cfg.indirectThreshold.critical, // User's ratio value
+            };
+            const resolvedCritical = resolveThreshold(criticalConfig, config);
+            
+            if (resolvedCritical !== undefined) {
+              if (direction === 'below') {
+                thresholds.critical.min = resolvedCritical;
+              } else {
+                thresholds.critical.max = resolvedCritical;
+              }
+            }
+          }
+          
+          if (contextDef?.warning && cfg.indirectThreshold.warning !== undefined) {
+            const warningConfig = {
+              ...contextDef.warning,
+              indirectThreshold: cfg.indirectThreshold.warning, // User's ratio value
+            };
+            const resolvedWarning = resolveThreshold(warningConfig, config);
+            
+            if (resolvedWarning !== undefined) {
+              if (direction === 'below') {
+                thresholds.warning.min = resolvedWarning;
+              } else {
+                thresholds.warning.max = resolvedWarning;
+              }
+            }
           }
         }
-      }
-      
-      // Resolve warning threshold (calculated or static value field)
-      if (cfg.warning !== undefined) {
-        const resolvedWarning = resolveThreshold(cfg.warning, config);
+      } else {
+        // DIRECT MODE: Use static threshold values
+        // Resolve critical threshold (calculated or static value field)
+        if (cfg.critical !== undefined) {
+          const resolvedCritical = resolveThreshold(cfg.critical, config);
+          
+          if (resolvedCritical !== undefined) {
+            if (direction === 'below') {
+              thresholds.critical.min = resolvedCritical;
+            } else {
+              thresholds.critical.max = resolvedCritical;
+            }
+          }
+        }
         
-        if (resolvedWarning !== undefined) {
-          if (direction === 'below') {
-            thresholds.warning.min = resolvedWarning;
-          } else {
-            thresholds.warning.max = resolvedWarning;
+        // Resolve warning threshold (calculated or static value field)
+        if (cfg.warning !== undefined) {
+          const resolvedWarning = resolveThreshold(cfg.warning, config);
+          
+          if (resolvedWarning !== undefined) {
+            if (direction === 'below') {
+              thresholds.warning.min = resolvedWarning;
+            } else {
+              thresholds.warning.max = resolvedWarning;
+            }
           }
         }
       }
@@ -661,7 +716,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
     // Schema V4: All sensors use metrics object, no top-level thresholds
     if (config.metrics) {
       Object.entries(config.metrics).forEach(([metricKey, metricConfig]: [string, any]) => {
-        const thresholds = convertToMetricThresholds(metricConfig, metricConfig.direction);
+        const thresholds = convertToMetricThresholds(metricConfig, metricKey, metricConfig.direction);
         this.updateThresholds(metricKey, thresholds);
       });
     }
