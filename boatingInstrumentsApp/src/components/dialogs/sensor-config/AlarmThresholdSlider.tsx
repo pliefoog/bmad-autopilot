@@ -312,23 +312,6 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   
   return (
     <View style={styles.container}>
-      {/* Legend */}
-      <View style={[styles.legend, isMobile && styles.legendMobile]}>
-        <AnimatedThresholdValue
-          label="WARNING"
-          value={calculateEffectiveValue(sliderState.warning, isRatioMode, formulaContext, presentation, ratioUnit)}
-          color={theme.warning}
-          theme={theme}
-        />
-        
-        <AnimatedThresholdValue
-          label="CRITICAL"
-          value={calculateEffectiveValue(sliderState.critical, isRatioMode, formulaContext, presentation, ratioUnit)}
-          color={theme.error}
-          theme={theme}
-        />
-      </View>
-      
       {/* Range Indicator */}
       <View style={styles.rangeRow}>
         <Text style={[styles.rangeLabel, { color: theme.textSecondary }]}>
@@ -411,14 +394,14 @@ const styles = StyleSheet.create({
   rangeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: -28,
   },
   rangeLabel: {
     fontSize: 12,
   },
   sliderContainer: {
     paddingHorizontal: 8,
-    marginBottom: 8,
+    marginBottom: 0,
   },
   slider: {
     width: '100%',
@@ -439,10 +422,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   thumbLabelTop: {
-    bottom: 28,
+    bottom: 24,  // Closer to thumb to match bottom label spacing
   },
   thumbLabelBottom: {
-    top: 24,  // Closer to thumb to match top label spacing
+    top: 0,  // Closer to thumb to match top label spacing
   },
   thumbValueContainer: {
     position: 'absolute',
