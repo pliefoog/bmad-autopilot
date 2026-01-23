@@ -343,7 +343,8 @@ export const useNmeaStore = create<NmeaStore>()(
             // Check if this metric config has actual threshold values
             const hasMetricThresholds = 
               (metricConfig as any).critical !== undefined ||
-              (metricConfig as any).warning !== undefined;
+              (metricConfig as any).warning !== undefined ||
+              (metricConfig as any).indirectThreshold !== undefined;
 
             if (!hasMetricThresholds) {
               log.app('Skipping metric without threshold values', () => ({
@@ -355,15 +356,28 @@ export const useNmeaStore = create<NmeaStore>()(
             }
 
             // Extract threshold properties from metric config
-            const metricThresholds = {
-              critical: (metricConfig as any).critical,
-              warning: (metricConfig as any).warning,
-              min: (metricConfig as any).min,
-              max: (metricConfig as any).max,
+            // CRITICAL FIX (Jan 2025): Handle both direct and indirectThreshold modes
+            const metricThresholds: any = {
               direction: thresholds.direction || (metricConfig as any).direction,
               staleThresholdMs: (metricConfig as any).staleThresholdMs,
               enabled: (metricConfig as any).enabled ?? true,
             };
+            
+            // Check if this is ratio mode (indirectThreshold)
+            if ((metricConfig as any).indirectThreshold) {
+              metricThresholds.critical = {
+                indirectThreshold: (metricConfig as any).indirectThreshold.critical,
+              };
+              metricThresholds.warning = {
+                indirectThreshold: (metricConfig as any).indirectThreshold.warning,
+              };
+            } else {
+              // Direct mode - use critical/warning values
+              metricThresholds.critical = (metricConfig as any).critical;
+              metricThresholds.warning = (metricConfig as any).warning;
+              metricThresholds.min = (metricConfig as any).min;
+              metricThresholds.max = (metricConfig as any).max;
+            }
 
             sensorInstance.updateThresholds(metricKey, metricThresholds);
           }

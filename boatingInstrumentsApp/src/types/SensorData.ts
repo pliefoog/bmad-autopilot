@@ -34,10 +34,12 @@ export interface MetricThresholds {
   critical: {
     min?: number;
     max?: number;
+    indirectThreshold?: number;  // For formula-based ratio thresholds (Jan 2025)
   };
   warning: {
     min?: number;
     max?: number;
+    indirectThreshold?: number;  // For formula-based ratio thresholds (Jan 2025)
   };
   hysteresis?: number;
   criticalSoundPattern?: string;
@@ -55,6 +57,7 @@ export interface MetricThresholds {
 export interface MetricConfiguration {
   critical?: number;
   warning?: number;
+  indirectThreshold?: { critical?: number; warning?: number };  // For formula-based ratios (Jan 2025)
   direction?: 'above' | 'below';
   criticalSoundPattern?: string;
   warningSoundPattern?: string;

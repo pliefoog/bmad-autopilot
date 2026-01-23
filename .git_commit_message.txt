@@ -1,0 +1,33 @@
+fix(sensor-config): centralize validatedMetric to prevent flickering
+
+CRITICAL FIX: Slider was flickering when switching battery metrics (e.g., current → temperature) because multiple useMemos were independently resolving watchedMetric || defaultMetric, causing inconsistent metric resolution during React render cycles.
+
+Root Cause:
+- enrichedThresholds used: watchedMetric || defaultMetric
+- alarmConfig used: watchedMetric || defaultMetric (with guard)
+- sliderPresentation used: watchedMetric || defaultMetric
+- alarmFormula used: watchedMetric || defaultMetric
+- ratioUnit used: watchedMetric || defaultMetric
+- Each could resolve to different values during sensor/metric switches
+- Temperature has direct thresholds, but "current" (previous metric) had indirectThreshold (ratio mode)
+- ThresholdPresentationService would flip between ratio/direct modes → flickering slider
+
+Solution:
+- Created single validatedMetric useMemo (lines 333-342)
+- Validates metric belongs to current sensor's alarmFieldKeys
+- Falls back to alarmFieldKeys[0] if stale/invalid
+- All consumers now use validatedMetric (single source of truth):
+  * enrichedThresholds (line 345)
+  * alarmConfig (line 362)
+  * sliderPresentation (line 394, 407)
+  * alarmFormula (line 411, 419)
+  * ratioUnit (line 425, 437)
+  * metricLabel (line 531)
+
+Result:
+- Consistent metric resolution across all useMemos
+- No flickering during sensor/metric switches
+- Simpler dependency arrays
+- Future-proof against stale metric bugs
+
+Files: useSensorConfigForm.ts (732 lines, -17 deps)

@@ -214,9 +214,14 @@ class ThresholdPresentationServiceClass {
 
       // Derive numeric thresholds from MetricThresholds structure
       // For 'below' alarms, use .min; for 'above' alarms, use .max
+      // For ratio mode (indirectThreshold), use .indirectThreshold
       const t = thresholds as any;
       if (t) {
-        if (direction === 'below') {
+        if (ratioMode) {
+          // CRITICAL FIX (Jan 2025): Load indirectThreshold from storage for ratio mode
+          critical = t.critical?.indirectThreshold;
+          warning = t.warning?.indirectThreshold;
+        } else if (direction === 'below') {
           critical = t.critical?.min;
           warning = t.warning?.min;
         } else if (direction === 'above') {
@@ -227,10 +232,18 @@ class ThresholdPresentationServiceClass {
       
       // If no user thresholds, use schema defaults
       if (critical === undefined && schemaDefaults) {
-        critical = direction === 'below' ? schemaDefaults.critical.min : schemaDefaults.critical.max;
+        if (ratioMode) {
+          critical = schemaDefaults.critical.indirectThreshold;
+        } else {
+          critical = direction === 'below' ? schemaDefaults.critical.min : schemaDefaults.critical.max;
+        }
       }
       if (warning === undefined && schemaDefaults) {
-        warning = direction === 'below' ? schemaDefaults.warning.min : schemaDefaults.warning.max;
+        if (ratioMode) {
+          warning = schemaDefaults.warning.indirectThreshold;
+        } else {
+          warning = direction === 'below' ? schemaDefaults.warning.min : schemaDefaults.warning.max;
+        }
       }
 
       // Get min/max display range from schema
@@ -262,9 +275,15 @@ class ThresholdPresentationServiceClass {
       direction = field?.alarm?.direction;
 
       // Derive numeric thresholds from MetricThresholds structure
+      // For ratio mode (indirectThreshold), use .indirectThreshold
+      // For direct mode, use .min or .max based on direction
       const t = thresholds as any;
       if (t) {
-        if (direction === 'below') {
+        if (ratioMode) {
+          // CRITICAL FIX (Jan 2025): Load indirectThreshold from storage for ratio mode
+          critical = t.critical?.indirectThreshold;
+          warning = t.warning?.indirectThreshold;
+        } else if (direction === 'below') {
           critical = t.critical?.min;
           warning = t.warning?.min;
         } else if (direction === 'above') {
@@ -275,10 +294,18 @@ class ThresholdPresentationServiceClass {
       
       // If no user thresholds, use schema defaults
       if (critical === undefined && schemaDefaults) {
-        critical = direction === 'below' ? schemaDefaults.critical.min : schemaDefaults.critical.max;
+        if (ratioMode) {
+          critical = schemaDefaults.critical.indirectThreshold;
+        } else {
+          critical = direction === 'below' ? schemaDefaults.critical.min : schemaDefaults.critical.max;
+        }
       }
       if (warning === undefined && schemaDefaults) {
-        warning = direction === 'below' ? schemaDefaults.warning.min : schemaDefaults.warning.max;
+        if (ratioMode) {
+          warning = schemaDefaults.warning.indirectThreshold;
+        } else {
+          warning = direction === 'below' ? schemaDefaults.warning.min : schemaDefaults.warning.max;
+        }
       }
 
       // Get min/max from schema

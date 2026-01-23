@@ -217,8 +217,8 @@ export const SENSOR_SCHEMAS = {
         mnemonic: 'VOLT',
         unitType: 'voltage' as const,
         iostate: 'readOnly' as const,
-        min: 10.5,
-        max: 16.0,
+        min: 0,
+        max: 48.0,
         alarm: {
           direction: 'below' as const,
           defaultContext: 'agm',
@@ -230,9 +230,9 @@ export const SENSOR_SCHEMAS = {
               thresholdRange: { min: 0.90, max: 1.15 },
             },
             'agm': {
-              critical: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.04', indirectThreshold: 1.0, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'triple_blast' },
-              warning: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.04', indirectThreshold: 1.015, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'morse_u' },
-              thresholdRange: { min: 0.90, max: 1.15 },
+              critical: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.04', indirectThreshold: 0.85, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'triple_blast' },
+              warning: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.04', indirectThreshold: 1.15, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'morse_u' },
+              thresholdRange: { min: 0, max: 1.25 },
             },
             'gel': {
               critical: { formula: 'nominalVoltage * indirectThreshold + (temperature - 25) * -0.045', indirectThreshold: 1.002, indirectThresholdUnit: '× Vnom', hysteresis: 0.02, sound: 'triple_blast' },

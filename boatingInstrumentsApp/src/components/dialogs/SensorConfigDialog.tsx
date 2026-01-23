@@ -160,15 +160,36 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       // For multi-metric sensors: metrics = { voltage: {...}, current: {...} }
       const metricKey = data.selectedMetric; // Always populated (watchedMetric || defaultMetric)
       if (metricKey) {
-        updates.metrics = {
-          [metricKey]: {
+        // Detect if this metric uses indirectThreshold (ratio mode)
+        const schema = getSensorSchema(sensorType);
+        const fieldDef = schema.fields[metricKey as keyof typeof schema.fields];
+        const hasIndirectThreshold = fieldDef?.alarm && 
+          Object.values((fieldDef.alarm as any).contexts || {}).some((ctx: any) => 
+            ctx.critical?.indirectThreshold !== undefined || ctx.warning?.indirectThreshold !== undefined
+          );
+        
+        // Build metric config based on mode
+        const metricConfig: any = {
+          direction: getAlarmDirection(sensorType, data.selectedMetric).direction,
+          criticalSoundPattern: data.criticalSoundPattern,
+          warningSoundPattern: data.warningSoundPattern,
+          enabled: data.enabled,
+        };
+        
+        if (hasIndirectThreshold) {
+          // CRITICAL FIX (Jan 2025): For ratio mode, save as indirectThreshold
+          metricConfig.indirectThreshold = {
             critical: data.criticalValue,
             warning: data.warningValue,
-            direction: getAlarmDirection(sensorType, data.selectedMetric).direction,
-            criticalSoundPattern: data.criticalSoundPattern,
-            warningSoundPattern: data.warningSoundPattern,
-            enabled: data.enabled,
-          },
+          };
+        } else {
+          // For direct mode, save as critical/warning
+          metricConfig.critical = data.criticalValue;
+          metricConfig.warning = data.warningValue;
+        }
+        
+        updates.metrics = {
+          [metricKey]: metricConfig,
         };
       }
 

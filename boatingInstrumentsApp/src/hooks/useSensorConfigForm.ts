@@ -334,17 +334,46 @@ export const useSensorConfigForm = (
   const validatedMetric = useMemo(() => {
     const metric = watchedMetric || defaultMetric;
     const isValid = alarmFieldKeys.includes(metric);
-    return isValid ? metric : alarmFieldKeys[0];
+    const result = isValid ? metric : alarmFieldKeys[0];
+    
+    log.sensorConfig('🔍 validatedMetric computed', () => ({
+      watchedMetric,
+      defaultMetric,
+      computed: metric,
+      isValid,
+      result,
+      alarmFieldKeys,
+    }));
+    
+    return result;
   }, [watchedMetric, defaultMetric, alarmFieldKeys]);
 
   // Single enrichedThresholds source - use validated metric to prevent flickering
   const enrichedThresholds = useMemo(() => {
     if (!sensorType) return null;
-    return ThresholdPresentationService.getEnrichedThresholds(
+    
+    log.sensorConfig('🔄 enrichedThresholds recomputing', () => ({
+      sensorType,
+      selectedInstance,
+      validatedMetric,
+      watchedMetric,
+      defaultMetric,
+    }));
+    
+    const result = ThresholdPresentationService.getEnrichedThresholds(
       sensorType,
       selectedInstance,
       validatedMetric,
     );
+    
+    log.sensorConfig('✅ enrichedThresholds result', () => ({
+      ratioMode: result?.ratioMode,
+      ratioUnit: result?.ratioUnit,
+      min: result?.display.min.value,
+      max: result?.display.max.value,
+    }));
+    
+    return result;
   }, [sensorType, selectedInstance, validatedMetric]);
 
   // Compute alarm configuration
