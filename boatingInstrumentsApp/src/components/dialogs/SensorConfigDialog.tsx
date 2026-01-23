@@ -420,7 +420,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                       theme={theme}
                     />
                     {/* Current metric value display - always show, even if undefined */}
-                    <View style={[styles.metricValueDisplay, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                    <View style={styles.metricValueDisplay}>
                       <Text style={[styles.metricValueLabel, { color: theme.textSecondary }]}>
                         Current Value:
                       </Text>
@@ -574,18 +574,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
     marginTop: 8,
+    marginBottom: 4,
   },
   metricValueLabel: {
     fontSize: 14,
     fontWeight: '600',
   },
   metricValueText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
   },
   sliderRow: {

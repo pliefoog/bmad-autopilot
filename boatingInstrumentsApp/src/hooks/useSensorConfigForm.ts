@@ -355,11 +355,16 @@ export const useSensorConfigForm = (
 
     // ✅ UNIFIED: Always use metric (watchedMetric || defaultMetric)
     const metric = watchedMetric || defaultMetric;
-    const direction = getAlarmDirection(sensorType, metric).direction;
+    
+    // GUARD: Ensure metric is valid for this sensor (prevent stale values during sensor switch)
+    const isValidMetric = alarmFieldKeys.includes(metric);
+    const validMetric = isValidMetric ? metric : alarmFieldKeys[0];
+    
+    const direction = getAlarmDirection(sensorType, validMetric).direction;
     const triggerHint = getAlarmTriggerHint(sensorType);
 
     // Get first alarm field for sensors without metric selection
-    const fieldKey = metric || alarmFieldKeys[0];
+    const fieldKey = validMetric || alarmFieldKeys[0];
     if (!fieldKey) return null; // No alarm fields
 
     // contextValue is already defined in outer scope (from watchedContext)
