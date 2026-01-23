@@ -450,8 +450,13 @@ export const useSensorConfigForm = (
   // Compute metric key outside selector so it triggers re-subscription when changed
   const activeMetricKey = watchedMetric || defaultMetric;
   
+  // Use nmeaData.timestamp as reactive trigger (changes on every NMEA message)
+  // This ensures component re-renders when sensor data updates
   const currentMetricValue = useNmeaStore(
     (state) => {
+      // Subscribe to timestamp to trigger re-evaluation on data updates
+      const _ = state.nmeaData.timestamp;
+      
       if (!sensorType || !activeMetricKey) {
         log.sensorConfig('No sensorType or activeMetricKey', () => ({
           sensorType,
@@ -462,12 +467,13 @@ export const useSensorConfigForm = (
         return undefined;
       }
       
-      const sensorInstance = (state.nmeaData as any)?.sensors?.[sensorType]?.[selectedInstance];
+      // Access via sensorRegistry (global registry, not in Zustand state)
+      const sensorInstance = sensorRegistry.get(sensorType, selectedInstance);
       if (!sensorInstance) {
         log.sensorConfig('No sensor instance', () => ({
           sensorType,
           selectedInstance,
-          availableSensors: Object.keys((state.nmeaData as any)?.sensors || {}),
+          availableSensors: sensorRegistry.getAllSensors().map(s => `${s.sensorType}:${s.instance}`),
         }));
         return undefined;
       }
