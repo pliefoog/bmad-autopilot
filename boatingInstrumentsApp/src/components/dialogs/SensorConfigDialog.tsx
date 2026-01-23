@@ -439,16 +439,8 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                       selectedMetric={selectedMetricValue ?? ''}
                       onMetricChange={(metric) => handlers.handleMetricChange(metric)}
                       theme={theme}
+                      currentValue={currentMetricValue}
                     />
-                    {/* Current metric value display - always show, even if undefined */}
-                    <View style={styles.metricValueDisplay}>
-                      <Text style={[styles.metricValueLabel, { color: theme.textSecondary }]}>
-                        Current Value:
-                      </Text>
-                      <Text style={[styles.metricValueText, { color: currentMetricValue ? theme.primary : theme.textSecondary }]}>
-                        {currentMetricValue || '—'}
-                      </Text>
-                    </View>
                   </>
                 )}
 

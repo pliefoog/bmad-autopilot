@@ -23,6 +23,7 @@ export interface MetricSelectorProps {
   selectedMetric: string | undefined;
   onMetricChange: (metric: string) => void;
   theme: ThemeColors;
+  currentValue?: string;  // Current live value to display in dropdown label
 }
 
 export const MetricSelector: React.FC<MetricSelectorProps> = ({
@@ -30,6 +31,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
   selectedMetric,
   onMetricChange,
   theme,
+  currentValue,
 }) => {
   const presentationStore = usePresentationStore();
 
@@ -43,8 +45,12 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
       unit = '%';
     }
 
+    // If this is the selected metric and we have a current value, include it in the label
+    const isSelected = m.key === selectedMetric;
+    const valueDisplay = isSelected && currentValue ? ` - ${currentValue}` : '';
+
     return {
-      label: `${m.label}${unit ? ` (${unit})` : ''}`,
+      label: `${m.label}${valueDisplay}${unit && !isSelected ? ` (${unit})` : ''}`,
       value: m.key,
     };
   });
