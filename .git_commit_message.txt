@@ -1,34 +1,16 @@
-feat: dynamic threshold recalculation when dependencies change
+fix: use getSensorSchema helper instead of direct SENSOR_SCHEMAS access
 
-Implements automatic re-resolution of formula-based thresholds when dependency
-values change at runtime (e.g., capacity, temperature, nominalVoltage).
+Replaced direct SENSOR_SCHEMAS access with getSensorSchema() helper function
+for better encapsulation and consistency with rest of codebase.
 
-Key Changes:
-- Added _recalculateFormulaDependentThresholds() method to SensorInstance
-- Triggered after each updateMetrics() call that changes values
-- Detects formula-based thresholds by checking for indirectThreshold field
-- Re-resolves formulas using current metric values as context
-- Updates resolved min/max values while preserving original ratio
-- Re-evaluates alarms with new threshold values
-
-Example Use Cases:
-- Battery current threshold (capacity * 1.5 C-rate): Recalculates when capacity changes
-- Voltage threshold with temperature compensation: Recalculates when temperature changes
-- RPM thresholds based on engine parameters: Recalculates when maxRpm changes
-
-Architecture:
-- SensorInstance.updateMetrics() → detects changes → calls recalculation
-- Recalculation iterates MetricThresholds, finds formula-based (has indirectThreshold)
-- Builds context from current metric values (capacity, temperature, etc.)
-- Calls resolveThreshold() with updated context
-- Updates critical.min/max or warning.min/max with new resolved value
-- Preserves critical.indirectThreshold (user's original ratio)
-- Re-evaluates alarm states with new thresholds
+Changes:
+- _recalculateFormulaDependentThresholds(): Use getSensorSchema(this.sensorType)
+- updateThresholdsFromConfig(): Use getSensorSchema(this.sensorType)
 
 Benefits:
-- Voltage thresholds stay accurate as temperature changes
-- Current limits scale automatically when capacity is reconfigured
-- No manual threshold updates needed when dependencies change
-- Seamless user experience with dynamic adjustments
+- Consistent API usage across codebase
+- Better encapsulation of schema access
+- Leverages existing helper function
+- No functional change, pure refactoring
 
-Files: SensorInstance.ts (+115 lines)
+Files: SensorInstance.ts (2 occurrences fixed)

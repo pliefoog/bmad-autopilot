@@ -579,7 +579,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * @private
    */
   private _recalculateFormulaDependentThresholds(): void {
-    const schema = SENSOR_SCHEMAS[this.sensorType as keyof typeof SENSOR_SCHEMAS];
+    const schema = getSensorSchema(this.sensorType);
     if (!schema) return;
 
     // Build context from current metric values (capacity, temperature, nominalVoltage, etc.)
@@ -752,7 +752,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
       
       if (hasIndirectThreshold) {
         // RATIO MODE: Get schema ThresholdConfig with formula, inject user's ratio value
-        const schema = SENSOR_SCHEMAS[this.sensorType as keyof typeof SENSOR_SCHEMAS];
+        const schema = getSensorSchema(this.sensorType);
         const fieldDef = schema?.fields[metricKey as keyof typeof schema.fields] as any;
         const alarm = fieldDef?.alarm;
         
