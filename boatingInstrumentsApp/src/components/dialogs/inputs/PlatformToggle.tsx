@@ -196,7 +196,7 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
   if (Platform.OS === 'ios' || Platform.OS === 'android') {
     return (
       <View style={styles.container} testID={testID}>
-        {label && <Text style={[styles.label, { color: labelColor }]}>{label}</Text>}
+        {label && label.trim() !== '' ? <Text style={[styles.label, { color: labelColor }]}>{label}</Text> : null}
         <View style={{ transform: [{ scale }] }}>
           <Switch
             value={value}
@@ -218,7 +218,7 @@ export const PlatformToggle: React.FC<PlatformToggleProps> = ({
   // Use custom toggle for web
   return (
     <View style={styles.container} testID={testID}>
-      {label && <Text style={[styles.label, { color: labelColor }]}>{label}</Text>}
+      {label && label.trim() !== '' ? <Text style={[styles.label, { color: labelColor }]}>{label}</Text> : null}
       <WebToggle
         value={value}
         onValueChange={handleValueChange}

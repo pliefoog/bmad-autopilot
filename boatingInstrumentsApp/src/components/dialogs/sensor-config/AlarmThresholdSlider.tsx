@@ -40,21 +40,20 @@ function calculateEffectiveValue(
   presentation: { format: (v: number) => string; symbol: string } | undefined,
   ratioUnit?: string
 ): string {
-  // Debug logging
-  if (__DEV__) {
-    console.log('[AlarmThresholdSlider] calculateEffectiveValue:', {
-      thumbValue,
-      isRatioMode,
-      hasFormulaContext: !!formulaContext,
-      hasPresentation: !!presentation,
-      formula: formulaContext?.formula,
-      parameters: formulaContext?.parameters,
-    });
-  }
-  
   if (!isRatioMode || !formulaContext || !presentation) {
     // Direct mode: format as-is
-    return presentation ? `${presentation.format(thumbValue)} ${presentation.symbol}` : thumbValue.toString();
+    if (!presentation) return thumbValue.toString();
+    const formatted = presentation.format(thumbValue);
+    // Safety: ensure format() never returns empty or just whitespace
+    if (!formatted || formatted.trim() === '' || formatted.trim() === '.') {
+      return thumbValue.toString();
+    }
+    const symbol = presentation.symbol?.trim() || '';
+    // Only add symbol if it's a meaningful non-empty string (not just "." or whitespace)
+    const hasValidSymbol = symbol && symbol.length > 0 && symbol !== '.';
+    const result = hasValidSymbol ? `${formatted} ${symbol}` : formatted;
+    // Final safety: never return bare "." which would leak as text node
+    return (result === '.' || result.trim() === '.') ? thumbValue.toString() : result;
   }
   
   try {
@@ -64,31 +63,28 @@ function calculateEffectiveValue(
       indirectThreshold: thumbValue,
     });
     
-    if (__DEV__) {
-      console.log('[AlarmThresholdSlider] Formula result:', { result, formatted: presentation.format(result) });
-    }
-    
     if (typeof result === 'number' && !isNaN(result)) {
-      const formattedResult = `${presentation.format(result)} ${presentation.symbol}`;
-      if (__DEV__) {
-        console.log('[AlarmThresholdSlider] Returning formatted:', {
-          result,
-          formatted: presentation.format(result),
-          symbol: presentation.symbol,
-          final: formattedResult,
-        });
+      const formatted = presentation.format(result);
+      // Safety: ensure format() never returns empty or just whitespace
+      if (!formatted || formatted.trim() === '' || formatted.trim() === '.') {
+        return result.toString();
       }
-      return formattedResult;
+      const symbol = presentation.symbol?.trim() || '';
+      // Only add symbol if it's a meaningful non-empty string (not just "." or whitespace)
+      const hasValidSymbol = symbol && symbol.length > 0 && symbol !== '.';
+      const finalResult = hasValidSymbol ? `${formatted} ${symbol}` : formatted;
+      // Final safety: never return bare "." which would leak as text node
+      return (finalResult === '.' || finalResult.trim() === '.') ? result.toString() : finalResult;
     }
   } catch (err) {
     // Formula evaluation failed - fallback to ratio display
-    if (__DEV__) {
-      console.error('[AlarmThresholdSlider] Formula evaluation failed:', err);
-    }
   }
   
   // Fallback: show ratio value
-  return `${thumbValue.toFixed(2)}${ratioUnit ? ` ${ratioUnit}` : ''}`;
+  const hasValidRatioUnit = ratioUnit && ratioUnit.trim() && ratioUnit.trim() !== '.';
+  const fallback = hasValidRatioUnit ? `${thumbValue.toFixed(2)} ${ratioUnit.trim()}` : thumbValue.toFixed(2);
+  // Final safety: never return bare "." which would leak as text node
+  return (fallback === '.' || fallback.trim() === '.') ? thumbValue.toString() : fallback;
 }
 
 // ==================== TYPES ====================
@@ -166,7 +162,7 @@ const AnimatedThresholdValue: React.FC<AnimatedThresholdValueProps> = ({
   const opacityAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    Animated.sequence([
+    const animation = Animated.sequence([
       Animated.timing(opacityAnim, {
         toValue: 0.6,
         duration: 100,
@@ -177,7 +173,12 @@ const AnimatedThresholdValue: React.FC<AnimatedThresholdValueProps> = ({
         duration: 300,
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
+    
+    animation.start();
+    
+    // ✅ FIXED: Stop animation on unmount to prevent memory leaks
+    return () => animation.stop();
   }, [value, opacityAnim]);
 
   return (
@@ -211,18 +212,31 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   const isRatioMode = Boolean(formulaContext);  // Ratio mode if formula context provided
   const isMobile = width < MOBILE_BREAKPOINT;
   
+  // Track if user is actively dragging to prevent prop sync interference
+  const isDraggingRef = useRef(false);
+  
   // Single state object for simplicity
   const [sliderState, setSliderState] = useState<SliderState>({
     warning: currentWarning,
     critical: currentCritical,
   });
   
-  // Sync with prop changes (external updates)
+  // Sync with prop changes (external updates) - but NOT during active drag
   useEffect(() => {
-    setSliderState({
-      warning: currentWarning,
-      critical: currentCritical,
-    });
+    if (!isDraggingRef.current) {
+      setSliderState({
+        warning: currentWarning,
+        critical: currentCritical,
+      });
+    }
+    
+    // ✅ FIXED: Cleanup pending debounced callback on prop change or unmount
+    return () => {
+      if (debouncedOnChange.current) {
+        clearTimeout(debouncedOnChange.current);
+        debouncedOnChange.current = undefined;
+      }
+    };
   }, [currentCritical, currentWarning]);
   
   // ========== COMPUTED VALUES (All hooks called, safe to compute) ==========
@@ -230,29 +244,45 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
   // Compute step (1% of range for granular control)
   const step = useMemo(() => (max - min) / 100, [min, max]);
   
-  // Get unit symbol (use presentation symbol since effective values are displayed)
-  const unitSymbol = presentation.symbol;
-  
   // ========== EVENT HANDLERS ==========
   
-  const handleValueChanged = (newLow: number, newHigh: number) => {
+  // Debounced callback to prevent feedback loop during drag
+  const debouncedOnChange = useRef<NodeJS.Timeout | undefined>(undefined);
+  
+  const handleValueChanged = useCallback((newLow: number, newHigh: number) => {
+    // Set dragging flag
+    isDraggingRef.current = true;
+    
     // Validate threshold ordering based on direction
     if (direction === 'above') {
       // Above mode: critical (high) > warning (low)
       if (newHigh <= newLow) return;
       setSliderState({ warning: newLow, critical: newHigh });
-      onThresholdsChange(newHigh, newLow);
+      
+      // Debounce form update to prevent feedback loop
+      if (debouncedOnChange.current) clearTimeout(debouncedOnChange.current);
+      debouncedOnChange.current = setTimeout(() => {
+        onThresholdsChange(newHigh, newLow);
+        isDraggingRef.current = false;
+      }, 100);
     } else {
       // Below mode: critical (low) < warning (high)
       if (newLow >= newHigh) return;
       setSliderState({ warning: newHigh, critical: newLow });
-      onThresholdsChange(newLow, newHigh);
+      
+      // Debounce form update to prevent feedback loop
+      if (debouncedOnChange.current) clearTimeout(debouncedOnChange.current);
+      debouncedOnChange.current = setTimeout(() => {
+        onThresholdsChange(newLow, newHigh);
+        isDraggingRef.current = false;
+      }, 100);
     }
-  };
+  }, [direction, onThresholdsChange]);
   
   // ========== RENDER FUNCTIONS ==========
   
-  const renderThumb = useCallback((name: 'low' | 'high') => {
+  // ✅ FIXED: Removed useCallback - 11 dependencies defeated memoization
+  const renderThumb = (name: 'low' | 'high') => {
     // Determine if this thumb is for warning or critical based on direction
     const isWarning =
       (name === 'low' && direction === 'above') ||
@@ -294,7 +324,7 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
         </View>
       </View>
     );
-  }, [direction, theme.warning, theme.error, theme.textSecondary, sliderState.warning, sliderState.critical, isRatioMode, formulaContext, presentation, ratioUnit]);
+  };
   
   const renderRail = useCallback(() => {
     return <View style={[styles.rail, { backgroundColor: theme.border }]} />;
@@ -317,16 +347,16 @@ export const AlarmThresholdSlider: React.FC<AlarmThresholdSliderProps> = ({
         <Text style={[styles.rangeLabel, { color: theme.textSecondary }]}>
           {isRatioMode && resolvedRange && formulaContext
             ? calculateEffectiveValue(min, isRatioMode, formulaContext, presentation, ratioUnit)
-            : isRatioMode && ratioUnit
-              ? `${min.toFixed(2)} ${ratioUnit}`
-              : presentation.format(min)}
+            : isRatioMode && ratioUnit && ratioUnit.trim() && ratioUnit.trim() !== '.'
+              ? `${min.toFixed(2)} ${ratioUnit.trim()}`
+              : (presentation.format(min) || min.toString())}
         </Text>
         <Text style={[styles.rangeLabel, { color: theme.textSecondary }]}>
           {isRatioMode && resolvedRange && formulaContext
             ? calculateEffectiveValue(max, isRatioMode, formulaContext, presentation, ratioUnit)
-            : isRatioMode && ratioUnit
-              ? `${max.toFixed(2)} ${ratioUnit}`
-              : presentation.format(max)}
+            : isRatioMode && ratioUnit && ratioUnit.trim() && ratioUnit.trim() !== '.'
+              ? `${max.toFixed(2)} ${ratioUnit.trim()}`
+              : (presentation.format(max) || max.toString())}
         </Text>
       </View>
       

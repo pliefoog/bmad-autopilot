@@ -175,11 +175,12 @@ export class SensorInstance<T extends SensorData = SensorData> {
 
     // Get all alarm-capable fields
     const alarmFields = getAlarmFields(this.sensorType);
-    if (alarmFields.length > 0 && contextValue) {
+    if (alarmFields.length > 0) {
       // Dynamic require to avoid circular dependency for utility functions
       const { getAlarmDirection } = require('../utils/sensorAlarmUtils');
       
       for (const metricKey of alarmFields) {
+        // getAlarmDefaults handles undefined contextValue (uses defaultContext from schema)
         const alarmDefaults = getAlarmDefaults(this.sensorType, metricKey, contextValue);
         if (alarmDefaults) {
           // CRITICAL: Resolve calculated thresholds from schema to numeric values
@@ -202,50 +203,42 @@ export class SensorInstance<T extends SensorData = SensorData> {
           // Resolve warning threshold (handles both static value and calculated)
           const resolvedWarning = resolveThreshold(warningThreshold, configForResolving);
           
-          // Get direction to determine min vs max placement
-          const { direction } = getAlarmDirection(this.sensorType, metricKey);
-          const isBelow = direction === 'below';
+          // Check if this is formula mode
+          const hasFormula = criticalThreshold?.formula || warningThreshold?.formula;
+          const hasIndirectThreshold = criticalThreshold?.indirectThreshold !== undefined;
           
-          const thresholds: MetricThresholds = {
-            critical: {},
-            warning: {},
-            hysteresis: undefined,
-            staleThresholdMs: 60000,
-            enabled: true,
-          };
-          
-          // Place resolved thresholds in correct min/max fields based on direction
-          if (resolvedCritical !== undefined) {
-            if (isBelow) {
-              thresholds.critical.min = resolvedCritical;
-            } else {
-              thresholds.critical.max = resolvedCritical;
-            }
+          if (resolvedCritical === undefined || resolvedWarning === undefined) {
+            log.app('⚠️ Failed to resolve thresholds, skipping metric', () => ({
+              sensorType: this.sensorType,
+              metricKey,
+              resolvedCritical,
+              resolvedWarning,
+            }));
+            continue;
           }
-          
-          if (resolvedWarning !== undefined) {
-            if (isBelow) {
-              thresholds.warning.min = resolvedWarning;
-            } else {
-              thresholds.warning.max = resolvedWarning;
-            }
-          }
-          
-          // Extract sound patterns from thresholds (now per-threshold, not per-context)
-          thresholds.criticalSoundPattern = criticalThreshold?.sound;
-          thresholds.warningSoundPattern = warningThreshold?.sound;
-          
-          // Extract hysteresis if present
-          if (criticalThreshold?.hysteresis !== undefined) {
-            thresholds.hysteresis = criticalThreshold.hysteresis;
-          } else if (warningThreshold?.hysteresis !== undefined) {
-            thresholds.hysteresis = warningThreshold.hysteresis;
-          }
+
+          // Build simplified threshold structure
+          const thresholds: MetricThresholds = hasFormula && hasIndirectThreshold
+            ? {
+                mode: 'formula',
+                criticalRatio: criticalThreshold.indirectThreshold!,
+                warningRatio: warningThreshold.indirectThreshold!,
+                formula: criticalThreshold.formula || warningThreshold.formula!,
+                hysteresis: criticalThreshold?.hysteresis ?? warningThreshold?.hysteresis,
+                enabled: true,
+              }
+            : {
+                mode: 'direct',
+                critical: resolvedCritical,
+                warning: resolvedWarning,
+                hysteresis: criticalThreshold?.hysteresis ?? warningThreshold?.hysteresis,
+                enabled: true,
+              };
           
           this._thresholds.set(metricKey, thresholds);
         }
       }
-      log.app('✅ Loaded registry alarm defaults (multi-metric)', () => ({
+      log.app('✅ Loaded registry alarm defaults (simplified)', () => ({
         sensorType: this.sensorType,
         instance: this.instance,
         source: 'schema',
@@ -351,17 +344,24 @@ export class SensorInstance<T extends SensorData = SensorData> {
             // Add to history
             this._addToHistory(fieldName, metric);
 
-            // Evaluate alarm with priority logic
+            // Evaluate alarm with simplified logic
             const thresholds = this._thresholds.get(fieldName);
-            const staleThreshold = thresholds?.staleThresholdMs ?? 5000;
             const previousState = this._alarmStates.get(fieldName) ?? 0;
+            
+            // Get direction from schema
+            const direction = require('../registry').getAlarmDirection(this.sensorType, fieldName) ?? 'below';
+            
+            // Build formula context if needed
+            const formulaContext = thresholds?.mode === 'formula' ? this._buildFormulaContext() : undefined;
 
             const newState = evaluateAlarm(
               fieldValue,
               now,
               thresholds,
               previousState,
-              staleThreshold,
+              direction,
+              5000,  // 5 second stale threshold (sensor-level, could be configurable)
+              formulaContext,
             );
 
             this._alarmStates.set(fieldName, newState);
@@ -391,11 +391,8 @@ export class SensorInstance<T extends SensorData = SensorData> {
     // Note: Calculated metrics (dewPoint, ROT, trueWind) are now handled
     // by CalculatedMetricsService in SensorDataRegistry
 
-    // CRITICAL: Recalculate formula-based thresholds when dependency values change
-    // Example: voltage threshold depends on temperature, current threshold depends on capacity
-    if (hasChanges) {
-      this._recalculateFormulaDependentThresholds();
-    }
+    // Note: Formula-based thresholds are evaluated on-the-fly in evaluateAlarm()
+    // No need to recalculate/cache them - evaluation happens with live sensor data
 
     return { changed: hasChanges, changedMetrics };
   }
@@ -526,6 +523,50 @@ export class SensorInstance<T extends SensorData = SensorData> {
   }
 
   /**
+   * Get evaluated threshold values for a metric field
+   * Handles both direct mode (returns configured values) and formula mode (evaluates formula)
+   * Returns the actual threshold values that evaluateAlarm() uses for alarm state determination
+   *
+   * @param fieldName - The metric field name (e.g., 'voltage', 'depth')
+   * @returns Object with critical and warning threshold values (in SI units), or undefined if no thresholds
+   */
+  getEvaluatedThresholds(fieldName: string): { critical: number; warning: number } | undefined {
+    const thresholds = this._thresholds.get(fieldName);
+    if (!thresholds || !thresholds.enabled) {
+      return undefined;
+    }
+
+    // Direct mode: return configured values
+    if (thresholds.mode === 'direct') {
+      return {
+        critical: thresholds.critical,
+        warning: thresholds.warning,
+      };
+    }
+
+    // Formula mode: evaluate formula with current sensor data
+    try {
+      const formulaContext = this._buildFormulaContext();
+      const { evaluateFormula } = require('../utils/formulaEvaluator');
+
+      const critical = evaluateFormula(thresholds.formula, {
+        ...formulaContext,
+        indirectThreshold: thresholds.criticalRatio,
+      });
+
+      const warning = evaluateFormula(thresholds.formula, {
+        ...formulaContext,
+        indirectThreshold: thresholds.warningRatio,
+      });
+
+      return { critical, warning };
+    } catch (error) {
+      console.error(`[SensorInstance] Formula evaluation failed for ${this.sensorType}.${fieldName}:`, error);
+      return undefined;
+    }
+  }
+
+  /**
    * Get history for specific metric
    * 
    * CRITICAL: Converts SI values → display units using current user preferences
@@ -576,104 +617,7 @@ export class SensorInstance<T extends SensorData = SensorData> {
    * - Preserve original indirectThreshold value (user's ratio)
    * - Skip direct thresholds (no indirectThreshold field)
    * 
-   * @private
-   */
-  private _recalculateFormulaDependentThresholds(): void {
-    const schema = getSensorSchema(this.sensorType);
-    if (!schema) return;
 
-    // Build context from current metric values (capacity, temperature, nominalVoltage, etc.)
-    const context: Record<string, any> = {
-      sensorType: this.sensorType,
-      instance: this.instance,
-      name: this.name,
-      context: this.context,
-    };
-
-    // Add all current metric values to context
-    for (const [metricKey, buffer] of this._history.entries()) {
-      const latest = buffer.getLatest();
-      if (latest && typeof latest.value === 'number') {
-        context[metricKey] = latest.value;
-      }
-    }
-
-    // Check each threshold for formula dependencies (indicated by indirectThreshold)
-    for (const [metricKey, thresholds] of this._thresholds.entries()) {
-      const hasCriticalFormula = thresholds.critical.indirectThreshold !== undefined;
-      const hasWarningFormula = thresholds.warning.indirectThreshold !== undefined;
-
-      if (!hasCriticalFormula && !hasWarningFormula) {
-        continue; // Skip direct thresholds
-      }
-
-      // Get schema definition for this metric
-      const fieldDef = schema.fields[metricKey as keyof typeof schema.fields] as any;
-      const alarm = fieldDef?.alarm;
-      if (!alarm) continue;
-
-      // Get context-specific threshold config from schema
-      const contextKey = schema.contextKey;
-      const contextValue = this.context ? (this.context as any)[contextKey!] : undefined;
-      const contextDef = contextValue
-        ? alarm.contexts[contextValue]
-        : alarm.contexts[Object.keys(alarm.contexts)[0]];
-      if (!contextDef) continue;
-
-      const direction = alarm.direction;
-
-      // Recalculate critical threshold if formula-based
-      if (hasCriticalFormula && contextDef.critical) {
-        const criticalConfig = {
-          ...contextDef.critical,
-          indirectThreshold: thresholds.critical.indirectThreshold,
-        };
-        const resolvedCritical = resolveThreshold(criticalConfig, context as any);
-
-        if (resolvedCritical !== undefined) {
-          if (direction === 'below') {
-            thresholds.critical.min = resolvedCritical;
-          } else {
-            thresholds.critical.max = resolvedCritical;
-          }
-
-          // Re-evaluate alarm with new threshold
-          const metric = this.getMetric(metricKey);
-          if (metric && typeof metric.si_value === 'number') {
-            const previousState = this._alarmStates.get(metricKey) ?? 0;
-            const staleThreshold = thresholds.staleThresholdMs ?? 5000;
-            const newState = evaluateAlarm(
-              metric.si_value,
-              metric.timestamp,
-              thresholds,
-              previousState,
-              staleThreshold,
-            );
-            this._alarmStates.set(metricKey, newState);
-          }
-        }
-      }
-
-      // Recalculate warning threshold if formula-based
-      if (hasWarningFormula && contextDef.warning) {
-        const warningConfig = {
-          ...contextDef.warning,
-          indirectThreshold: thresholds.warning.indirectThreshold,
-        };
-        const resolvedWarning = resolveThreshold(warningConfig, context as any);
-
-        if (resolvedWarning !== undefined) {
-          if (direction === 'below') {
-            thresholds.warning.min = resolvedWarning;
-          } else {
-            thresholds.warning.max = resolvedWarning;
-          }
-        }
-      }
-    }
-  }
-
-  /**
    * Update thresholds for specific metric
    * Called by SensorConfigDialog when user changes threshold configuration
    *
@@ -727,119 +671,43 @@ export class SensorInstance<T extends SensorData = SensorData> {
       this.context = config.context;
     }
     
-    // Helper to convert SensorConfiguration threshold format to MetricThresholds format
-    // CRITICAL: Detects and resolves calculated thresholds (e.g., C-rate current, nominalVoltage scaling)
-    const convertToMetricThresholds = (cfg: any, metricKey: string, direction?: 'above' | 'below'): MetricThresholds => {
-      const thresholds: MetricThresholds = {
-        critical: {},
-        warning: {},
-        enabled: cfg.enabled ?? true,
-        criticalSoundPattern: cfg.criticalSoundPattern,
-        warningSoundPattern: cfg.warningSoundPattern,
-        staleThresholdMs: 5000,
-      };
-
-      // CALCULATED THRESHOLD DETECTION AND RESOLUTION
-      // Jan 2026: Support calculated thresholds (capacity-based, voltage-based, RPM-based)
-      // Schema defines formulas; resolver converts them to numeric values at runtime
-      
-      // CRITICAL FIX (Jan 2025): Handle both direct and indirectThreshold modes
-      // For ratio mode: Get schema ThresholdConfig, inject user's indirectThreshold, resolve formula
-      // For direct mode: Use static value directly
-      
-      // Check if this is ratio mode (indirectThreshold stored separately)
-      const hasIndirectThreshold = cfg.indirectThreshold !== undefined;
-      
-      if (hasIndirectThreshold) {
-        // RATIO MODE: Get schema ThresholdConfig with formula, inject user's ratio value
-        const schema = getSensorSchema(this.sensorType);
-        const fieldDef = schema?.fields[metricKey as keyof typeof schema.fields] as any;
-        const alarm = fieldDef?.alarm;
-        
-        if (alarm) {
-          // Get context-specific threshold config
-          const contextKey = schema.contextKey;
-          const contextValue = config.context ? (config.context as any)[contextKey!] : undefined;
-          const contextDef = contextValue ? alarm.contexts[contextValue] : alarm.contexts[Object.keys(alarm.contexts)[0]];
-          
-          // Build ThresholdConfig with user's indirectThreshold value
-          if (contextDef?.critical && cfg.indirectThreshold.critical !== undefined) {
-            const criticalConfig = {
-              ...contextDef.critical,
-              indirectThreshold: cfg.indirectThreshold.critical, // User's ratio value
-            };
-            const resolvedCritical = resolveThreshold(criticalConfig, config);
-            
-            // Store BOTH resolved value (for alarms/TrendLine) AND ratio (for UI/recalc)
-            thresholds.critical.indirectThreshold = cfg.indirectThreshold.critical;
-            if (resolvedCritical !== undefined) {
-              if (direction === 'below') {
-                thresholds.critical.min = resolvedCritical;
-              } else {
-                thresholds.critical.max = resolvedCritical;
-              }
-            }
-          }
-          
-          if (contextDef?.warning && cfg.indirectThreshold.warning !== undefined) {
-            const warningConfig = {
-              ...contextDef.warning,
-              indirectThreshold: cfg.indirectThreshold.warning, // User's ratio value
-            };
-            const resolvedWarning = resolveThreshold(warningConfig, config);
-            
-            // Store BOTH resolved value (for alarms/TrendLine) AND ratio (for UI/recalc)
-            thresholds.warning.indirectThreshold = cfg.indirectThreshold.warning;
-            if (resolvedWarning !== undefined) {
-              if (direction === 'below') {
-                thresholds.warning.min = resolvedWarning;
-              } else {
-                thresholds.warning.max = resolvedWarning;
-              }
-            }
-          }
-        }
+    // Helper to convert SensorConfiguration threshold format to simplified MetricThresholds
+    const convertToMetricThresholds = (cfg: any, metricKey: string): MetricThresholds => {
+      // Check mode from config
+      if (cfg.mode === 'formula' && cfg.formula) {
+        // Formula mode: Store ratios + formula
+        return {
+          mode: 'formula',
+          criticalRatio: cfg.critical ?? 0,
+          warningRatio: cfg.warning ?? 0,
+          formula: cfg.formula,
+          hysteresis: cfg.hysteresis,
+          enabled: cfg.enabled ?? true,
+        };
       } else {
-        // DIRECT MODE: Use static threshold values
-        // Resolve critical threshold (calculated or static value field)
-        if (cfg.critical !== undefined) {
-          const resolvedCritical = resolveThreshold(cfg.critical, config);
-          
-          if (resolvedCritical !== undefined) {
-            if (direction === 'below') {
-              thresholds.critical.min = resolvedCritical;
-            } else {
-              thresholds.critical.max = resolvedCritical;
-            }
-          }
-        }
+        // Direct mode: Store resolved threshold values
+        const resolvedCritical = typeof cfg.critical === 'number' 
+          ? cfg.critical 
+          : resolveThreshold(cfg.critical, config);
+        const resolvedWarning = typeof cfg.warning === 'number'
+          ? cfg.warning
+          : resolveThreshold(cfg.warning, config);
         
-        // Resolve warning threshold (calculated or static value field)
-        if (cfg.warning !== undefined) {
-          const resolvedWarning = resolveThreshold(cfg.warning, config);
-          
-          if (resolvedWarning !== undefined) {
-            if (direction === 'below') {
-              thresholds.warning.min = resolvedWarning;
-            } else {
-              thresholds.warning.max = resolvedWarning;
-            }
-          }
-        }
+        return {
+          mode: 'direct',
+          critical: resolvedCritical ?? 0,
+          warning: resolvedWarning ?? 0,
+          hysteresis: cfg.hysteresis,
+          enabled: cfg.enabled ?? true,
+        };
       }
-
-      if (cfg.criticalHysteresis !== undefined || cfg.warningHysteresis !== undefined) {
-        thresholds.hysteresis = cfg.criticalHysteresis ?? cfg.warningHysteresis;
-      }
-
-      return thresholds;
     };
 
     // Apply metrics thresholds (UNIFIED: single + multi-metric)
     // Schema V4: All sensors use metrics object, no top-level thresholds
     if (config.metrics) {
       Object.entries(config.metrics).forEach(([metricKey, metricConfig]: [string, any]) => {
-        const thresholds = convertToMetricThresholds(metricConfig, metricKey, metricConfig.direction);
+        const thresholds = convertToMetricThresholds(metricConfig, metricKey);
         this.updateThresholds(metricKey, thresholds);
       });
     }
@@ -921,6 +789,33 @@ export class SensorInstance<T extends SensorData = SensorData> {
     // Store raw SI value only - display values computed on-demand
     // This is 77% memory reduction (no HistoryPoint object)
     buffer.add(metric.si_value, metric.timestamp);
+  }
+
+  /**
+   * Build formula context from current sensor values
+   * Used for evaluating formula-based thresholds
+   * 
+   * @returns Record of field name → SI value for formula evaluation
+   */
+  private _buildFormulaContext(): Record<string, number> {
+    const context: Record<string, number> = {};
+    
+    // Extract common fields used in formulas
+    const fields = ['nominalVoltage', 'capacity', 'maxRpm', 'temperature'];
+    for (const field of fields) {
+      const metric = this.getMetric(field);
+      if (metric && typeof metric.si_value === 'number') {
+        context[field] = metric.si_value;
+      }
+    }
+    
+    // Apply fallback defaults for missing base parameters
+    context.nominalVoltage = context.nominalVoltage ?? 12;
+    context.capacity = context.capacity ?? 140;
+    context.maxRpm = context.maxRpm ?? 3000;
+    context.temperature = context.temperature ?? 25;
+    
+    return context;
   }
 
   /**

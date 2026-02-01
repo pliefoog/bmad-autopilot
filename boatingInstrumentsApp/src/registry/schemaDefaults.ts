@@ -92,7 +92,8 @@ export function applySchemaDefaults(sensorInstance: SensorInstance): void {
     }
     
     // Build threshold configuration from schema defaults (new ThresholdConfig structure)
-    // ThresholdConfig has: value, calculated, hysteresis, sound (instead of old min/max and sound patterns)
+    // ThresholdConfig has: value, formula, indirectThreshold, hysteresis, sound
+    // MetricConfiguration (persistent) requires: critical, warning (numeric values or ratio in formula mode)
     const direction = field.alarm.direction;
     
     // Extract threshold values (only static values available during schema initialization)
@@ -100,39 +101,30 @@ export function applySchemaDefaults(sensorInstance: SensorInstance): void {
     const criticalValue = defaults.critical?.value;
     const warningValue = defaults.warning?.value;
     
-    const thresholds: any = {
-      critical: {},
-      warning: {},
-      direction,
-      staleThresholdMs: 5000, // Default stale threshold
-      enabled: true, // Alarms enabled by default
-    };
+    // Check if formula mode (has indirectThreshold and formula)
+    const hasFormula = defaults.critical?.formula || defaults.warning?.formula;
+    const hasIndirect = defaults.critical?.indirectThreshold !== undefined;
     
-    // Extract sound patterns and hysteresis from ThresholdConfig
-    if (defaults.critical?.sound) {
-      thresholds.criticalSoundPattern = defaults.critical.sound;
-    }
-    if (defaults.warning?.sound) {
-      thresholds.warningSoundPattern = defaults.warning.sound;
-    }
-    if (defaults.critical?.hysteresis !== undefined) {
-      thresholds.hysteresis = defaults.critical.hysteresis;
-    } else if (defaults.warning?.hysteresis !== undefined) {
-      thresholds.hysteresis = defaults.warning.hysteresis;
-    }
-    
-    // Set min/max based on alarm direction using static values
-    if (direction === 'below') {
-      if (criticalValue !== undefined) thresholds.critical.min = criticalValue;
-      if (warningValue !== undefined) thresholds.warning.min = warningValue;
-    } else if (direction === 'above') {
-      if (criticalValue !== undefined) thresholds.critical.max = criticalValue;
-      if (warningValue !== undefined) thresholds.warning.max = warningValue;
-    }
+    const thresholds: any = hasFormula && hasIndirect
+      ? {
+          mode: 'formula',
+          criticalRatio: defaults.critical.indirectThreshold!,
+          warningRatio: defaults.warning.indirectThreshold!,
+          formula: defaults.critical.formula || defaults.warning.formula!,
+          hysteresis: defaults.critical?.hysteresis ?? defaults.warning?.hysteresis,
+          enabled: true,
+        }
+      : {
+          mode: 'direct',
+          critical: criticalValue ?? 0,
+          warning: warningValue ?? 0,
+          hysteresis: defaults.critical?.hysteresis ?? defaults.warning?.hysteresis,
+          enabled: true,
+        };
     
     // Apply to sensor instance
     sensorInstance.updateThresholds(fieldKey, thresholds);
     
-    log.storeInit(`  ✓ ${fieldKey}: critical=${criticalValue ?? 'calculated'}, warning=${warningValue ?? 'calculated'}`, () => ({}));
+    log.storeInit(`  ✓ ${fieldKey}: critical=${criticalValue ?? 'formula'}, warning=${warningValue ?? 'formula'}`, () => ({}));
   }
 }

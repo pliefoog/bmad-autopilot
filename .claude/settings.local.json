@@ -47,7 +47,20 @@
       "Bash(ls:*)",
       "Bash(mkdir:*)",
       "Bash(zip:*)",
-      "Bash(unzip:*)"
+      "Bash(unzip:*)",
+      "Bash(docker system:*)",
+      "Bash(setopt:*)",
+      "Bash(for d in ~/Library/Group Containers/*/)",
+      "Bash(do du -sh \"$d\")",
+      "Bash(done)",
+      "Bash(for d in Chromium Claude Kiro Xcode)",
+      "Bash(do du -sh \"/Users/pieter/Library/Application Support/$d\")",
+      "Bash(/Volumes/SSD_I/Dev/scripts/move-dev-tools-to-ssd.sh)",
+      "Bash(sudo rm:*)",
+      "Bash(diskutil info:*)",
+      "Bash(tmutil listlocalsnapshots:*)",
+      "Bash(diskutil apfs listSnapshots:*)",
+      "Bash(diskutil apfs:*)"
     ],
     "deny": [],
     "ask": []

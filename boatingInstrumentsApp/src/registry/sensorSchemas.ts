@@ -729,3 +729,42 @@ export const SENSOR_SCHEMAS = {
  * Sensor type union (replaces manual SensorType in SensorData.ts)
  */
 export type SensorType = keyof typeof SENSOR_SCHEMAS;
+
+/**
+ * SCHEMA VALIDATION (Jan 2025)
+ * 
+ * Validates schema completeness at module load to catch configuration errors early.
+ * This prevents runtime errors from missing required properties.
+ */
+function validateSchemaCompleteness(): void {
+  const errors: string[] = [];
+
+  for (const [sensorType, schema] of Object.entries(SENSOR_SCHEMAS)) {
+    for (const [fieldKey, field] of Object.entries(schema.fields)) {
+      // Check 1: All alarm-enabled fields MUST have thresholdRange or field min/max
+      if ('alarm' in field && field.alarm) {
+        const hasThresholdRange = Object.values(field.alarm.contexts || {}).some(
+          (ctx: any) => ctx.critical?.thresholdRange || ctx.warning?.thresholdRange
+        );
+        const hasFieldRange = field.min !== undefined && field.max !== undefined;
+
+        if (!hasThresholdRange && !hasFieldRange) {
+          errors.push(
+            `❌ ${sensorType}.${fieldKey} has alarm config but missing thresholdRange in contexts AND field min/max. ` +
+            `ThresholdPresentationService will throw at runtime!`
+          );
+        }
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(
+      `Schema validation failed (${errors.length} errors):\n\n${errors.join('\n')}\n\n` +
+      `FIX: Add thresholdRange to alarm contexts OR add min/max to field definition.`
+    );
+  }
+}
+
+// Run validation at module load (fails fast if schema incomplete)
+validateSchemaCompleteness();

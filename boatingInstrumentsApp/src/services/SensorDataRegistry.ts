@@ -150,12 +150,12 @@ export class SensorDataRegistry {
       // 4. If corrupted: Gracefully fall back to schema defaults
       try {
         // Dynamic require() to avoid circular dependency: store → registry → SensorInstance → store
-        const { useSensorConfigStore } = require('../store/sensorConfigStore');
-        const store = useSensorConfigStore.getState();
+        const { useNmeaStore } = require('../store/nmeaStore');
+        const store = useNmeaStore.getState();
         
-        if (store._hydrated) {
+        if (store._hasHydrated) {
           // Safe to read - hydration complete
-          const persistedConfig = store.getConfig(sensorType, instance);
+          const persistedConfig = store.getSensorConfig(sensorType, instance);
           
           if (persistedConfig) {
             try {
@@ -194,16 +194,17 @@ export class SensorDataRegistry {
           // Listen for hydration completion (only in browser/web environment)
           if (typeof window !== 'undefined') {
             const handleHydration = () => {
-              const persistedConfig = useSensorConfigStore.getState().getConfig(sensorType, instance);
+              const { useNmeaStore } = require('../store/nmeaStore');
+              const persistedConfig = useNmeaStore.getState().getSensorConfig(sensorType, instance);
               if (persistedConfig) {
                 log.app(`🔄 Hydration complete, reapplying persisted config for ${sensorType}[${instance}]`, () => ({
                   name: persistedConfig.name,
                 }));
                 sensor.updateThresholdsFromConfig(persistedConfig);
               }
-              window.removeEventListener('sensorConfigStoreHydrated', handleHydration);
+              window.removeEventListener('nmeaStoreHydrated', handleHydration);
             };
-            window.addEventListener('sensorConfigStoreHydrated', handleHydration, { once: true });
+            window.addEventListener('nmeaStoreHydrated', handleHydration, { once: true });
           }
         }
       } catch (storageError) {

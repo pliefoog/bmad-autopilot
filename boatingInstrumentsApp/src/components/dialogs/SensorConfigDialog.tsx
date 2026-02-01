@@ -36,15 +36,19 @@ import { useWatch } from 'react-hook-form';
 import { useTheme, ThemeColors } from '../../store/themeStore';
 import { useNmeaStore } from '../../store/nmeaStore';
 import { useSettingsStore } from '../../store/settingsStore';
+import { usePresentationStore } from '../../presentation/presentationStore';
 import { SensorType, SensorConfiguration } from '../../types/SensorData';
 import { BaseConfigDialog } from './base/BaseConfigDialog';
 import { UniversalIcon } from '../atoms/UniversalIcon';
 import { PlatformToggle } from './inputs/PlatformToggle';
 import { PlatformPicker } from './inputs/PlatformPicker';
 import { getPlatformTokens } from '../../theme/settingsTokens';
-import { getSensorSchema } from '../../registry';
-import { getAlarmDirection } from '../../utils/sensorAlarmUtils';
+import { getSensorSchema, getAlarmDefaults, getAlarmDirection } from '../../registry';
+import { getAlarmTriggerHint } from '../../utils/sensorAlarmUtils';
 import { sensorRegistry } from '../../services/SensorDataRegistry';
+import { ThresholdPresentationService } from '../../services/ThresholdPresentationService';
+import { SENSOR_SCHEMAS } from '../../registry/sensorSchemas';
+import { ensureFormatFunction } from '../../presentation/presentations';
 import {
   SOUND_PATTERNS,
   MarineAudioAlertManager,
@@ -122,29 +126,37 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
 
   // Initialize sensor on open
   React.useEffect(() => {
+    let isMounted = true;
+    
     if (visible && !initialSensorType && !selectedSensorType && availableSensorTypes.length > 0) {
-      setSelectedSensorType(availableSensorTypes[0]);
+      if (isMounted) {
+        setSelectedSensorType(availableSensorTypes[0]);
+      }
     }
+    
+    return () => { isMounted = false; };
   }, [visible, initialSensorType, selectedSensorType, availableSensorTypes]);
 
   // Reset instance when sensor type changes
   React.useEffect(() => {
+    let isMounted = true;
+    
     if (instances.length > 0 && !instances.find((i) => i.instance === selectedInstance)) {
-      setSelectedInstance(instances[0].instance);
+      if (isMounted) {
+        setSelectedInstance(instances[0].instance);
+      }
     }
+    
+    return () => { isMounted = false; };
   }, [instances, selectedInstance]);
 
-  // Get form hook (all form logic centralized here)
-  const { form, enrichedThresholds, currentMetricValue, handlers, computed } = useSensorConfigForm(
+  // Get form hook (simplified - just form state + save)
+  const { form, handlers } = useSensorConfigForm(
     selectedSensorType,
     selectedInstance,
     async (sensorType, instance, data) => {
       if (!sensorType) return;
-      
-      // Capture store methods inside callback to avoid stale closure
-      const updateSensorThresholds = useNmeaStore.getState().updateSensorThresholds;
-      const setConfig = useNmeaStore.getState().setSensorConfig;
-      
+
       // If name field is empty, set default format
       const trimmedName = data.name?.trim();
       const defaultName = trimmedName || `${sensorType}-${instance}`;
@@ -159,38 +171,67 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       // For single-metric sensors: metrics = { depth: { critical, warning, direction, ... } }
       // For multi-metric sensors: metrics = { voltage: {...}, current: {...} }
       const metricKey = data.selectedMetric; // Always populated (watchedMetric || defaultMetric)
+      log.sensorConfig('onSave processing metric', () => ({
+        metricKey,
+        criticalValue: data.criticalValue,
+        warningValue: data.warningValue,
+      }));
       if (metricKey) {
-        // Detect if this metric uses indirectThreshold (ratio mode)
+        // Detect if this metric uses formula mode (ratio-based thresholds)
         const schema = getSensorSchema(sensorType);
         const fieldDef = schema.fields[metricKey as keyof typeof schema.fields];
-        const hasIndirectThreshold = fieldDef?.alarm && 
-          Object.values((fieldDef.alarm as any).contexts || {}).some((ctx: any) => 
-            ctx.critical?.indirectThreshold !== undefined || ctx.warning?.indirectThreshold !== undefined
+        const hasFormula = fieldDef?.alarm &&
+          Object.values((fieldDef.alarm as any).contexts || {}).some((ctx: any) =>
+            ctx.critical?.formula !== undefined || ctx.warning?.formula !== undefined
           );
-        
-        // Build metric config based on mode
+        log.sensorConfig('Detected formula mode', () => ({ hasFormula }));
+
+        // Build metric config matching discriminated union structure
         const metricConfig: any = {
-          direction: getAlarmDirection(sensorType, data.selectedMetric).direction,
+          direction: getAlarmDirection(sensorType, data.selectedMetric ?? '') ?? 'below',
           criticalSoundPattern: data.criticalSoundPattern,
           warningSoundPattern: data.warningSoundPattern,
-          enabled: data.enabled,
+          critical: data.criticalValue,
+          warning: data.warningValue,
+          // enabled: REMOVED - per-metric enabled now managed by handleMetricEnabledChange
         };
-        
-        if (hasIndirectThreshold) {
-          // CRITICAL FIX (Jan 2025): For ratio mode, save as indirectThreshold
-          metricConfig.indirectThreshold = {
-            critical: data.criticalValue,
-            warning: data.warningValue,
-          };
+
+        // Add formula mode properties if applicable
+        if (hasFormula) {
+          // Extract formula from schema (assumes first context has formula)
+          const contextValues = Object.values((fieldDef.alarm as any).contexts || {});
+          const formulaDef = (contextValues[0] as any)?.critical?.formula;
+          
+          if (formulaDef) {
+            metricConfig.mode = 'formula';
+            metricConfig.formula = formulaDef;
+            log.sensorConfig('Saving as formula mode', () => ({
+              metricKey,
+              criticalRatio: metricConfig.critical,
+              warningRatio: metricConfig.warning,
+              formula: metricConfig.formula,
+            }));
+          }
         } else {
-          // For direct mode, save as critical/warning
-          metricConfig.critical = data.criticalValue;
-          metricConfig.warning = data.warningValue;
+          metricConfig.mode = 'direct';
+          log.sensorConfig('Saving as direct mode', () => ({
+            metricKey,
+            critical: metricConfig.critical,
+            warning: metricConfig.warning,
+          }));
         }
-        
+
+        // ⭐ CRITICAL FIX (Jan 2025): Merge with existing metrics to preserve other metrics' config
+        const currentConfig = useNmeaStore.getState().getSensorConfig(sensorType, instance);
+        log.sensorConfig('Current config before merge', () => ({ metrics: currentConfig?.metrics }));
         updates.metrics = {
-          [metricKey]: metricConfig,
+          ...currentConfig?.metrics, // Preserve existing metrics (voltage, current, etc.)
+          [metricKey]: {
+            ...currentConfig?.metrics?.[metricKey], // Preserve existing metric config (e.g., enabled state)
+            ...metricConfig, // Apply new threshold values
+          },
         };
+        log.sensorConfig('Final updates.metrics to be saved', () => ({ metrics: updates.metrics }));
       }
 
       // Generic context handling (schema-driven)
@@ -199,7 +240,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       if (data.context) {
         const schema = getSensorSchema(sensorType);
         const contextField = schema.contextKey ? schema.fields[schema.contextKey] : null;
-        
+
         // Validate context value against schema options
         if (contextField?.options) {
           const isValid = contextField.options.includes(data.context);
@@ -220,8 +261,15 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       }
 
       try {
-        updateSensorThresholds(sensorType, instance, updates);
-        await setConfig(sensorType, instance, updates);
+        log.sensorConfig('Saving config to store', () => ({ sensorType, instance, updates }));
+        // ✅ FIXED: Get store methods at point of use to avoid stale closures
+        const store = useNmeaStore.getState();
+        store.updateSensorThresholds(sensorType, instance, updates);
+        await store.setSensorConfig(sensorType, instance, updates);
+        log.sensorConfig('Save completed, verifying', () => ({ sensorType, instance }));
+        // Verify it was saved
+        const verifyConfig = useNmeaStore.getState().getSensorConfig(sensorType, instance);
+        log.sensorConfig('Verified saved config', () => ({ sensorType, instance, config: verifyConfig }));
       } catch (error) {
         log.app('SensorConfigDialog: Error saving config', () => ({
           error: error instanceof Error ? error.message : String(error),
@@ -235,6 +283,140 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       }
     },
   );
+
+  // ⭐ SIMPLIFIED ARCHITECTURE (Jan 2026): Computed values moved from hook to dialog
+  // Hook handles FORM STATE, dialog handles PRESENTATION
+
+  // Get selected metric for enrichment
+  const selectedMetricValue = useWatch({ control: form.control, name: 'selectedMetric' });
+
+  // Enrich thresholds for selected metric (dialog-local, not in hook)
+  const enrichedThresholds = useMemo(() => {
+    if (!selectedSensorType || !selectedMetricValue) return null;
+    return ThresholdPresentationService.getEnrichedThresholds(
+      selectedSensorType,
+      selectedInstance,
+      selectedMetricValue,
+    );
+  }, [selectedSensorType, selectedInstance, selectedMetricValue]);
+
+  // Get current live value for metric selector display
+  const currentMetricValue = useNmeaStore(
+    (state) => {
+      if (!selectedSensorType || !selectedMetricValue) return undefined;
+      const sensorInstance = sensorRegistry.get(selectedSensorType, selectedInstance);
+      const metricValue = sensorInstance?.getMetric(selectedMetricValue);
+      const formatted = metricValue?.formattedValueWithUnit;
+      // Safety: ensure we never return empty string or "." that could leak as text node
+      if (!formatted || formatted.trim() === '' || formatted.trim() === '.') {
+        return undefined;
+      }
+      return formatted;
+    }
+  );
+
+  // Check if sensor supports alarms
+  const supportsAlarms = useMemo(() => {
+    if (!selectedSensorType) return false;
+    const schema = SENSOR_SCHEMAS[selectedSensorType as keyof typeof SENSOR_SCHEMAS];
+    return schema && Object.values(schema.fields).some(
+      (field): field is any => 'alarm' in field && !!field.alarm
+    );
+  }, [selectedSensorType]);
+
+  // Get alarm config for slider (direction, range, step)
+  const alarmConfig = useMemo(() => {
+    if (!selectedSensorType || !selectedMetricValue || !supportsAlarms) return null;
+    const direction = getAlarmDirection(selectedSensorType, selectedMetricValue) ?? 'below';
+    // Get sensor config to determine context for alarm defaults
+    const config = useNmeaStore.getState().getSensorConfig(selectedSensorType, selectedInstance);
+    const defaults = getAlarmDefaults(selectedSensorType, selectedMetricValue, config?.context);
+    if (!defaults?.thresholdRange) return null;
+
+    return {
+      direction,
+      triggerHint: getAlarmTriggerHint(selectedSensorType),
+      min: defaults.thresholdRange.min,
+      max: defaults.thresholdRange.max,
+      step: 0.1,
+    };
+  }, [selectedSensorType, selectedMetricValue, supportsAlarms]);
+
+  // Get slider presentation (format function + symbol)
+  const sliderPresentation = useMemo(() => {
+    if (!selectedSensorType || !selectedMetricValue) return null;
+    const schema = SENSOR_SCHEMAS[selectedSensorType as keyof typeof SENSOR_SCHEMAS];
+    const fieldDef = schema?.fields[selectedMetricValue as keyof typeof schema.fields];
+    if (!fieldDef || !('unitType' in fieldDef)) return null;
+
+    const presentation = usePresentationStore.getState().getPresentationForCategory(fieldDef.unitType as any);
+    if (!presentation) return null;
+
+    // CRITICAL: Sanitize symbol to prevent "." from leaking as text node
+    const symbol = presentation.symbol?.trim() || '';
+    const sanitizedSymbol = (symbol && symbol.length > 0 && symbol !== '.') ? symbol : '';
+
+    return {
+      format: ensureFormatFunction(presentation),
+      symbol: sanitizedSymbol,
+    };
+  }, [selectedSensorType, selectedMetricValue]);
+
+  // Get alarm formula (for ratio mode detection)
+  const alarmFormula = useMemo(() => {
+    if (!selectedSensorType || !selectedMetricValue) return undefined;
+    const schema = SENSOR_SCHEMAS[selectedSensorType as keyof typeof SENSOR_SCHEMAS];
+    const fieldDef = schema?.fields[selectedMetricValue as keyof typeof schema.fields];
+    if (!fieldDef || !('alarm' in fieldDef)) return undefined;
+    return (fieldDef.alarm as any)?.formula as string | undefined;
+  }, [selectedSensorType, selectedMetricValue]);
+
+  // Get sensor metrics (for formula evaluation)
+  // ✅ FIXED: Build metrics Map from SensorInstance getMetric() calls
+  const sensorMetrics = useMemo(() => {
+    if (!selectedSensorType) return undefined;
+    const sensorInstance = sensorRegistry.get(selectedSensorType, selectedInstance);
+    if (!sensorInstance) return undefined;
+    
+    // Build Map of all metrics for formula evaluation
+    const metricsMap = new Map<string, any>();
+    const metricKeys = sensorInstance.getMetricKeys();
+    
+    for (const key of metricKeys) {
+      const metric = sensorInstance.getMetric(key);
+      if (metric) {
+        metricsMap.set(key, metric.value); // Store converted display value
+      }
+    }
+    
+    return metricsMap;
+  }, [selectedSensorType, selectedInstance]);
+
+  // Get ratio unit (for indirect threshold display)
+  const ratioUnit = useMemo(() => {
+    if (!selectedSensorType || !selectedMetricValue || !alarmFormula) return undefined;
+    const schema = SENSOR_SCHEMAS[selectedSensorType as keyof typeof SENSOR_SCHEMAS];
+    const fieldDef = schema?.fields[selectedMetricValue as keyof typeof schema.fields];
+    if (!fieldDef || !('alarm' in fieldDef)) return undefined;
+
+    const alarm = fieldDef.alarm as any;
+    const firstContext = Object.keys(alarm.contexts || {})[0];
+    const contextDef = firstContext ? alarm.contexts[firstContext] : null;
+    return contextDef?.critical?.indirectThresholdUnit;
+  }, [selectedSensorType, selectedMetricValue, alarmFormula]);
+
+  // Bundle computed values (same API as before, but computed here instead of in hook)
+  const computed = useMemo(() => ({
+    alarmConfig,
+    enrichedThresholds,
+    sliderPresentation,
+    alarmFormula,
+    sensorMetrics,
+    ratioUnit,
+    resolvedRange: enrichedThresholds?.resolvedRange,
+    formulaContext: enrichedThresholds?.formulaContext,
+    supportsAlarms,
+  }), [alarmConfig, enrichedThresholds, sliderPresentation, alarmFormula, sensorMetrics, ratioUnit, supportsAlarms]);
 
   // Get glove mode setting (before useMemo that depends on sensorConfig)
   const gloveMode = useSettingsStore((state) => state.themeSettings.gloveMode);
@@ -258,23 +440,46 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
     if (!sensorConfig) return [];
     return Object.entries(sensorConfig.fields)
       .filter(([_, field]) => field.alarm !== undefined)
-      .map(([key, field]) => ({
-        key,
-        label: field.label,
-        category: field.unitType,
-      }));
+      .map(([key, field]) => {
+        // Safety: ensure label is never just "." or empty
+        const label = field.label && field.label.trim() && field.label.trim() !== '.'
+          ? field.label.trim()
+          : key; // Fallback to key name if label invalid
+        return {
+          key,
+          label,
+          category: field.unitType,
+        };
+      });
   }, [sensorConfig]);
 
   // Watch form fields for conditional rendering (performance optimized)
-  const enabledValue = useWatch({ control: form.control, name: 'enabled' });
-  const selectedMetricValue = useWatch({ control: form.control, name: 'selectedMetric' });
-  const criticalPatternValue = useWatch({ control: form.control, name: 'criticalSoundPattern' });
-  const warningPatternValue = useWatch({ control: form.control, name: 'warningSoundPattern' });
-  const criticalValueWatched = useWatch({ control: form.control, name: 'criticalValue' });
-  const warningValueWatched = useWatch({ control: form.control, name: 'warningValue' });
+  // const enabledValue = useWatch({ control: form.control, name: 'enabled' });  // REMOVED: Now per-metric
+  // selectedMetricValue already declared above in computed properties section
+  // ✅ FIXED: Consolidate multiple useWatch calls into single subscription
+  const {
+    criticalSoundPattern: criticalPatternValue,
+    warningSoundPattern: warningPatternValue,
+    criticalValue: criticalValueWatched,
+    warningValue: warningValueWatched,
+  } = useWatch({
+    control: form.control,
+    name: ['criticalSoundPattern', 'warningSoundPattern', 'criticalValue', 'warningValue'],
+  }) as {
+    criticalSoundPattern?: string;
+    warningSoundPattern?: string;
+    criticalValue?: number;
+    warningValue?: number;
+  };
 
-  // Track unsaved changes for UI feedback
-  const hasUnsavedChanges = form.formState.isDirty && !form.formState.isSubmitting;
+  // Watch current metric's enabled state from store (per-metric alarm enable)
+  const currentMetricEnabled: boolean = useNmeaStore(
+    (state) => {
+      if (!selectedSensorType || !selectedMetricValue) return false;
+      const config = state.getSensorConfig(selectedSensorType, selectedInstance);
+      return config?.metrics?.[selectedMetricValue]?.enabled ?? true; // Default enabled
+    }
+  ) as boolean;
 
   // Early guard: No sensor selected
   if (!selectedSensorType) {
@@ -334,20 +539,14 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
       }}
       title="Sensor Configuration"
       headerRight={
-        <View style={styles.headerStatus}>
-          {form.formState.isSubmitting && (
+        form.formState.isSubmitting ? (
+          <View style={styles.headerStatus}>
             <View style={[styles.statusBadge, { backgroundColor: theme.primary }]}>
               <ActivityIndicator size="small" color="white" />
               <Text style={styles.statusBadgeText}>Saving...</Text>
             </View>
-          )}
-          {hasUnsavedChanges && !form.formState.isSubmitting && (
-            <View style={[styles.statusBadge, { backgroundColor: theme.warning }]}>
-              <UniversalIcon name="alert-circle" size={14} color="white" />
-              <Text style={styles.statusBadgeText}>Unsaved</Text>
-            </View>
-          )}
-        </View>
+          </View>
+        ) : null
       }
     >
       <ScrollView style={styles.container}>
@@ -394,7 +593,10 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                 key={field.key}
                 field={field}
                 value={form.watch(field.key as any)}
-                onChange={(fieldKey: string, value: any) => form.setValue(fieldKey as any, value)}
+                onChange={(fieldKey: string, value: any) => {
+                  form.setValue(fieldKey as any, value, { shouldDirty: false });
+                  handlers.saveImmediately();
+                }}
                 sensorInstance={
                   selectedSensorType
                     ? sensorRegistry.get(selectedSensorType, selectedInstance) ?? undefined
@@ -403,7 +605,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                 theme={theme}
                 gloveMode={gloveMode}
               />
-              ))}
+            ))}
           </View>
         )}
 
@@ -411,36 +613,57 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
         {computed.supportsAlarms && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Alarms</Text>
-            <View style={styles.settingRow}>
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Enable alarms</Text>
-              <PlatformToggle
-                label=""
-                value={enabledValue ?? false}
-                onValueChange={(value) => handlers.handleEnabledChange(value)}
-              />
-            </View>
 
-            {enabledValue && (
+            {/* ✅ PER-METRIC: Metric label on top, dropdown and alarm toggle side-by-side */}
+            {alarmMetrics.length > 0 && (
+              <View style={styles.metricAlarmRow}>
+                <Text style={[styles.label, { color: theme.text }]}>Metric</Text>
+                <View style={styles.metricControlsRow}>
+                  {/* Metric dropdown */}
+                  
+                  <View style={styles.metricDropdownContainer}>
+                    <PlatformPicker
+                      value={selectedMetricValue || ''}
+                      onValueChange={(value) => handlers.handleMetricChange(String(value))}
+                      items={alarmMetrics.map((m) => {
+                        const isSelected = m.key === selectedMetricValue;
+                        const valueDisplay = isSelected && currentMetricValue ? ` - ${currentMetricValue}` : '';
+                        return {
+                          label: `${m.label}${valueDisplay}`,
+                          value: m.key,
+                        };
+                      })}
+                    />
+                  </View>
+                  
+                  {/* Alarm toggle */}
+                  <View style={styles.alarmToggleRow}>
+                    <Text style={[styles.toggleLabel, { color: theme.text }]}>Alarm</Text>
+                    <PlatformToggle
+                      label=""
+                      value={currentMetricEnabled}
+                      onValueChange={(value) => {
+                        if (selectedMetricValue) {
+                          handlers.handleMetricEnabledChange(selectedMetricValue, value);
+                        }
+                      }}
+                    />
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Conditional Rendering: Only show threshold/sound controls when metric alarm is enabled */}
+            {currentMetricEnabled && (
               <View style={styles.settingGroup}>
-                {/* ✅ UNIFIED: Always show MetricSelector (interactive even for single-metric) */}
-                {alarmMetrics.length > 0 && (
-                  <MetricSelector
-                    alarmMetrics={alarmMetrics}
-                    selectedMetric={selectedMetricValue ?? ''}
-                    onMetricChange={(metric) => handlers.handleMetricChange(metric)}
-                    theme={theme}
-                    currentValue={currentMetricValue}
-                  />
-                )}
 
                 {/* Threshold Slider - Dumb component with validated props */}
                 {/* ✅ UNIFIED: Slider always rendered when config available (no requiresMetricSelection check) */}
-                {/* CRITICAL: key prop forces remount when metric changes - prevents stale enrichedThresholds */}
-                {computed.alarmConfig && computed.sliderPresentation && enrichedThresholds && (
+                {/* ✅ FIXED: Key includes metric to force remount when switching metrics (prevents stale state) */}
+                {computed.alarmConfig && computed.sliderPresentation && enrichedThresholds ? (
                   <View style={styles.sliderSection}>
-                    <Text style={styles.groupLabel}>Threshold</Text>
                     <AlarmThresholdSlider
-                      key={`${selectedSensorType}-${selectedInstance}-${form.watch('selectedMetric')}`}
+                      key={`${selectedSensorType}-${selectedInstance}-${selectedMetricValue}`}
                       min={enrichedThresholds.display.min.value}
                       max={enrichedThresholds.display.max.value}
                       direction={computed.alarmConfig.direction}
@@ -453,21 +676,29 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                       resolvedRange={computed.resolvedRange}
                       formulaContext={computed.formulaContext}
                       onThresholdsChange={(critical, warning) => {
-                        form.setValue('criticalValue', critical);
-                        form.setValue('warningValue', warning);
+                        form.setValue('criticalValue', critical, { shouldDirty: false });
+                        form.setValue('warningValue', warning, { shouldDirty: false });
+                        handlers.saveImmediately();
                       }}
                       theme={theme}
                     />
                   </View>
-                )}
+                ) : null}
 
                 {/* Sound Pattern Control */}
+                {/*
                 <SoundPatternControl
                   criticalPattern={criticalPatternValue ?? 'rapid_pulse'}
                   warningPattern={warningPatternValue ?? 'warble'}
                   soundPatternItems={soundPatternItems}
-                  onCriticalChange={(pattern) => form.setValue('criticalSoundPattern', pattern)}
-                  onWarningChange={(pattern) => form.setValue('warningSoundPattern', pattern)}
+                  onCriticalChange={(pattern) => {
+                    form.setValue('criticalSoundPattern', pattern, { shouldDirty: true });
+                    handlers.triggerAutoSave();
+                  }}
+                  onWarningChange={(pattern) => {
+                    form.setValue('warningSoundPattern', pattern, { shouldDirty: true });
+                    handlers.triggerAutoSave();
+                  }}
                   onTestSound={async (soundPattern: string) => {
                     if (soundPattern === 'none') return;
                     try {
@@ -487,6 +718,7 @@ export const SensorConfigDialog: React.FC<SensorConfigDialogProps> = ({
                   isNarrow={isNarrow}
                   theme={theme}
                 />
+                */}
               </View>
             )}
           </View>
@@ -534,7 +766,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   settingGroup: {
-    marginTop: 8,  // Tighter spacing - tucked under Enable Alarm
+    marginTop: 4,  // Tighter spacing after horizontal row
   },
   groupLabel: {
     fontSize: 14,
@@ -557,7 +789,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   sliderSection: {
-    marginTop: 16,
+    marginTop: 8,  // Compact spacing for mobile
   },
   metricDisplay: {
     flexDirection: 'row',
@@ -633,6 +865,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingRight: 12,
+  },
+
+  // NEW: Per-metric alarm layout - label on top, dropdown and toggle side-by-side
+  metricAlarmRow: {
+    marginBottom: 12,
+  },
+  metricControlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 8,
+  },
+  metricDropdownContainer: {
+    flex: 1,
+  },
+  alarmToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minWidth: 110,
+  },
+  toggleLabel: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   statusBadge: {
     flexDirection: 'row',

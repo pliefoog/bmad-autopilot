@@ -4,6 +4,7 @@ import Svg, { Polyline, Line, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../store/themeStore';
 import { SensorType, SensorMetricProps } from '../types/SensorData';
 import { useCategoryPresentation } from '../presentation/useCategoryPresentation';
+import { DataCategory } from '../presentation/categories';
 import { useAlarmThresholds } from '../hooks/useAlarmThresholds';
 import { ConversionRegistry } from '../utils/ConversionRegistry';
 import { log } from '../utils/logging/logger';
@@ -146,10 +147,11 @@ export const TrendLine: React.FC<TrendLineProps> = ({
   }, [fieldConfig?.mnemonic, baseMetric, metric]);
 
   // Get sensor instance using MetricContext (not nmeaStore)
-  const sensorInstance = useSensorInstance(sensorType, instance);
+  // Cast sensorType to SensorType (stricter than keyof SensorsData)
+  const sensorInstance = useSensorInstance(sensorType as SensorType, instance);
 
   // Get current metric value and unit (with fallback to registry - like MetricCell pattern)
-  const currentMetric = useMetricValue(sensorType, instance, metric);
+  const currentMetric = useMetricValue(sensorType as SensorType, instance, metric);
   
   // Get unit: prefer from MetricValue (when data exists), fallback to registry category
   const unit = useMemo(() => {
@@ -257,44 +259,78 @@ export const TrendLine: React.FC<TrendLineProps> = ({
 
   // Get presentation system for this sensor (for unit conversion)
   // MUST be called unconditionally to satisfy React hooks rules
-  const presentation = useCategoryPresentation(sensor);
+  // Use unitType from field config (field's category) for presentation
+  const presentation = useCategoryPresentation((fieldConfig?.unitType ?? 'speed') as DataCategory);
 
   // Subscribe to sensor-instance alarm thresholds
   // MUST be called unconditionally to satisfy React hooks rules
-  const alarmThresholds = useAlarmThresholds(sensor, instance);
+  // Cast sensor to SensorType for alarm thresholds hook
+  // CRITICAL: Pass metricKey to get correct thresholds (not first alarm field)
+  const alarmThresholds = useAlarmThresholds(sensor as SensorType, instance, baseMetric);
 
-  // Convert thresholds to display units if enabled
+  // Get evaluated threshold values from hook (formulas already evaluated)
+  const effectiveThresholds = useMemo(() => {
+    if (!alarmThresholds.enabled || alarmThresholds.status !== 'loaded') {
+      log.uiTrendline('[TrendLine] No thresholds', () => ({
+        sensor: `${sensor}.${instance}`,
+        enabled: alarmThresholds.enabled,
+        status: alarmThresholds.status,
+      }));
+      return { critical: undefined, warning: undefined };
+    }
+
+    // Thresholds are already evaluated by SensorInstance.getEvaluatedThresholds()
+    // No need to check mode or evaluate formulas here
+    log.uiTrendline('[TrendLine] Evaluated thresholds from hook', () => ({
+      sensor: `${sensor}.${instance}`,
+      critical: alarmThresholds.critical,
+      warning: alarmThresholds.warning,
+    }));
+
+    return {
+      critical: alarmThresholds.critical,
+      warning: alarmThresholds.warning,
+    };
+  }, [alarmThresholds, sensor, instance]);
+
+  // Convert effective thresholds to display units
   const convertedWarningThreshold = useMemo(() => {
-    if (!alarmThresholds.enabled || alarmThresholds.warning === undefined) {
+    if (effectiveThresholds.warning === undefined) {
       return undefined;
     }
-    return presentation.isValid
-      ? presentation.convert(alarmThresholds.warning)
-      : alarmThresholds.warning;
-  }, [alarmThresholds.enabled, alarmThresholds.warning, presentation]);
+    const converted = presentation.isValid
+      ? presentation.convert(effectiveThresholds.warning)
+      : effectiveThresholds.warning;
+    
+    log.uiTrendline('[TrendLine] Converted warning threshold', () => ({
+      sensor: `${sensor}.${instance}`,
+      si: effectiveThresholds.warning,
+      display: converted,
+      presentationValid: presentation.isValid,
+    }));
+    return converted;
+  }, [effectiveThresholds.warning, presentation, sensor, instance]);
 
   const convertedAlarmThreshold = useMemo(() => {
-    if (!alarmThresholds.enabled) {
+    if (effectiveThresholds.critical === undefined) {
       return undefined;
     }
-    const criticalValue =
-      alarmThresholds.thresholdType === 'min' ? alarmThresholds.min : alarmThresholds.max;
-    if (criticalValue === undefined) {
-      return undefined;
-    }
-    return presentation.isValid ? presentation.convert(criticalValue) : criticalValue;
-  }, [
-    alarmThresholds.enabled,
-    alarmThresholds.min,
-    alarmThresholds.max,
-    alarmThresholds.thresholdType,
-    presentation,
-  ]);
-
-  const thresholdType = alarmThresholds.thresholdType;
+    const converted = presentation.isValid
+      ? presentation.convert(effectiveThresholds.critical)
+      : effectiveThresholds.critical;
+    
+    log.uiTrendline('[TrendLine] Converted critical threshold', () => ({
+      sensor: `${sensor}.${instance}`,
+      si: effectiveThresholds.critical,
+      display: converted,
+      presentationValid: presentation.isValid,
+    }));
+    return converted;
+  }, [effectiveThresholds.critical, presentation, sensor, instance]);
 
   // Fetch history using MetricContext hook (replaces getSensorHistory from nmeaStore)
-  const rawTrendData = useMetricHistory(sensorType, instance, metric, { timeWindowMs });
+  // Cast sensorType to SensorType (stricter than keyof SensorsData)
+  const rawTrendData = useMetricHistory(sensorType as SensorType, instance, metric, { timeWindowMs });
 
   // Convert DataPoint<number | string>[] to { value: number, timestamp: number }[]
   // Filter out non-numeric values (SI → display conversion happens in SensorInstance.getHistoryForMetric)
@@ -345,10 +381,8 @@ export const TrendLine: React.FC<TrendLineProps> = ({
 
   // Derive all colors from theme
   const trendlineColor = usePrimaryLine ? theme.trendline.primary : theme.trendline.secondary;
-  const warningColor = theme.trendline.thresholdWarning;
-  // Use correct threshold color based on alarm configuration (max for overheat/overspeed, min for shallow water/low battery)
-  const alarmColor =
-    thresholdType === 'max' ? theme.trendline.thresholdMax : theme.trendline.thresholdMin;
+  const warningColor = theme.trendline.thresholdWarning;  // Orange
+  const criticalColor = theme.trendline.thresholdMin;     // Red (consistent for all sensors)
   const normalColor = trendlineColor;
   const axisColor = theme.trendline.axis;
   const labelColor = theme.trendline.label;
@@ -484,13 +518,42 @@ export const TrendLine: React.FC<TrendLineProps> = ({
       convertedWarningThreshold <= dataMax
     ) {
       thresholdPositions.warning = calculateThresholdY(convertedWarningThreshold);
+      log.uiTrendline('[TrendLine] Warning threshold in range', () => ({
+        sensor: `${sensor}.${instance}`,
+        value: convertedWarningThreshold,
+        dataMin,
+        dataMax,
+        yPosition: thresholdPositions.warning,
+      }));
+    } else if (convertedWarningThreshold !== undefined) {
+      log.uiTrendline('[TrendLine] Warning threshold OUT OF RANGE', () => ({
+        sensor: `${sensor}.${instance}`,
+        value: convertedWarningThreshold,
+        dataMin,
+        dataMax,
+      }));
     }
+    
     if (
       convertedAlarmThreshold !== undefined &&
       convertedAlarmThreshold >= dataMin &&
       convertedAlarmThreshold <= dataMax
     ) {
       thresholdPositions.alarm = calculateThresholdY(convertedAlarmThreshold);
+      log.uiTrendline('[TrendLine] Critical threshold in range', () => ({
+        sensor: `${sensor}.${instance}`,
+        value: convertedAlarmThreshold,
+        dataMin,
+        dataMax,
+        yPosition: thresholdPositions.alarm,
+      }));
+    } else if (convertedAlarmThreshold !== undefined) {
+      log.uiTrendline('[TrendLine] Critical threshold OUT OF RANGE', () => ({
+        sensor: `${sensor}.${instance}`,
+        value: convertedAlarmThreshold,
+        dataMin,
+        dataMax,
+      }));
     }
 
     // Calculate points for the line with colors
@@ -676,11 +739,7 @@ export const TrendLine: React.FC<TrendLineProps> = ({
           y2={thresholdPositions.warning}
           stroke={warningColor}
           strokeWidth={scaledDimensions.warningStroke}
-          strokeDasharray={
-            thresholdType === 'max'
-              ? `${scaledDimensions.dashLength} ${scaledDimensions.gapLength}`
-              : `${scaledDimensions.dashShort} ${scaledDimensions.gapLong}`
-          }
+          strokeDasharray={`${scaledDimensions.dashLength} ${scaledDimensions.gapLength}`}
           opacity={0.7}
         />
       )}
@@ -690,13 +749,9 @@ export const TrendLine: React.FC<TrendLineProps> = ({
           y1={thresholdPositions.alarm}
           x2={chartWidth + AXIS_MARGIN}
           y2={thresholdPositions.alarm}
-          stroke={alarmColor}
+          stroke={criticalColor}
           strokeWidth={scaledDimensions.alarmStroke}
-          strokeDasharray={
-            thresholdType === 'max'
-              ? `${scaledDimensions.dashLength} ${scaledDimensions.gapLength}`
-              : `${scaledDimensions.dashShort} ${scaledDimensions.gapLong}`
-          }
+          strokeDasharray={`${scaledDimensions.dashLength} ${scaledDimensions.gapLength}`}
           opacity={0.8}
         />
       )}

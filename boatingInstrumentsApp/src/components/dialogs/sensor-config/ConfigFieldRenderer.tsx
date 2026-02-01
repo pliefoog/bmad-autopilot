@@ -150,7 +150,11 @@ const ConfigFieldRendererComponent: React.FC<ConfigFieldRendererProps> = ({
             value={String(currentValue || '')}
             onChangeText={(text) => {
               if (field.type === 'text') {
-                console.log(`[ConfigFieldRenderer] onChangeText: field=${field.key}, text="${text}", currentValue="${currentValue}"`);
+                log.sensorConfig('ConfigFieldRenderer: text input changed', () => ({
+                  field: field.key,
+                  text,
+                  currentValue,
+                }));
                 onChange(field.key, text);
               }
             }}
@@ -293,7 +297,20 @@ const ConfigFieldRendererComponent: React.FC<ConfigFieldRendererProps> = ({
   }
 };
 
-export const ConfigFieldRenderer = React.memo(ConfigFieldRendererComponent);
+// ✅ FIXED: Add custom comparison to prevent re-renders when other fields change
+export const ConfigFieldRenderer = React.memo(
+  ConfigFieldRendererComponent,
+  (prevProps, nextProps) => {
+    // Only re-render if value, error, field key, glove mode, or theme changes
+    return (
+      prevProps.value === nextProps.value &&
+      prevProps.error === nextProps.error &&
+      prevProps.field.key === nextProps.field.key &&
+      prevProps.gloveMode === nextProps.gloveMode &&
+      prevProps.theme === nextProps.theme
+    );
+  }
+);
 
 const createStyles = (theme: ThemeColors, platformTokens: ReturnType<typeof getPlatformTokens>, gloveMode: boolean) =>
   StyleSheet.create({

@@ -187,3 +187,26 @@ export function getContextValues(sensorType: SensorType): string[] {
   return Array.from(field.options ?? []);
 }
 
+/**
+ * Get alarm direction for a specific metric from schema (SINGLE SOURCE OF TRUTH)
+ * @param sensorType - Sensor type (e.g., 'battery', 'depth')
+ * @param metricKey - Metric field name (e.g., 'voltage', 'stateOfCharge')
+ * @returns Alarm direction ('above' or 'below'), or undefined if metric has no alarm config
+ * 
+ * @example
+ * ```typescript
+ * getAlarmDirection('battery', 'voltage')        // 'below' - alarms when too low
+ * getAlarmDirection('battery', 'stateOfCharge')  // 'below' - alarms when too low
+ * getAlarmDirection('battery', 'temperature')    // 'above' - alarms when too high
+ * getAlarmDirection('engine', 'coolantTemp')     // 'above' - alarms when overheating
+ * getAlarmDirection('depth', 'depth')            // 'below' - alarms when too shallow
+ * ```
+ */
+export function getAlarmDirection(sensorType: SensorType, metricKey: string): 'above' | 'below' | undefined {
+  const fieldDef = getFieldDefinition(sensorType, metricKey);
+  if (!fieldDef || !('alarm' in fieldDef) || !fieldDef.alarm) {
+    return undefined;
+  }
+  return fieldDef.alarm.direction;
+}
+

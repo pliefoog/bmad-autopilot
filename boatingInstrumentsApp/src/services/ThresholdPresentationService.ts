@@ -20,16 +20,14 @@
  *   'battery', 0, 'voltage'
  * );
  *
- * // Display formatted values
- * <Text>{enriched.display.critical.formattedValue}</Text>
- * <Text>Range: {enriched.display.min.formattedValue} - {enriched.display.max.formattedValue}</Text>
+ * // Display formatted values (discriminated union: mode 'direct' | 'formula')
+ * <Text>Critical: {enriched.display.critical.formattedValue}</Text>
+ * <Text>Warning: {enriched.display.warning.formattedValue}</Text>
  *
- * // Save display value back to SI
- * const criticalSI = ThresholdPresentationService.convertDisplayToSI(
- *   enriched.unitType,
- *   formData.criticalValue
- * );
- * updateSensorThresholds(sensorType, instance, { critical: criticalSI });
+ * // For formula mode, shows ratio value:
+ * if (thresholds.mode === 'formula') {
+ *   <Text>Ratio: {thresholds.criticalRatio}× (formula-based)</Text>
+ * }
  * ```
  *
  * **Benefits:**
@@ -213,10 +211,9 @@ class ThresholdPresentationServiceClass {
     let warning: number | undefined;
     let direction: 'above' | 'below' | undefined;
 
-    // Initialize with fallback to ensure they're never undefined
-    const fallback = this.getFallbackRange(category);
-    let minSI: number = fallback.min;
-    let maxSI: number = fallback.max;
+    // Initialize - will be set from schema below
+    let minSI: number;
+    let maxSI: number;
 
     if (metric) {
       // Multi-metric sensor: thresholds are per-metric from SensorInstance
@@ -224,21 +221,18 @@ class ThresholdPresentationServiceClass {
       const field = schema.fields[metric as keyof typeof schema.fields];
       direction = field?.alarm?.direction;
 
-      // Derive numeric thresholds from MetricThresholds structure
-      // For 'below' alarms, use .min; for 'above' alarms, use .max
-      // For ratio mode, use .indirectThreshold for UI editing
+      // Extract thresholds from simplified structure
       const t = thresholds as any;
       if (t) {
-        if (ratioMode) {
-          // Ratio mode: Use indirectThreshold (user's ratio value) from runtime thresholds
-          critical = t.critical?.indirectThreshold;
-          warning = t.warning?.indirectThreshold;
-        } else if (direction === 'below') {
-          critical = t.critical?.min;
-          warning = t.warning?.min;
-        } else if (direction === 'above') {
-          critical = t.critical?.max;
-          warning = t.warning?.max;
+        if (t.mode === 'formula') {
+          // Formula mode: Use ratio values for UI editing
+          critical = t.criticalRatio;
+          warning = t.warningRatio;
+          ratioMode = true;
+        } else if (t.mode === 'direct') {
+          // Direct mode: Single threshold values
+          critical = t.critical;
+          warning = t.warning;
         }
       }
       
@@ -247,14 +241,14 @@ class ThresholdPresentationServiceClass {
         if (ratioMode) {
           critical = schemaDefaults.critical.indirectThreshold;
         } else {
-          critical = direction === 'below' ? schemaDefaults.critical.min : schemaDefaults.critical.max;
+          critical = schemaDefaults.critical.value;
         }
       }
       if (warning === undefined && schemaDefaults) {
         if (ratioMode) {
           warning = schemaDefaults.warning.indirectThreshold;
         } else {
-          warning = direction === 'below' ? schemaDefaults.warning.min : schemaDefaults.warning.max;
+          warning = schemaDefaults.warning.value;
         }
       }
 
@@ -270,15 +264,10 @@ class ThresholdPresentationServiceClass {
         minSI = field.min;
         maxSI = field.max;
       } else {
-        // Fallback to reasonable defaults based on category
-        log.app('[ThresholdPresentationService] No defaults found for metric, using fallback', () => ({
-          sensorType,
-          metric,
-          category,
-        }));
-        const fb = this.getFallbackRange(category);
-        minSI = fb.min;
-        maxSI = fb.max;
+        // CRITICAL: All alarm metrics MUST have thresholdRange or field min/max in schema
+        const error = `Schema validation failed: ${sensorType}.${metric} missing thresholdRange and field min/max`;
+        log.app(`[ThresholdPresentationService] ${error}`, () => ({ sensorType, metric, category }));
+        throw new Error(error);
       }
     } else {
       // Single-metric sensor: thresholds reflect overall sensor configuration
@@ -286,21 +275,18 @@ class ThresholdPresentationServiceClass {
       const field = fieldKey ? schema.fields[fieldKey as keyof typeof schema.fields] : undefined;
       direction = field?.alarm?.direction;
 
-      // Derive numeric thresholds from MetricThresholds structure
-      // For ratio mode, use .indirectThreshold for UI editing
-      // For direct mode, use .min or .max based on direction
+      // Extract thresholds from simplified structure
       const t = thresholds as any;
       if (t) {
-        if (ratioMode) {
-          // Ratio mode: Use indirectThreshold (user's ratio value) from runtime thresholds
-          critical = t.critical?.indirectThreshold;
-          warning = t.warning?.indirectThreshold;
-        } else if (direction === 'below') {
-          critical = t.critical?.min;
-          warning = t.warning?.min;
-        } else if (direction === 'above') {
-          critical = t.critical?.max;
-          warning = t.warning?.max;
+        if (t.mode === 'formula') {
+          // Formula mode: Use ratio values for UI editing
+          critical = t.criticalRatio;
+          warning = t.warningRatio;
+          ratioMode = true;
+        } else if (t.mode === 'direct') {
+          // Direct mode: Single threshold values
+          critical = t.critical;
+          warning = t.warning;
         }
       }
       
@@ -309,14 +295,14 @@ class ThresholdPresentationServiceClass {
         if (ratioMode) {
           critical = schemaDefaults.critical.indirectThreshold;
         } else {
-          critical = direction === 'below' ? schemaDefaults.critical.min : schemaDefaults.critical.max;
+          critical = schemaDefaults.critical.value;
         }
       }
       if (warning === undefined && schemaDefaults) {
         if (ratioMode) {
           warning = schemaDefaults.warning.indirectThreshold;
         } else {
-          warning = direction === 'below' ? schemaDefaults.warning.min : schemaDefaults.warning.max;
+          warning = schemaDefaults.warning.value;
         }
       }
 
@@ -332,20 +318,24 @@ class ThresholdPresentationServiceClass {
         minSI = field.min;
         maxSI = field.max;
       } else {
-        // Fallback to reasonable defaults based on category
-        log.app('[ThresholdPresentationService] No defaults found for sensor, using fallback', () => ({
-          sensorType,
-          category,
-        }));
-        const fb = this.getFallbackRange(category);
-        minSI = fb.min;
-        maxSI = fb.max;
+        // CRITICAL: All alarm metrics MUST have thresholdRange or field min/max in schema
+        const error = `Schema validation failed: ${sensorType} missing thresholdRange and field min/max`;
+        log.app(`[ThresholdPresentationService] ${error}`, () => ({ sensorType, category }));
+        throw new Error(error);
       }
     }
 
     // Get helper functions for conversions and formatting
     const convertFn = getConvertFunction(presentation);
     const formatFn = ensureFormatFunction(presentation);
+
+    // Sanitize symbol to prevent text node leaks in React Native Web
+    // CRITICAL: Never use "." or empty strings as they render as bare text nodes
+    const sanitizedSymbol = (() => {
+      const raw = presentation.symbol || '';
+      const trimmed = raw.trim();
+      return (trimmed && trimmed !== '.') ? trimmed : '';
+    })();
 
     // Convert all values to display units (with safety checks)
     // CRITICAL: In ratio mode, threshold values are ratios (not SI units) - don't convert!
@@ -355,10 +345,10 @@ class ThresholdPresentationServiceClass {
             const converted = ratioMode ? critical : convertFn(critical);
             return {
               value: converted,
-              unit: ratioMode ? (ratioUnit || '') : presentation.symbol,
+              unit: ratioMode ? (ratioUnit || '') : sanitizedSymbol,
               formattedValue: ratioMode 
                 ? `${formatFn(converted)} ${ratioUnit || ''}`
-                : `${formatFn(converted)} ${presentation.symbol}`,
+                : `${formatFn(converted)} ${sanitizedSymbol}`,
             };
           })()
         : undefined;
@@ -369,25 +359,19 @@ class ThresholdPresentationServiceClass {
             const converted = ratioMode ? warning : convertFn(warning);
             return {
               value: converted,
-              unit: ratioMode ? (ratioUnit || '') : presentation.symbol,
-              formattedValue: ratioMode 
+              unit: ratioMode ? (ratioUnit || '') : sanitizedSymbol,
+              formattedValue: ratioMode
                 ? `${formatFn(converted)} ${ratioUnit || ''}`
-                : `${formatFn(converted)} ${presentation.symbol}`,
+                : `${formatFn(converted)} ${sanitizedSymbol}`,
             };
           })()
         : undefined;
 
-    // Min/Max should always exist due to fallback, but add safety check
+    // Min/Max should always exist from schema, validate
     if (minSI === undefined || maxSI === undefined) {
-      log.app('[ThresholdPresentationService] minSI or maxSI is undefined', () => ({
-        sensorType,
-        metric,
-        minSI,
-        maxSI,
-      }));
-      const fallback = this.getFallbackRange(category);
-      minSI = minSI ?? fallback.min;
-      maxSI = maxSI ?? fallback.max;
+      const error = `Schema validation failed: ${sensorType}${metric ? `.${metric}` : ''} has undefined min/max after schema lookup`;
+      log.app(`[ThresholdPresentationService] ${error}`, () => ({ sensorType, metric, minSI, maxSI }));
+      throw new Error(error);
     }
 
     // In ratio mode, min/max are ratio values (dimensionless), not SI physical values
@@ -397,18 +381,18 @@ class ThresholdPresentationServiceClass {
 
     const minDisplay = {
       value: minConverted,
-      unit: ratioMode ? (ratioUnit || '') : presentation.symbol,
+      unit: ratioMode ? (ratioUnit || '') : sanitizedSymbol,
       formattedValue: ratioMode
         ? `${formatFn(minConverted)} ${ratioUnit || ''}`
-        : `${formatFn(minConverted)} ${presentation.symbol}`,
+        : `${formatFn(minConverted)} ${sanitizedSymbol}`,
     };
 
     const maxDisplay = {
       value: maxConverted,
-      unit: ratioMode ? (ratioUnit || '') : presentation.symbol,
+      unit: ratioMode ? (ratioUnit || '') : sanitizedSymbol,
       formattedValue: ratioMode
         ? `${formatFn(maxConverted)} ${ratioUnit || ''}`
-        : `${formatFn(maxConverted)} ${presentation.symbol}`,
+        : `${formatFn(maxConverted)} ${sanitizedSymbol}`,
     };
 
     // Build absolute value strings for ratio mode (show computed value with fallback indicators)
@@ -484,7 +468,7 @@ class ThresholdPresentationServiceClass {
             indirectThreshold: critical,  // Use saved ratio value
           });
           const convertedCritical = convertFn(resolvedCritical);
-          absoluteCritical = `${formatFn(convertedCritical)} ${presentation.symbol}`;
+          absoluteCritical = `${formatFn(convertedCritical)} ${sanitizedSymbol}`;
         } catch (err) {
           log.app('[ThresholdPresentationService] Failed to evaluate critical formula', () => ({
             sensorType,
@@ -502,7 +486,7 @@ class ThresholdPresentationServiceClass {
             indirectThreshold: warning,  // Use saved ratio value
           });
           const convertedWarning = convertFn(resolvedWarning);
-          absoluteWarning = `${formatFn(convertedWarning)} ${presentation.symbol}`;
+          absoluteWarning = `${formatFn(convertedWarning)} ${sanitizedSymbol}`;
         } catch (err) {
           log.app('[ThresholdPresentationService] Failed to evaluate warning formula', () => ({
             sensorType,
@@ -549,7 +533,7 @@ class ThresholdPresentationServiceClass {
       convertFromSI: ratioMode ? (v: number) => v : getConvertFunction(presentation),
       formatValue: ratioMode
         ? (displayValue: number) => `${formatFn(displayValue)} ${ratioUnit || ''}`
-        : (displayValue: number) => `${formatFn(displayValue)} ${presentation.symbol}`,
+        : (displayValue: number) => `${formatFn(displayValue)} ${sanitizedSymbol}`,
     };
     
     // Debug logging
@@ -609,52 +593,13 @@ class ThresholdPresentationServiceClass {
     return (fieldWithUnit[1] as any)?.unitType || null;
   }
 
-  /**
-   * Get fallback min/max range for a unitType when defaults are not available
-   *
-   * @param unitType - Data category
-   * @returns Fallback range in SI units
-   */
-  private getFallbackRange(category: DataCategory): { min: number; max: number } {
-    switch (category) {
-      case 'voltage':
-        return { min: 0, max: 30 }; // Volts
-      case 'current':
-        return { min: -200, max: 200 }; // Amps
-      case 'temperature':
-        return { min: -40, max: 150 }; // Celsius
-      case 'depth':
-        return { min: 0, max: 200 }; // Meters
-      case 'speed':
-        return { min: 0, max: 50 }; // m/s (approx 100 knots)
-      case 'pressure':
-        return { min: 0, max: 1000000 }; // Pascals (10 bar)
-      case 'flowRate':
-        return { min: 0, max: 100 }; // L/h
-      case 'volume':
-        return { min: 0, max: 1000 }; // Liters
-      case 'capacity':
-        return { min: 0, max: 1000 }; // Ah
-      case 'power':
-        return { min: 0, max: 10000 }; // Watts
-      case 'distance':
-        return { min: 0, max: 185200 }; // meters (100 nautical miles)
-      case 'rpm':
-        return { min: 0, max: 5000 }; // RPM
-      case 'wind':
-        return { min: 0, max: 50 }; // m/s
-      case 'angle':
-        return { min: 0, max: 360 }; // Degrees
-      case 'frequency':
-        return { min: 0, max: 100 }; // Hz
-      case 'coordinates':
-      case 'time':
-        return { min: 0, max: 100 }; // Not applicable
-      default:
-        return { min: 0, max: 100 }; // Generic fallback
-    }
-  }
 }
+
+/**
+ * ARCHITECTURAL NOTE: All alarm metrics MUST have thresholdRange or field min/max in schema.
+ * The old getFallbackRange() function (37 lines of hardcoded duplication) was removed Jan 2025.
+ * If you see errors about missing ranges, ADD THEM TO THE SCHEMA - don't add fallback logic here.
+ */
 
 // Export singleton instance
 export const ThresholdPresentationService = new ThresholdPresentationServiceClass();

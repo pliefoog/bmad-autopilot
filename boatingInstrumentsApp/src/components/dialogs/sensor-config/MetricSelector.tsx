@@ -69,7 +69,7 @@ export const MetricSelector: React.FC<MetricSelectorProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 12,
+    marginBottom: 0, // Controlled by parent horizontalRow
   },
   field: {
     marginBottom: 16,

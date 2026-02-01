@@ -200,16 +200,29 @@ export const useWidgetStore = create<WidgetStore>()(
         },
 
         resetAppToDefaults: async () => {
+          // ⚠️ NUCLEAR OPTION: Clears ALL AsyncStorage (affects ALL stores)
+          // This method clears:
+          // - widgetStore (dashboard, widget settings)
+          // - nmeaStore (sensor configs, thresholds)
+          // - settingsStore (all user settings)
+          // - alarmStore (alarm history, settings)
+          // - themeStore (theme preferences)
+          // - uiStore (UI state)
+          // - Any other persisted data
+          //
+          // Call nmeaStore.performFactoryReset() BEFORE this to cleanly destroy sensors
+          
           // Step 1: Cleanup widget registration system first
           const { cleanupWidgetSystem, initializeWidgetSystem } = await import(
             '../services/initializeWidgetSystem'
           );
           cleanupWidgetSystem();
 
-          // Step 2: Clear all AsyncStorage keys (including onboarding flag)
+          // Step 2: Clear all AsyncStorage keys (affects ALL stores with persist middleware)
           try {
             const AsyncStorage = await import('@react-native-async-storage/async-storage');
             await AsyncStorage.default.clear();
+            log.app('[WidgetStore] AsyncStorage cleared - ALL stores affected');
           } catch (error) {
             log.app('Failed to clear AsyncStorage during factory reset', () => ({
               error: error instanceof Error ? error.message : String(error),

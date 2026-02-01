@@ -280,7 +280,9 @@ export const useNmeaStore = create<NmeaStore>()(
         // Support multi-metric threshold access
         // If metricKey provided, use it; otherwise default to first metric
         const targetMetricKey = metricKey || metricKeys[0];
-        return (sensorInstance as any)._thresholds.get(targetMetricKey);
+        
+        // Return evaluated thresholds (handles both direct and formula modes)
+        return sensorInstance.getEvaluatedThresholds(targetMetricKey);
       },
 
       updateSensorThresholds: (sensorType: SensorType, instance: number, thresholds: any, metricKey?: string) => {
@@ -297,16 +299,16 @@ export const useNmeaStore = create<NmeaStore>()(
         // CRITICAL FIX (Jan 2026): Use SensorInstance's updateThresholdsFromConfig
         // This method properly handles formula resolution for indirectThreshold (ratio-based alarms)
         // 
-        // PREVIOUS BUG: nmeaStore did its own conversion which stored raw indirectThreshold values
-        // without resolving formulas (e.g., "capacity * indirectThreshold"). This caused alarms
-        // to never trigger because evaluateAlarm checks critical.min/max, not critical.indirectThreshold.
+        // NEW ARCHITECTURE (Jan 2026): Uses discriminated union MetricThresholds
+        // - mode: 'direct' → { critical: number, warning: number }
+        // - mode: 'formula' → { criticalRatio: number, warningRatio: number, formula: string }
         // 
         // SensorInstance.updateThresholdsFromConfig:
         // 1. Detects ratio mode (indirectThreshold present in config)
         // 2. Gets schema ThresholdConfig with formula definition
         // 3. Injects user's indirectThreshold value (e.g., 1.5 C-rate)
-        // 4. Calls resolveThreshold to evaluate formula → numeric value
-        // 5. Stores resolved value in critical.min or critical.max based on direction
+        // 4. Builds discriminated union with mode='formula'
+        // 5. Formula evaluation happens on-the-fly in evaluateAlarm() with live sensor context
         // 
         // The thresholds parameter is a SensorConfiguration object (despite name),
         // so we can pass it directly to updateThresholdsFromConfig.
@@ -315,14 +317,14 @@ export const useNmeaStore = create<NmeaStore>()(
       },
 
       /**
-       * Factory reset - Clear all data
+       * Factory reset - Clear all data INCLUDING persisted configs
        */
       performFactoryReset: () => {
         try {
           // Destroy registry (clears all sensors)
           sensorRegistry.destroy();
 
-          // Reset UI state
+          // Reset ALL state including persisted sensorConfigs
           set(
             {
               connectionStatus: 'disconnected',
@@ -333,12 +335,14 @@ export const useNmeaStore = create<NmeaStore>()(
               },
               alarms: [],
               lastError: undefined,
+              sensorConfigs: {}, // ⭐ CRITICAL: Clear persisted configurations
+              configVersion: 4,
             },
             false,
             'performFactoryReset',
           );
 
-          log.app('Factory reset complete');
+          log.app('Factory reset complete - all configs cleared');
         } catch (error) {
           log.app('Error during factory reset', () => ({
             error: error instanceof Error ? error.message : String(error),

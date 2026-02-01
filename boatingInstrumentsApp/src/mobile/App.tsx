@@ -249,11 +249,16 @@ const App = () => {
     log.app('[App] User confirmed factory reset');
 
     try {
-      // Import the widget store and perform complete factory reset
+      // Step 1: Call nmeaStore factory reset (clears sensor registry + volatile state)
+      const { useNmeaStore } = await import('../store/nmeaStore');
+      useNmeaStore.getState().performFactoryReset();
+      log.app('[App] NMEA store factory reset complete');
+
+      // Step 2: Call widgetStore reset (clears ALL AsyncStorage + resets widget state)
       const { useWidgetStore } = await import('../store/widgetStore');
       const { resetAppToDefaults } = useWidgetStore.getState();
-
       await resetAppToDefaults();
+      log.app('[App] Widget store factory reset complete');
 
       log.app('[App] Factory reset complete - forcing complete app restart');
 

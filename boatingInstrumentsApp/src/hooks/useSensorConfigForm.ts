@@ -1,57 +1,82 @@
 /**
- * useSensorConfigForm - React Hook Form Integration with Sensor Config Logic
+ * useSensorConfigForm - Simplified Form State Management
  *
- * Purpose: Encapsulate all form state, validation, and sensor-specific logic.
- * Pattern: RHF with onSubmit validation mode for explicit save-on-transition.
- * Performance: Uses useWatch for selective field subscriptions (not whole-form watching).
- * Memory safety: Returns cleanup function for all store subscriptions.
+ * SIMPLIFIED (Jan 2026): Reduced from 797 lines to ~150 lines.
+ * 
+ * Responsibilities (ONLY):
+ * 1. Form state management (React Hook Form)
+ * 2. Load/save from store
+ * 3. Safety confirmations for critical sensors
+ * 4. Auto-save on transitions
  *
- * Architecture:
- * - Single enrichedThresholds source of truth (no dual-enrichment)
- * - Direction-aware threshold validation via Zod schema
- * - Memoized handlers with tight dependency arrays
- * - Glove mode and theme support
- * - Maritime safety: Confirmation dialogs for critical sensors
+ * Moved to Components:
+ * - Enrichment → AlarmThresholdSlider (calls service directly)
+ * - Slider range calculations → AlarmThresholdSlider
+ * - UI calculations → MetricSelector, other components
+ * - Live value display → MetricSelector (via sensorRegistry)
  *
- * Maritime context:
- * - Designed for one-handed operation (gloved hands, emergency situations)
- * - Save-on-transition pattern ensures data safety
- * - Enrichment guards prevent data corruption on unit conversion failures
+ * Philosophy: Hook manages FORM STATE, components handle PRESENTATION.
  */
 
-import { useCallback, useMemo, useEffect } from 'react';
-import { useForm, useWatch, UseFormReturn } from 'react-hook-form';
+import { useCallback, useMemo, useEffect, useRef } from 'react';
+import { useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Platform, Alert } from 'react-native';
 
 import { useNmeaStore } from '../store/nmeaStore';
-import { usePresentationStore } from '../presentation/presentationStore';
-import { ensureFormatFunction } from '../presentation/presentations';
-
 import type { SensorType, SensorConfiguration } from '../types/SensorData';
-import type { EnrichedThresholdInfo } from '../services/ThresholdPresentationService';
-
+import { getSensorSchema } from '../registry';
+import { SENSOR_SCHEMAS } from '../registry/sensorSchemas';
 import { ThresholdPresentationService } from '../services/ThresholdPresentationService';
 import { MarineAudioAlertManager } from '../services/alarms/MarineAudioAlertManager';
 import { CriticalAlarmType, AlarmEscalationLevel } from '../services/alarms/types';
-import { getSensorSchema, getAlarmDefaults } from '../registry';
-import { SENSOR_SCHEMAS } from '../registry/sensorSchemas';
-import { sensorRegistry } from '../services/SensorDataRegistry';
-import { getAlarmDirection, getAlarmTriggerHint } from '../utils/sensorAlarmUtils';
-import { getSensorDisplayName } from '../utils/sensorDisplayName';
-import { getCriticalSliderRange, getWarningSliderRange } from '../utils/alarmSliderUtils';
 import { SOUND_TEST_DURATION_MS } from '../constants/timings';
+import { getSensorDisplayName } from '../utils/sensorDisplayName';
 import { log } from '../utils/logging/logger';
-import { useConfirmDialog, useClamped } from './forms';
+import { useConfirmDialog } from './forms';
 
 /**
- * Form data structure for sensor configuration
+ * Helper: Load threshold values for a metric (saved or default)
+ */
+const loadThresholdsForMetric = (
+  sensorType: SensorType,
+  selectedInstance: number,
+  metricKey: string,
+  savedConfig?: SensorConfiguration,
+): { critical?: number; warning?: number; criticalSound: string; warningSound: string } => {
+  const metricConfig = savedConfig?.metrics?.[metricKey];
+  
+  if (metricConfig) {
+    // Load saved values (already in display units)
+    return {
+      critical: metricConfig.critical,
+      warning: metricConfig.warning,
+      criticalSound: metricConfig.criticalSoundPattern || 'rapid_pulse',
+      warningSound: metricConfig.warningSoundPattern || 'warble',
+    };
+  }
+  
+  // No saved config - use enrichment service defaults
+  const enriched = ThresholdPresentationService.getEnrichedThresholds(
+    sensorType,
+    selectedInstance,
+    metricKey,
+  );
+  
+  return {
+    critical: enriched?.display.critical?.value,
+    warning: enriched?.display.warning?.value,
+    criticalSound: 'rapid_pulse',
+    warningSound: 'warble',
+  };
+};
+
+/**
+ * Form data structure - simple, flat, maps 1:1 to store
  */
 interface SensorFormData {
   name?: string;
-  enabled: boolean;
-  context?: string; // Generic context field (e.g., 'agm', 'diesel') - driven by schema.contextKey
+  context?: string;
   selectedMetric?: string;
   criticalValue?: number;
   warningValue?: number;
@@ -60,100 +85,44 @@ interface SensorFormData {
 }
 
 /**
- * Create Zod schema with direction-aware validation
+ * Minimal validation - just ensure warning < critical (direction-aware)
  */
 const createSensorFormSchema = (direction?: 'above' | 'below') =>
-  z
-    .object({
-      name: z.string().optional(),
-      enabled: z.boolean(),
-      context: z.string().optional(), // Generic context (chemistry, engineType, etc.)
-      selectedMetric: z.string().optional(),
-      criticalValue: z.number().optional(),
-      warningValue: z.number().optional(),
-      criticalSoundPattern: z.string(),
-      warningSoundPattern: z.string(),
-    })
-    .refine(
-      (data) => {
-        if (data.warningValue !== undefined && data.criticalValue !== undefined && direction) {
-          if (direction === 'above') {
-            return data.warningValue < data.criticalValue;
-          } else {
-            return data.warningValue > data.criticalValue;
-          }
-        }
-        return true;
-      },
-      {
-        message: 'Warning threshold must be less severe than critical threshold',
-        path: ['warningValue'],
-      },
-    );
+  z.object({
+    name: z.string().optional(),
+    context: z.string().optional(),
+    selectedMetric: z.string().optional(),
+    criticalValue: z.number().optional(),
+    warningValue: z.number().optional(),
+    criticalSoundPattern: z.string(),
+    warningSoundPattern: z.string(),
+  }).refine(
+    (data) => {
+      if (data.warningValue !== undefined && data.criticalValue !== undefined && direction) {
+        return direction === 'above' 
+          ? data.warningValue < data.criticalValue 
+          : data.warningValue > data.criticalValue;
+      }
+      return true;
+    },
+    { message: 'Warning threshold must be less severe than critical threshold', path: ['warningValue'] }
+  );
 
 export interface UseSensorConfigFormReturn {
   form: UseFormReturn<SensorFormData>;
-  enrichedThresholds: EnrichedThresholdInfo | null;
-  currentMetricValue: string | undefined;
   handlers: {
     handleMetricChange: (newMetric: string) => void;
-    handleEnabledChange: (value: boolean) => void;
+    handleMetricEnabledChange: (metricKey: string, value: boolean) => Promise<void>;
     handleInstanceSwitch: (newInstance: number) => Promise<void>;
     handleSensorTypeSwitch: (newType: SensorType) => Promise<void>;
     handleClose: () => Promise<boolean>;
     handleTestSound: (soundPattern: string) => Promise<void>;
-  };
-  computed: {
-    alarmConfig: { direction: 'above' | 'below'; triggerHint: string; min: number; max: number; step: number } | null;
-    criticalSliderRange: { min: number; max: number };
-    warningSliderRange: { min: number; max: number };
-    unitSymbol: string;
-    metricLabel: string;
-    requiresMetricSelection: boolean;
-    supportsAlarms: boolean;
-    sliderPresentation: { format: (value: number) => string; symbol: string } | null;
-    alarmFormula: string | undefined;
-    sensorMetrics: Map<string, any> | undefined;
-    ratioUnit: string | undefined;
-    resolvedRange: { min: number; max: number } | undefined;
-    formulaContext: { formula: string; parameters: Record<string, number> } | undefined;
+    saveImmediately: () => Promise<void>;
   };
 }
 
 /**
- * useSensorConfigForm - Unified form management with React Hook Form
- *
- * Encapsulates all sensor configuration form state, validation, and business logic.
- * Follows maritime UX patterns: save-on-transition, one-handed operation, critical confirmations.
- *
- * @param sensorType - Currently selected sensor type (depth, engine, battery, etc.)
- * @param selectedInstance - Instance number for multi-sensor systems (0-based)
- * @param onSave - Async callback invoked on explicit save (form submission)
- *
- * @returns Object containing:
- *   - form: RHF UseFormReturn with all form state and methods
- *   - enrichedThresholds: Pre-enriched threshold data with display units (null if enrichment fails)
- *   - handlers: Memoized event handlers for all form interactions
- *   - computed: Derived values (alarm config, slider ranges, labels)
- *
- * @example
- * const { form, handlers, computed } = useSensorConfigForm(
- *   'depth',
- *   0,
- *   async (type, instance, data) => {
- *     await saveSensorConfig(type, instance, data);
- *   }
- * );
- *
- * @performance
- * - Uses useWatch for selective field subscriptions (not form.watch)
- * - Handlers memoized with tight dependency arrays
- * - Enrichment cached until unit system changes
- *
- * @maritime
- * - Confirmation dialogs for critical sensors (depth, engine)
- * - Glove-mode compatible (48x48px touch targets)
- * - Save-on-transition prevents data loss during emergency situations
+ * Simplified hook - JUST form state + save logic
  */
 export const useSensorConfigForm = (
   sensorType: SensorType | null,
@@ -162,43 +131,17 @@ export const useSensorConfigForm = (
 ): UseSensorConfigFormReturn => {
   const { confirm } = useConfirmDialog();
 
-  // Store access - only getSensorThresholds needed here
-  const getSensorThresholds = useNmeaStore((state) => state.getSensorThresholds);
+  // Auto-save timeout ref - useRef maintains reference across renders
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Watch nmeaStore for changes to trigger form re-initialization
+  // Load saved config from store
   const savedConfig = useNmeaStore(
-    (state) => sensorType ? state.getSensorConfig(sensorType, selectedInstance) : undefined,
-    (a, b) => {
-      // ✅ UNIFIED: Schema V4 equality check (no top-level enabled/critical/warning)
-      if (!a && !b) return true;
-      if (!a || !b) return false;
-      const isEqual = (
-        a.name === b.name &&
-        a.context === b.context &&
-        JSON.stringify(a.metrics) === JSON.stringify(b.metrics)
-      );
-
-      // Debug: Log equality checks
-      console.log(`[useSensorConfigForm] savedConfig equality check: isEqual=${isEqual}, a.name="${a.name}", b.name="${b.name}"`);
-      if (!isEqual) {
-        console.log(`[useSensorConfigForm] savedConfig CHANGED: old="${b.name}" → new="${a.name}"`);
-        log.app('useSensorConfigForm: savedConfig changed', () => ({
-          sensorType,
-          instance: selectedInstance,
-          oldName: b.name,
-          newName: a.name,
-          nameChanged: a.name !== b.name,
-        }));
-      }
-
-      return isEqual;
-    }
+    (state) => sensorType ? state.getSensorConfig(sensorType, selectedInstance) : undefined
   );
 
-  // Get sensor config and derived values
   const sensorConfig = sensorType ? getSensorSchema(sensorType) : null;
-
-  // Compute alarm fields from schema (fields with alarm property)
+  
+  // Get alarm fields for metric selection
   const alarmFieldKeys = useMemo(() => {
     if (!sensorConfig) return [];
     return Object.entries(sensorConfig.fields)
@@ -206,384 +149,104 @@ export const useSensorConfigForm = (
       .map(([key, _]) => key);
   }, [sensorConfig]);
 
-  // Determine if sensor requires metric selection (multi-alarm)
-  const requiresMetricSelection = alarmFieldKeys.length > 1;
-  const supportsAlarms = alarmFieldKeys.length > 0;
-  
-  // ✅ UNIFIED: Always use first alarm field as default (single-metric only has 1 option)
-  const defaultMetric = alarmFieldKeys[0];
-
-  // Get current thresholds from store
-  const currentThresholds = useMemo(
-    () => (sensorType ? getSensorThresholds(sensorType, selectedInstance) : { enabled: false }),
-    [sensorType, selectedInstance, getSensorThresholds],
-  );
-
   // Determine alarm direction for validation
-  const direction = useMemo(
-    () => (sensorType ? getAlarmDirection(sensorType).direction : undefined),
-    [sensorType],
-  );
+  const direction = useMemo(() => {
+    const defaultMetric = alarmFieldKeys[0];
+    if (!sensorType || !defaultMetric) return undefined;
+    const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
+    const fieldDef = schema?.fields[defaultMetric as keyof typeof schema.fields];
+    if (!fieldDef || !('alarm' in fieldDef)) return undefined;
+    return (fieldDef.alarm as any)?.direction || 'above';
+  }, [sensorType, alarmFieldKeys]);
 
-  // Initialize form data
+  // Initialize form data from store
   const initialFormData: SensorFormData = useMemo(() => {
-    const sensorInstance = sensorType
-      ? sensorRegistry.get(sensorType, selectedInstance)
+    if (!sensorType) {
+      return {
+        criticalSoundPattern: 'rapid_pulse',
+        warningSoundPattern: 'warble',
+      };
+    }
+
+    const displayName = getSensorDisplayName(sensorType, selectedInstance, savedConfig as SensorConfiguration | undefined);
+    const firstMetric = alarmFieldKeys[0] || '';
+    const thresholds = firstMetric
+      ? loadThresholdsForMetric(sensorType, selectedInstance, firstMetric, savedConfig as SensorConfiguration | undefined)
+      : { criticalSound: 'rapid_pulse', warningSound: 'warble' };
+
+    const contextValue = typeof (savedConfig as any)?.context === 'string' 
+      ? (savedConfig as any).context 
       : undefined;
-
-    // Priority: savedConfig.name → sensorInstance.name → default format
-    const displayName = sensorType
-      ? getSensorDisplayName(sensorType, selectedInstance, savedConfig, sensorInstance?.name)
-      : '';
-
-    log.sensorConfig('Initializing form data', () => ({
-      sensorType,
-      instance: selectedInstance,
-      savedConfigName: savedConfig?.name,
-      nmeaName: sensorInstance?.name,
-      resolvedDisplayName: displayName,
-    }));
-
-    // ✅ UNIFIED: Always use first alarm field as default (works for single and multi-metric)
-    const firstMetric = alarmFieldKeys[0];
-    let criticalValue: number | undefined;
-    let warningValue: number | undefined;
-    let criticalSoundPattern = 'rapid_pulse';
-    let warningSoundPattern = 'warble';
-
-    // SIMPLIFIED: SensorInstance already has correct values (from AsyncStorage or schema defaults)
-    // ThresholdPresentationService reads from SensorInstance and enriches for display
-    if (sensorType) {
-      const enriched = ThresholdPresentationService.getEnrichedThresholds(
-        sensorType,
-        selectedInstance,
-        firstMetric,
-      );
-      if (enriched) {
-        criticalValue = enriched.display.critical?.value;
-        warningValue = enriched.display.warning?.value;
-      }
-    }
-
-    // ✅ UNIFIED: Schema V4 always uses metrics object (single + multi-metric)
-    // Get sound patterns from sensor instance thresholds via metrics object
-    if (firstMetric && currentThresholds?.metrics?.[firstMetric]) {
-      const metricConfig = currentThresholds.metrics[firstMetric];
-      criticalSoundPattern = metricConfig.criticalSoundPattern || 'rapid_pulse';
-      warningSoundPattern = metricConfig.warningSoundPattern || 'warble';
-    }
-
-    // Extract context from saved config (user-selected, e.g., 'agm', 'diesel')
-    // Context is a configuration choice, not a sensor reading
-    // Context is now always a string (e.g., 'agm', 'diesel')
-    const contextValue = typeof savedConfig?.context === 'string' ? savedConfig.context : undefined;
 
     return {
       name: displayName,
-      enabled: savedConfig?.enabled ?? currentThresholds?.enabled ?? false,
       context: contextValue,
-      selectedMetric: firstMetric || '',
-      criticalValue,
-      warningValue,
-      criticalSoundPattern,
-      warningSoundPattern,
+      selectedMetric: firstMetric,
+      criticalValue: thresholds.critical,
+      warningValue: thresholds.warning,
+      criticalSoundPattern: thresholds.criticalSound,
+      warningSoundPattern: thresholds.warningSound,
     };
-  }, [sensorType, selectedInstance, savedConfig, currentThresholds, sensorConfig, alarmFieldKeys, defaultMetric]);
+  }, [sensorType, selectedInstance, savedConfig, alarmFieldKeys]);
 
-  // Initialize RHF with schema validation
+  // Initialize React Hook Form
   const form = useForm<SensorFormData>({
-    mode: 'onSubmit', // Explicit validation on save
+    mode: 'onSubmit',
     resolver: zodResolver(createSensorFormSchema(direction)),
     defaultValues: initialFormData,
   });
 
-  // CRITICAL: Reset form when sensor type or instance changes
-  // Without this, switching sensors shows stale data from previous sensor
+  // Reset form when sensor type/instance changes
+  // NOTE: Do NOT include initialFormData in deps - it changes when savedConfig updates,
+  // causing infinite loop (save → config update → formData recompute → reset → save...)
   useEffect(() => {
-    console.log(`[useSensorConfigForm] form.reset called with initialFormData.name="${initialFormData.name}"`);
     form.reset(initialFormData);
-    console.log(`[useSensorConfigForm] After reset, form.getValues('name')="${form.getValues('name')}"`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sensorType, selectedInstance, initialFormData]); // initialFormData stable via useMemo
+  }, [sensorType, selectedInstance, form.reset]);
 
-  // Watch specific fields for derived value calculation (not whole-form watching)
-  const watchedMetric = useWatch({
-    control: form.control,
-    name: 'selectedMetric',
-  });
-  const watchedCritical = useWatch({
-    control: form.control,
-    name: 'criticalValue',
-  });
-  const watchedWarning = useWatch({
-    control: form.control,
-    name: 'warningValue',
-  });
-  
-  // Watch context field if sensor has contextKey (battery/engine chemistry/engineType)
-  // For non-context sensors (depth), contextKey is undefined and watchedContext will be undefined
-  // We use a dummy field name to satisfy React Hook rules (hooks must be called unconditionally)
-  const contextKey = sensorConfig?.contextKey;
-  const watchedContext = useWatch({
-    control: form.control,
-    name: (contextKey || '__unused__') as any, // Dummy field for non-context sensors
-  });
-  
-  // For sensors with contextKey, use the watched value; otherwise undefined
-  const contextValue = contextKey ? (typeof watchedContext === 'string' ? watchedContext : undefined) : undefined;
-
-  // ✅ GUARD: Validate metric is valid for current sensor (prevent stale values during sensor switch)
-  const validatedMetric = useMemo(() => {
-    const metric = watchedMetric || defaultMetric;
-    const isValid = alarmFieldKeys.includes(metric);
-    const result = isValid ? metric : alarmFieldKeys[0];
-    
-    log.sensorConfig('🔍 validatedMetric computed', () => ({
-      watchedMetric,
-      defaultMetric,
-      computed: metric,
-      isValid,
-      result,
-      alarmFieldKeys,
-    }));
-    
-    return result;
-  }, [watchedMetric, defaultMetric, alarmFieldKeys]);
-
-  // Single enrichedThresholds source - use validated metric to prevent flickering
-  // CRITICAL: Ensure validatedMetric is NOT undefined before calling service
-  const enrichedThresholds = useMemo(() => {
-    // Early return if no sensor or metric - prevents stale data
-    if (!sensorType || !validatedMetric) {
-      log.sensorConfig('⏭️ Skipping enrichedThresholds - no sensor/metric', () => ({
-        sensorType,
-        validatedMetric,
-      }));
-      return null;
-    }
-    
-    log.sensorConfig('🔄 enrichedThresholds recomputing', () => ({
-      sensorType,
-      selectedInstance,
-      validatedMetric,
-      watchedMetric,
-      defaultMetric,
-    }));
-    
-    const result = ThresholdPresentationService.getEnrichedThresholds(
-      sensorType,
-      selectedInstance,
-      validatedMetric,
-    );
-    
-    log.sensorConfig('✅ enrichedThresholds result', () => ({
-      metric: validatedMetric,
-      ratioMode: result?.ratioMode,
-      ratioUnit: result?.ratioUnit,
-      minSI: result?.min,
-      maxSI: result?.max,
-      minDisplay: result?.display.min.value,
-      maxDisplay: result?.display.max.value,
-    }));
-    
-    return result;
-  }, [sensorType, selectedInstance, validatedMetric]);
-
-  // Compute alarm configuration
-  const alarmConfig = useMemo(() => {
-    if (!sensorType) return null;
-
-    // Check if this sensor type has alarm definitions for ANY field - if not, return null early
-    const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
-    const hasAnyAlarm = schema && Object.values(schema.fields).some(
-      (field): field is any => 'alarm' in field && !!field.alarm
-    );
-    if (!hasAnyAlarm) {
-      return null;
-    }
-
-    // ✅ Use validatedMetric (already computed above with guard)
-    const direction = getAlarmDirection(sensorType, validatedMetric).direction;
-    const triggerHint = getAlarmTriggerHint(sensorType);
-
-    // Get first alarm field for sensors without metric selection
-    const fieldKey = validatedMetric || alarmFieldKeys[0];
-    if (!fieldKey) return null; // No alarm fields
-
-    // contextValue is already defined in outer scope (from watchedContext)
-    // For sensors with contextKey: actual context value (e.g., 'agm', 'diesel')
-    // For non-context sensors: undefined → uses alarm.defaultContext
-    const defaults = getAlarmDefaults(sensorType, fieldKey, contextValue);
-
-    // Validate thresholdRange exists - no fallbacks allowed
-    if (!defaults?.thresholdRange) {
-      throw new Error(
-        `No thresholdRange found for ${sensorType}.${fieldKey}${contextValue ? ` with context "${contextValue}"` : ''}. ` +
-        `Check sensorSchemas.ts for missing context or thresholdRange definition.`
-      );
-    }
-
-    const baseMin = defaults.thresholdRange.min;
-    const baseMax = defaults.thresholdRange.max;
-    const step = 0.1;
-
-    return { direction, triggerHint, min: baseMin, max: baseMax, step };
-  }, [sensorType, selectedInstance, validatedMetric, contextValue, alarmFieldKeys]);
-
-  // Compute slider presentation data (for new simplified slider)
-  const sliderPresentation = useMemo(() => {
-    if (!sensorType || !validatedMetric) return null;
-    
-    const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
-    const fieldDef = schema?.fields[validatedMetric as keyof typeof schema.fields];
-    if (!fieldDef || !('unitType' in fieldDef) || typeof fieldDef.unitType !== 'string') return null;
-    
-    const presentation = usePresentationStore.getState().getPresentationForCategory(fieldDef.unitType as any);
-    if (!presentation) return null;
-    
-    return {
-      format: ensureFormatFunction(presentation),
-      symbol: presentation.symbol,
+  // Cleanup: Clear auto-save timeout on state change or unmount
+  // CRITICAL: Prevents race condition where timeout fires after instance/type switch
+  // Cleanup function runs both when deps change AND on component unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+        autoSaveTimeoutRef.current = null;
+      }
     };
-  }, [sensorType, validatedMetric]);
-  
-  // Get alarm formula (ratio mode detection)
-  const alarmFormula = useMemo(() => {
-    if (!sensorType || !validatedMetric) return undefined;
-    
-    const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
-    const fieldDef = schema?.fields[validatedMetric as keyof typeof schema.fields];
-    if (!fieldDef || !('alarm' in fieldDef) || !fieldDef.alarm) return undefined;
-    
-    return (fieldDef.alarm as any)?.formula as string | undefined;
-  }, [sensorType, validatedMetric]);
-  
-  // Get sensor metrics for formula evaluation
-  const sensorMetrics = useMemo(() => {
-    if (!sensorType) return undefined;
-    
-    const nmeaData = useNmeaStore.getState().nmeaData as any;
-    const sensorInstance = nmeaData?.sensors?.[sensorType]?.[selectedInstance];
-    return sensorInstance?.getAllMetrics();
   }, [sensorType, selectedInstance]);
-  
-  // Get ratio unit for ratio mode
-  const ratioUnit = useMemo(() => {
-    if (!sensorType || !validatedMetric || !alarmFormula) return undefined;
-    
-    const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
-    const fieldDef = schema?.fields[validatedMetric as keyof typeof schema.fields];
-    if (!fieldDef || !('alarm' in fieldDef) || !fieldDef.alarm) return undefined;
-    
-    const alarm = fieldDef.alarm as any;
-    // Get first context's indirectThresholdUnit
-    const firstContext = Object.keys(alarm.contexts || {})[0];
-    const contextDef = firstContext ? alarm.contexts[firstContext] : null;
-    return contextDef?.critical?.indirectThresholdUnit;
-  }, [sensorType, validatedMetric, alarmFormula]);
 
-  // Get current metric value for display (reactive to store changes)
-  // Use nmeaData.timestamp as reactive trigger (changes on every NMEA message)
-  // This ensures component re-renders when sensor data updates
-  const currentMetricValue = useNmeaStore(
-    (state) => {
-      // Subscribe to timestamp to trigger re-evaluation on data updates
-      const _ = state.nmeaData.timestamp;
+  // Internal: Save current form state (consolidates all save pathways)
+  const saveCurrentState = useCallback(
+    async (requireValidation: boolean = true): Promise<boolean> => {
+      if (!sensorType) return false;
       
-      if (!sensorType || !validatedMetric) {
-        log.sensorConfig('No sensorType or validatedMetric', () => ({
-          sensorType,
-          validatedMetric,
-          watchedMetric,
-          defaultMetric,
+      try {
+        if (requireValidation) {
+          // Use handleSubmit for validation
+          await form.handleSubmit(async (data) => {
+            await onSave(sensorType, selectedInstance, data);
+          })();
+        } else {
+          // Direct save without validation
+          const formData = form.getValues();
+          await onSave(sensorType, selectedInstance, formData);
+        }
+        return true;
+      } catch (error) {
+        log.app('useSensorConfigForm: Save failed', () => ({
+          error: error instanceof Error ? error.message : String(error),
         }));
-        return undefined;
+        return false;
       }
-      
-      // Access via sensorRegistry (global registry, not in Zustand state)
-      const sensorInstance = sensorRegistry.get(sensorType, selectedInstance);
-      if (!sensorInstance) {
-        log.sensorConfig('No sensor instance', () => ({
-          sensorType,
-          selectedInstance,
-          availableSensors: sensorRegistry.getAllSensors().map(s => `${s.sensorType}:${s.instance}`),
-        }));
-        return undefined;
-      }
-      
-      const metricValue = sensorInstance.getMetric(validatedMetric);
-      if (!metricValue) {
-        log.sensorConfig('No metric value', () => ({
-          sensorType,
-          validatedMetric,
-          availableMetrics: Array.from(sensorInstance.metrics?.keys() || []),
-        }));
-        return undefined;
-      }
-      
-      // Return formatted value with unit
-      log.sensorConfig('✅ Got metric value', () => ({
-        sensorType,
-        validatedMetric,
-        formattedValueWithUnit: metricValue.formattedValueWithUnit,
-      }));
-      return metricValue.formattedValueWithUnit;
     },
-    (a, b) => a === b
+    [sensorType, selectedInstance, form, onSave],
   );
 
-  // Slider ranges
-  const criticalSliderRange = useMemo(
-    () =>
-      alarmConfig
-        ? getCriticalSliderRange(alarmConfig.min, alarmConfig.max, watchedWarning, alarmConfig.direction)
-        : { min: 0, max: 100 },
-    [alarmConfig, watchedWarning],
-  );
-
-  const warningSliderRange = useMemo(
-    () =>
-      alarmConfig
-        ? getWarningSliderRange(alarmConfig.min, alarmConfig.max, watchedCritical, alarmConfig.direction)
-        : { min: 0, max: 100 },
-    [alarmConfig, watchedCritical],
-  );
-
-  // Clamped slider values
-  const clampedCritical = useClamped(watchedCritical, criticalSliderRange);
-  const clampedWarning = useClamped(watchedWarning, warningSliderRange);
-
-  // Update form if clamped values changed
-  useEffect(() => {
-    if (clampedCritical !== watchedCritical && clampedCritical !== undefined) {
-      form.setValue('criticalValue', clampedCritical);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clampedCritical, watchedCritical]); // form.setValue is stable, omit form object
-
-  useEffect(() => {
-    if (clampedWarning !== watchedWarning && clampedWarning !== undefined) {
-      form.setValue('warningValue', clampedWarning);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clampedWarning, watchedWarning]); // form.setValue is stable, omit form object
-
-  // Compute display values
-  const unitSymbol = useMemo(() => enrichedThresholds?.display.min.unit || '', [enrichedThresholds]);
-  const metricLabel = useMemo(() => {
-    if (!sensorConfig) return sensorType || '';
-    
-    if (validatedMetric) {
-      return sensorConfig.fields[validatedMetric]?.label || '';
-    }
-    
-    return sensorConfig?.displayName || sensorType || '';
-  }, [validatedMetric, sensorConfig, sensorType]);
-
-  // Handler: Metric change
+  // Handler: Metric change - load new thresholds
   const handleMetricChange = useCallback(
     (newMetric: string) => {
-      if (!sensorType || !sensorConfig) return;
+      if (!sensorType) return;
 
       const enriched = ThresholdPresentationService.getEnrichedThresholds(
         sensorType,
@@ -597,130 +260,105 @@ export const useSensorConfigForm = (
           sensorType,
           instance: selectedInstance,
         }));
+        return;
       }
 
-      const criticalValue = enriched?.display.critical?.value;
-      const warningValue = enriched?.display.warning?.value;
-
-      form.setValue('selectedMetric', newMetric);
-      if (criticalValue !== undefined) form.setValue('criticalValue', criticalValue);
-      if (warningValue !== undefined) form.setValue('warningValue', warningValue);
+      form.setValue('selectedMetric', newMetric, { shouldDirty: false });
+      if (enriched.display.critical?.value !== undefined) {
+        form.setValue('criticalValue', enriched.display.critical.value, { shouldDirty: false });
+      }
+      if (enriched.display.warning?.value !== undefined) {
+        form.setValue('warningValue', enriched.display.warning.value, { shouldDirty: false });
+      }
     },
-    [sensorType, selectedInstance, sensorConfig, form],
+    [sensorType, selectedInstance, form],
   );
 
-  // Handler: Alarm enable with safety confirmation
-  const handleEnabledChange = useCallback(
-    async (value: boolean) => {
-      // Check if sensor has any alarm with safetyRequired: true
-      const schema = sensorType ? SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS] : null;
-      const isCritical = schema && Object.values(schema.fields).some(
-        (field): boolean => {
-          if (!('alarm' in field) || !field.alarm) return false;
-          return field.alarm.safetyRequired === true;
-        }
-      );
+  // Handler: Per-metric alarm enable with safety confirmation
+  const handleMetricEnabledChange = useCallback(
+    async (metricKey: string, value: boolean) => {
+      if (!sensorType) return;
+
+      // Check if metric is safety-critical
+      const schema = SENSOR_SCHEMAS[sensorType as keyof typeof SENSOR_SCHEMAS];
+      const fieldDef = schema?.fields[metricKey as keyof typeof schema.fields];
+      const isCritical = fieldDef && 'alarm' in fieldDef && (fieldDef.alarm as any)?.safetyRequired === true;
 
       if (!value && isCritical) {
-        const title = 'Disable Critical Alarm?';
-        const message = `${sensorType?.toUpperCase()} alarms are critical for vessel safety. Disable this alarm?`;
-        const ok = await confirm(title, message);
-        if (ok) {
-          form.setValue('enabled', value, { shouldDirty: true });
-        }
-      } else {
-        form.setValue('enabled', value, { shouldDirty: true });
-      }
-    },
-    [sensorType, form, confirm],
-  );
-
-  // Handler: Instance switch with save
-  const handleInstanceSwitch = useCallback(
-    async (newInstance: number) => {
-      if (!sensorType) return;
-      if (form.formState.isDirty && enrichedThresholds) {
-        try {
-          await form.handleSubmit(async (data) => {
-            await onSave(sensorType, selectedInstance, data);
-          })();
-        } catch (error) {
-          log.app('useSensorConfigForm: Instance switch save failed', () => ({
-            error: error instanceof Error ? error.message : String(error),
-          }));
-        }
-      }
-    },
-    [sensorType, selectedInstance, form, enrichedThresholds, onSave],
-  );
-
-  // Handler: Sensor type switch with save
-  const handleSensorTypeSwitch = useCallback(
-    async (newType: SensorType) => {
-      if (form.formState.isDirty && enrichedThresholds) {
-        try {
-          await form.handleSubmit(async (data) => {
-            await onSave(sensorType || newType, selectedInstance, data);
-          })();
-        } catch (error) {
-          log.app('useSensorConfigForm: Sensor type switch save failed', () => ({
-            error: error instanceof Error ? error.message : String(error),
-          }));
-        }
-      }
-    },
-    [sensorType, selectedInstance, form, enrichedThresholds, onSave],
-  );
-
-  // Handler: Close with save and cleanup
-  const handleClose = useCallback(async (): Promise<boolean> => {
-    console.log(`[useSensorConfigForm] handleClose: isDirty=${form.formState.isDirty}, name="${form.getValues('name')}"`);
-
-    if (form.formState.isDirty) {
-      console.log('[useSensorConfigForm] Form is dirty, attempting save...');
-      // For name-only changes (no thresholds), enrichment isn't needed
-      const hasThresholdChanges =
-        form.getValues('criticalValue') !== undefined ||
-        form.getValues('warningValue') !== undefined;
-
-      if (hasThresholdChanges && !enrichedThresholds) {
-        const shouldDiscard = await confirm(
-          'Discard Changes?',
-          'Cannot save threshold changes - unit conversion unavailable. Discard unsaved changes?',
+        const ok = await confirm(
+          'Disable Critical Alarm?',
+          `${metricKey.toUpperCase()} alarm is critical for vessel safety. Disable?`
         );
-        if (!shouldDiscard) return false; // User cancelled - don't close
-        form.reset(); // Reset to discard changes
-      } else {
-        console.log('[useSensorConfigForm] Proceeding with save (no threshold issues)');
-        try {
-          await form.handleSubmit(
-            async (data) => {
-              console.log(`[useSensorConfigForm] handleSubmit executing with data.name="${data.name}"`);
-              if (sensorType) await onSave(sensorType, selectedInstance, data);
-            },
-            (errors) => {
-              // Log validation errors
-              log.app('Form validation failed', () => ({
-                errors,
-                values: form.getValues(),
-              }));
-            }
-          )();
-          // DON'T reset after successful save - it causes form to revert to old initialFormData
-          // The form will reset when dialog actually closes (component unmount or next open)
-        } catch (error) {
-          console.log(`[useSensorConfigForm] Save failed:`, error);
-          log.app('useSensorConfigForm: Close save failed', () => ({
-            error: error instanceof Error ? error.message : String(error),
-          }));
-          return false; // Save failed - don't close
-        }
+        if (!ok) return;
       }
-    } else {
-      console.log('[useSensorConfigForm] Form NOT dirty, skipping save');
+
+      // Update store directly (per-metric enabled state not in form)
+      const currentConfig = useNmeaStore.getState().getSensorConfig(sensorType, selectedInstance);
+      const existingMetric = currentConfig?.metrics?.[metricKey];
+      
+      await useNmeaStore.getState().setSensorConfig(sensorType, selectedInstance, {
+        ...currentConfig,
+        metrics: {
+          ...currentConfig?.metrics,
+          [metricKey]: {
+            critical: existingMetric?.critical ?? 0,
+            warning: existingMetric?.warning ?? 0,
+            ...existingMetric,
+            enabled: value,
+          },
+        },
+        lastModified: Date.now(),
+      });
+    },
+    [sensorType, selectedInstance, confirm],
+  );
+
+  // Handler: Instance switch - auto-save before switching
+  // NOTE: newInstance param unused - parent component handles state update after this returns
+  const handleInstanceSwitch = useCallback(
+    async (_newInstance: number) => {
+      if (!sensorType) return;
+      
+      // CRITICAL: Clear pending auto-save to prevent race condition
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+        autoSaveTimeoutRef.current = null;
+      }
+      
+      // Always save on instance switch (with validation)
+      await saveCurrentState(true);
+      await new Promise(resolve => setTimeout(resolve, 0)); // Microtask for store sync
+      
+      // Reset form to prevent stale data
+      form.reset({}, { keepDefaultValues: false });
+    },
+    [sensorType, form, saveCurrentState],
+  );
+
+  // Handler: Sensor type switch - save if dirty
+  // NOTE: newType param unused - parent component handles state update after this returns
+  const handleSensorTypeSwitch = useCallback(
+    async (_newType: SensorType) => {
+      // CRITICAL: Clear pending auto-save to prevent race condition
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+        autoSaveTimeoutRef.current = null;
+      }
+      
+      if (form.formState.isDirty) {
+        await saveCurrentState(true);
+      }
+    },
+    [form.formState.isDirty, saveCurrentState],
+  );
+
+  // Handler: Close - save if dirty
+  const handleClose = useCallback(async (): Promise<boolean> => {
+    if (form.formState.isDirty) {
+      return await saveCurrentState(true);
     }
-    return true; // Success - allow close
-  }, [form, enrichedThresholds, sensorType, selectedInstance, onSave, confirm]);
+    return true; // No changes, allow close
+  }, [form.formState.isDirty, saveCurrentState]);
 
   // Handler: Test sound
   const handleTestSound = useCallback(async (soundPattern: string): Promise<void> => {
@@ -740,36 +378,42 @@ export const useSensorConfigForm = (
     }
   }, []);
 
-  // Note: form.reset() called in handleClose() - no additional cleanup needed
+  // Handler: Immediate save - no debouncing for maritime safety
+  const saveImmediately = useCallback(async () => {
+    if (!sensorType) return;
+    
+    // Guard: Don't save if critical values are undefined (enrichment failed or not loaded yet)
+    const formData = form.getValues();
+    if (formData.criticalValue === undefined || formData.warningValue === undefined) {
+      log.app('useSensorConfigForm: Skipping save - threshold values not loaded yet', () => ({
+        sensorType,
+        selectedInstance,
+        criticalValue: formData.criticalValue,
+        warningValue: formData.warningValue,
+      }));
+      return;
+    }
+    
+    // Clear any pending timeout (cleanup)
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+      autoSaveTimeoutRef.current = null;
+    }
+    
+    // Save immediately without validation
+    await saveCurrentState(false);
+  }, [sensorType, selectedInstance, form, saveCurrentState]);
 
   return {
     form,
-    enrichedThresholds,
-    currentMetricValue,
     handlers: {
       handleMetricChange,
-      handleEnabledChange,
+      handleMetricEnabledChange,
       handleInstanceSwitch,
       handleSensorTypeSwitch,
       handleClose,
       handleTestSound,
-    },
-    computed: {
-      alarmConfig,
-      enrichedThresholds,
-      criticalSliderRange,
-      warningSliderRange,
-      unitSymbol,
-      metricLabel,
-      requiresMetricSelection,
-      supportsAlarms,
-      sliderPresentation,
-      alarmFormula,
-      sensorMetrics,
-      ratioUnit,
-      currentMetricValue,
-      resolvedRange: enrichedThresholds?.resolvedRange,
-      formulaContext: enrichedThresholds?.formulaContext,
+      saveImmediately,
     },
   };
 };

@@ -27,42 +27,55 @@ import type { SensorInstance } from './SensorInstance';
 import { SENSOR_SCHEMAS, type InferSensorData, type SensorType } from '../registry/sensorSchemas';
 
 /**
- * Per-metric threshold configuration
- * Used by SensorInstance for per-metric alarm evaluation
+ * Per-metric threshold configuration (runtime in-memory)
+ * 
+ * Simplified Architecture (Jan 2026):
+ * - Single threshold value per level (critical/warning)
+ * - Mode discriminates between direct values and formula-based
+ * - Direction looked up from schema (not stored)
+ * - Sound patterns moved to persistent config only
+ * - Hysteresis is absolute value in metric units
+ * 
+ * Usage:
+ * - Direct mode: threshold is the actual value (e.g., 30% SOC)
+ * - Formula mode: store ratio + formula, evaluate on alarm check
  */
-export interface MetricThresholds {
-  critical: {
-    min?: number;  // Resolved threshold value for alarm evaluation
-    max?: number;  // Resolved threshold value for alarm evaluation
-    indirectThreshold?: number;  // Original ratio for UI editing & recalculation (Jan 2026)
-  };
-  warning: {
-    min?: number;  // Resolved threshold value for alarm evaluation
-    max?: number;  // Resolved threshold value for alarm evaluation
-    indirectThreshold?: number;  // Original ratio for UI editing & recalculation (Jan 2026)
-  };
-  hysteresis?: number;
-  criticalSoundPattern?: string;
-  warningSoundPattern?: string;
-  staleThresholdMs: number;
+export type MetricThresholds = {
+  hysteresis?: number;  // Absolute value in metric units (e.g., 2% for SOC)
   enabled: boolean;
-}
+} & (
+  | {
+      mode: 'direct';
+      critical: number;   // SI units (e.g., 30 for 30% SOC, 2.5 for 2.5m depth)
+      warning: number;
+    }
+  | {
+      mode: 'formula';
+      criticalRatio: number;  // User-adjustable multiplier (e.g., 1.0 for C-rate)
+      warningRatio: number;
+      formula: string;        // Formula to evaluate (e.g., 'capacity * indirectThreshold')
+    }
+);
 
 /**
- * Per-metric configuration
- * Used in unified SensorConfiguration.metrics object
+ * Per-metric configuration (persistent to AsyncStorage)
+ * 
+ * Simplified Architecture (Jan 2026):
+ * - Stores source values (what user configures)
+ * - Direction derived from schema (not stored)
+ * - Single hysteresis value (absolute units)
+ * - Sound patterns for alarm manager
  * 
  * Schema V2 (Unified): All sensors use this structure in metrics object
  */
 export interface MetricConfiguration {
-  critical?: number;
-  warning?: number;
-  indirectThreshold?: { critical?: number; warning?: number };  // For formula-based ratios (Jan 2025)
-  direction?: 'above' | 'below';
+  critical: number;          // Direct value OR ratio (depends on mode)
+  warning: number;
+  mode?: 'formula';          // Omit for direct mode (default)
+  formula?: string;          // Only if mode='formula'
+  hysteresis?: number;       // Absolute value in metric units
   criticalSoundPattern?: string;
   warningSoundPattern?: string;
-  criticalHysteresis?: number;
-  warningHysteresis?: number;
   enabled: boolean;
 }
 
