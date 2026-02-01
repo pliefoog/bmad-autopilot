@@ -47,11 +47,11 @@ export const menuItems: MenuItem[] = [
     testId: 'menu-layout-settings',
   },
   {
-    id: 'alarm-configuration',
-    label: 'Alarms',
-    icon: 'notifications-outline',
+    id: 'sensor-configuration',
+    label: 'Sensors',
+    icon: 'speedometer-outline',
     action: 'openAlarmConfiguration',
-    testId: 'menu-alarms',
+    testId: 'menu-sensors',
   },
   {
     id: 'alarm-history',
